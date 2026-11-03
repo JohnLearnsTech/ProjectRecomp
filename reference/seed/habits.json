@@ -1,0 +1,117 @@
+{
+  "_about": "Habit templates offered in setup, and the units a habit can use. Minutes and hours get a timer.",
+  "templates": [
+    {
+      "name": "Walk",
+      "type": "build",
+      "unit": "min",
+      "goal": 20,
+      "step": 5
+    },
+    {
+      "name": "Read",
+      "type": "build",
+      "unit": "pages",
+      "goal": 10,
+      "step": 5
+    },
+    {
+      "name": "Meditate",
+      "type": "build",
+      "unit": "min",
+      "goal": 10,
+      "step": 5
+    },
+    {
+      "name": "Deep work",
+      "type": "build",
+      "unit": "h",
+      "goal": 2,
+      "step": 0.5
+    },
+    {
+      "name": "Screen time",
+      "type": "limit",
+      "unit": "h",
+      "goal": 2,
+      "step": 0.5
+    },
+    {
+      "name": "No sugar",
+      "type": "limit",
+      "unit": "times",
+      "goal": 0,
+      "step": 1
+    },
+    {
+      "name": "Journal",
+      "type": "build",
+      "unit": "times",
+      "goal": 1,
+      "step": 1
+    },
+    {
+      "name": "Stretch",
+      "type": "build",
+      "unit": "min",
+      "goal": 10,
+      "step": 5
+    }
+  ],
+  "units": [
+    {
+      "v": "min",
+      "l": "minutes (timer)",
+      "step": 5,
+      "goal": 20
+    },
+    {
+      "v": "h",
+      "l": "hours (timer)",
+      "step": 0.5,
+      "goal": 1
+    },
+    {
+      "v": "times",
+      "l": "times",
+      "step": 1,
+      "goal": 1
+    },
+    {
+      "v": "steps",
+      "l": "steps",
+      "step": 500,
+      "goal": 8000
+    },
+    {
+      "v": "glasses",
+      "l": "glasses",
+      "step": 1,
+      "goal": 8
+    },
+    {
+      "v": "L",
+      "l": "litres",
+      "step": 0.5,
+      "goal": 3
+    },
+    {
+      "v": "pages",
+      "l": "pages",
+      "step": 5,
+      "goal": 10
+    },
+    {
+      "v": "km",
+      "l": "km",
+      "step": 0.5,
+      "goal": 2
+    },
+    {
+      "v": "g",
+      "l": "grams",
+      "step": 10,
+      "goal": 100
+    }
+  ]
+}

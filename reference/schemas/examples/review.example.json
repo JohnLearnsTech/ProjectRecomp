@@ -1,0 +1,24 @@
+{
+  "id": "2026-10-12",
+  "at": 1791824400000,
+  "from": "2026-10-06",
+  "to": "2026-10-12",
+  "applied": false,
+  "stats": {
+    "from": "2026-10-06", "to": "2026-10-12", "daysInWeek": 7,
+    "weightAvg": 80.8, "weighIns": 6,
+    "kcalAvg": 2060, "foodDays": 6, "proteinAvg": 138,
+    "stepsAvg": 8650, "stepsDays": 7, "sleepAvg": 7.1,
+    "liftDone": 3, "liftScheduled": 3, "cardioDone": 2, "cardioScheduled": 3,
+    "checksPct": 81,
+    "habits": [ { "name": "Walk", "type": "build", "goal": 10, "unit": "min", "met": 6, "of": 7 } ],
+    "strength": [ { "exercise": "Leg press", "thisWeek": "80×12, 80×11, 80×10", "lastTime": { "date": "2026-10-03", "sets": "77.5×12, 77.5×12, 77.5×11" } } ]
+  },
+  "out": {
+    "headline": "A steady week: all three lifts done and weight down 0.4 kg on the average.",
+    "wins": ["3 of 3 lifting sessions done", "Protein averaged 138 g"],
+    "watch": ["Only 2 of 3 cardio days hit the step target"],
+    "focus": "Get the Saturday walk in before noon.",
+    "suggestion": { "what": "Raise steps to 9,500 a day", "why": "Weight is moving but slower than the plan line.", "change": { "steps": 9500 } }
+  }
+}

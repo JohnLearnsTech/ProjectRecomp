@@ -1,0 +1,86 @@
+{
+  "v": 1,
+  "by": "you",
+  "at": 1789000000000,
+  "note": "Edited Full Body A",
+  "programs": {
+    "fullA": {
+      "name": "Full Body A",
+      "kit": "gym",
+      "ex": [
+        "Leg press|3 × 10-12|Feet mid-platform, hip-width.",
+        "Chest press machine|3 × 10-12|Handles level with mid-chest.",
+        "Incline plank, hands on a bench|3 × 20-30 s|Body in one line."
+      ]
+    },
+    "fullB": {
+      "name": "Full Body B",
+      "kit": "gym",
+      "ex": [
+        "Goblet squat to box|3 × 8-10|Dumbbell at the chest.",
+        "Lat pulldown|3 × 10-12|Bar to the upper chest."
+      ]
+    }
+  },
+  "targets": { "carb": 210, "fat": 65, "fiber": 30 },
+  "phases": [
+    {
+      "name": "Phase 1 · Base",
+      "detail": "Learn the movements and find working loads.",
+      "steps": 8000,
+      "weeks": [
+        [
+          { "t": "lift", "s": "fullA", "c": "10 to 15 minutes of easy cardio after lifting." },
+          { "t": "cardio", "c": "Walk 20 to 30 minutes at an easy pace." },
+          { "t": "lift", "s": "fullB", "c": "10 to 15 minutes of easy cardio after lifting." },
+          { "t": "cardio", "c": "Walk 20 to 30 minutes at an easy pace." },
+          { "t": "lift", "s": "fullA", "c": "10 to 15 minutes of easy cardio after lifting." },
+          { "t": "cardio", "c": "Walk 20 to 30 minutes at an easy pace." },
+          { "t": "rest", "c": "Rest day. A walk if you feel like it." }
+        ],
+        [
+          { "t": "lift", "s": "fullB", "c": "10 to 15 minutes of easy cardio after lifting." },
+          { "t": "cardio", "c": "Walk 20 to 30 minutes at an easy pace." },
+          { "t": "lift", "s": "fullA", "c": "10 to 15 minutes of easy cardio after lifting." },
+          { "t": "cardio", "c": "Walk 20 to 30 minutes at an easy pace." },
+          { "t": "lift", "s": "fullB", "c": "10 to 15 minutes of easy cardio after lifting." },
+          { "t": "cardio", "c": "Walk 20 to 30 minutes at an easy pace." },
+          { "t": "rest", "c": "Rest day. A walk if you feel like it." }
+        ]
+      ]
+    },
+    {
+      "name": "Phase 2 · Build",
+      "detail": "Double progression.",
+      "steps": 9000,
+      "weeks": [
+        [
+          { "t": "lift", "s": "fullA" }, { "t": "cardio", "c": "Walk 30 minutes." }, { "t": "lift", "s": "fullB" },
+          { "t": "cardio", "c": "Walk 30 minutes." }, { "t": "lift", "s": "fullA" }, { "t": "cardio", "c": "Walk 30 minutes." }, { "t": "rest", "c": "Rest day." }
+        ]
+      ]
+    },
+    {
+      "name": "Phase 3 · Push",
+      "detail": "The hardest block.",
+      "steps": 9500,
+      "weeks": [
+        [
+          { "t": "lift", "s": "fullB" }, { "t": "cardio", "c": "Walk 30 minutes." }, { "t": "lift", "s": "fullA" },
+          { "t": "cardio", "c": "Walk 30 minutes." }, { "t": "lift", "s": "fullB" }, { "t": "cardio", "c": "Intervals on a bike." }, { "t": "rest", "c": "Rest day." }
+        ]
+      ]
+    },
+    {
+      "name": "Phase 4 · Sharpen",
+      "detail": "Hold loads, sleep more.",
+      "steps": 9500,
+      "weeks": [
+        [
+          { "t": "lift", "s": "fullA" }, { "t": "cardio", "c": "Walk 30 minutes." }, { "t": "lift", "s": "fullB" },
+          { "t": "cardio", "c": "Walk 30 minutes." }, { "t": "lift", "s": "fullA" }, { "t": "cardio", "c": "Walk 30 minutes." }, { "t": "rest", "c": "Rest day." }
+        ]
+      ]
+    }
+  ]
+}

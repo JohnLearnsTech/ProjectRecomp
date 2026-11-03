@@ -1,0 +1,9 @@
+{
+  "id": "mm3a0k5",
+  "name": "Usual breakfast",
+  "sig": "Egg, whole, boiled (2 × 43 g) + Oats, dry (40 g)",
+  "rows": [
+    { "label": "Egg, whole, boiled (2 × 43 g)", "kcal": 134, "p": 10.8, "c": 1, "f": 9.2, "fib": 0, "src": "table", "raw": "2 eggs" },
+    { "label": "Oats, dry (40 g)", "kcal": 152, "p": 5.2, "c": 26.8, "f": 2.8, "fib": 4, "src": "table", "raw": "40 g oats" }
+  ]
+}

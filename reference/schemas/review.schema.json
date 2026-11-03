@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "review.schema.json",
+  "title": "Weekly review",
+  "description": "A Claude-written review of the last 7 days. Web app storage: db collection reviews, doc id = the review's id (the end date), written with dbSet (so read with dbDec); localStorage goa:review holds only the most recent one. At startup the app reads reviews ordered by at desc, limit 1. Running a review twice on the same day overwrites that day's doc. The out object has already been bounds-checked by normReview.",
+  "type": "object",
+  "required": ["id", "at", "from", "to", "out"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "The last day of the reviewed week (MAXDAY when it ran). Also the db doc id." },
+    "at": { "type": "number", "description": "Epoch ms when the review was created." },
+    "from": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "First day included (may be later than to-6 near the goal start)." },
+    "to": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "Last day included. reviewDue() compares this with today (due again after 7 days)." },
+    "applied": { "type": "boolean", "default": false, "description": "True once the person tapped Apply on the suggested change." },
+    "stats": { "$ref": "#/$defs/weekStats" },
+    "out": {
+      "type": "object",
+      "required": ["headline", "wins", "watch", "focus", "suggestion"],
+      "additionalProperties": false,
+      "properties": {
+        "headline": { "type": "string", "maxLength": 240, "description": "One-sentence verdict." },
+        "wins": { "type": "array", "maxItems": 3, "items": { "type": "string", "maxLength": 200 } },
+        "watch": { "type": "array", "maxItems": 3, "items": { "type": "string", "maxLength": 200 } },
+        "focus": { "type": "string", "maxLength": 240, "description": "The one thing to do next week." },
+        "suggestion": {
+          "type": "object",
+          "required": ["what", "why", "change"],
+          "additionalProperties": false,
+          "properties": {
+            "what": { "type": "string", "maxLength": 200 },
+            "why": { "type": "string", "maxLength": 300 },
+            "change": {
+              "description": "At most one machine-applicable change, or null. kcal: only kept when at least 5 food days, within 250 kcal of the current target, below it (or above it for goal.type 'muscle'), and not under the calorie floor. steps: rounded to 100, above the current phase steps by at most 2500.",
+              "oneOf": [
+                { "type": "null" },
+                { "type": "object", "required": ["kcal"], "additionalProperties": false, "properties": { "kcal": { "type": "integer" } } },
+                { "type": "object", "required": ["steps"], "additionalProperties": false, "properties": { "steps": { "type": "integer" } } }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "weekStats": {
+      "type": "object",
+      "description": "Snapshot from weekStats(endK) at review time. Kept so the review still reads correctly after the logs change.",
+      "additionalProperties": true,
+      "properties": {
+        "from": { "type": "string" },
+        "to": { "type": "string" },
+        "daysInWeek": { "type": "integer", "minimum": 0, "maximum": 7 },
+        "weightAvg": { "type": ["number", "null"], "description": "kg, one decimal." },
+        "weighIns": { "type": "integer" },
+        "kcalAvg": { "type": ["integer", "null"] },
+        "foodDays": { "type": "integer", "description": "Days with kcal > 0." },
+        "proteinAvg": { "type": ["integer", "null"] },
+        "stepsAvg": { "type": ["integer", "null"] },
+        "stepsDays": { "type": "integer" },
+        "sleepAvg": { "type": ["number", "null"], "description": "Hours, one decimal." },
+        "liftDone": { "type": "integer" },
+        "liftScheduled": { "type": "integer" },
+        "cardioDone": { "type": "integer" },
+        "cardioScheduled": { "type": "integer" },
+        "checksPct": { "type": ["integer", "null"] },
+        "habits": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "type": { "type": "string", "enum": ["build", "limit"] },
+              "goal": { "type": "number" },
+              "unit": { "type": "string" },
+              "met": { "type": "integer" },
+              "of": { "type": "integer" }
+            }
+          }
+        },
+        "strength": {
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "type": "object",
+            "properties": {
+              "exercise": { "type": "string" },
+              "thisWeek": { "type": "string", "description": "Sets as text, e.g. '40×10, 40×9'." },
+              "lastTime": {
+                "type": ["object", "null"],
+                "properties": { "date": { "type": "string" }, "sets": { "type": "string" } }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

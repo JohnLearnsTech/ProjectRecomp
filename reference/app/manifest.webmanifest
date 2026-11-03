@@ -1,0 +1,29 @@
+{
+  "name": "Recomp",
+  "short_name": "Recomp",
+  "description": "Training, food, habits and the plan that ties them together.",
+  "start_url": "recomp.html",
+  "display": "standalone",
+  "background_color": "#08090A",
+  "theme_color": "#08090A",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

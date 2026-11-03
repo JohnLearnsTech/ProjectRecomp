@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "habit.schema.json",
+  "title": "Habit",
+  "description": "A habit definition. The web app keeps an ordered list (order = display order, changed by move up/down): localStorage goa:habits and db doc state/habits as {list:[Habit,...]}. normHabits() drops items without id or name and returns null for an empty list, in which case the seed list (gaming limit 2 h, walk build 10 min) is used. Daily values live in the day log (habits, hlog), not here. The keystone habit id is stored separately: localStorage goa:keystone (plain string) and db state/keystone as {id: string}; empty string means none, and getKeystone() then falls back to the first build habit.",
+  "type": "object",
+  "required": ["id", "name", "type", "goal"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Stable id. Seeds use 'gaming' and 'walk'; the add form uses 'h' + base36 time + random 0-999; onboarding uses 'h' + base36 time + index; the Pomodoro helper uses 'focus' (or 'focus' + base36 time)."
+    },
+    "name": { "type": "string", "minLength": 1, "maxLength": 40, "description": "Display name." },
+    "type": {
+      "type": "string",
+      "enum": ["build", "limit"],
+      "description": "build: met when value >= goal. limit: met when value <= goal. normHabits maps anything other than 'limit' to 'build'."
+    },
+    "unit": {
+      "type": "string",
+      "maxLength": 8,
+      "description": "Unit label. normUnit folds h/hr/hrs/hour/hours to 'h' and min/mins/minute/minutes to 'min'. 'h' and 'min' enable the timer (isTimeUnit). Offered units: min, h, times, steps, glasses, L, pages, km, g, or any custom text up to 8 characters. Empty string is allowed."
+    },
+    "goal": { "type": "number", "minimum": 0, "description": "Target (build) or cap (limit) per day, in the unit. Hours are decimal hours." },
+    "step": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "default": 1,
+      "description": "Increment for the goal stepper and value wheel. Defaults by unit: min 5, h 0.5, steps 500, L 0.5, pages 5, km 0.5, g 10, others 1. Hour habits use a finer 5-minute notch on the value wheel regardless of step."
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "food-cache-entry.schema.json",
+  "title": "Food estimate cache entry",
+  "description": "One per-100 g nutrition record in the estimate cache (estCache). Web app storage: localStorage goa:estcache and db doc state/estcache as {map:{<key>: Entry}}. The key is 'v2:' + canonName(description): lowercase, quantities and units removed, a trailing 'from <place>' removed, digits and punctuation removed, neutral words (boneless, cooked, homemade, large, ...) removed, remaining words sorted and joined by single spaces, e.g. 'v2:chicken grilled tikka'. Cooking methods are kept. Dish descriptions with listed ingredients (isDish) are never cached. Written by estimate() after a Claude reply, by rememberFood() when the person corrects a row (by='you'), and by logLabelFood() for nutrition labels (by='you').",
+  "type": "object",
+  "required": ["name", "per100"],
+  "additionalProperties": false,
+  "properties": {
+    "name": { "type": "string", "description": "Clean food name without a weight, used to build row labels." },
+    "serving_g": { "type": "number", "exclusiveMinimum": 0, "default": 100, "description": "Grams of one piece (counted foods) or one typical serving. A description with a count and no grams is priced as count × serving_g." },
+    "unitOnly": { "type": "boolean", "description": "Set by rememberFood when the corrected description had no weight: the record is per one piece and labels show '(n)' instead of '(n × g)'. In that case serving_g is 100 and per100 holds one piece's values (100 g is a stand-in)." },
+    "by": { "type": "string", "enum": ["you"], "description": "Present and 'you' when the numbers came from the person (correction or label). Absent for Claude estimates. A 'you' record makes reused rows log with src='you'." },
+    "per100": {
+      "type": "object",
+      "required": ["kcal", "p", "c", "f", "fib"],
+      "additionalProperties": false,
+      "description": "Values per 100 g of cooked, ready-to-eat food (per 100 ml for drinks).",
+      "properties": {
+        "kcal": { "type": "number", "minimum": 0 },
+        "p": { "type": "number", "minimum": 0, "description": "Protein g." },
+        "c": { "type": "number", "minimum": 0, "description": "Carbohydrate g." },
+        "f": { "type": "number", "minimum": 0, "description": "Fat g." },
+        "fib": { "type": "number", "minimum": 0, "description": "Fiber g." }
+      }
+    }
+  },
+  "$defs": {
+    "cacheKey": {
+      "type": "string",
+      "pattern": "^v2:[a-z ]*$",
+      "description": "Map key shape. Only lowercase letters and spaces follow the prefix. The key can be just 'v2:' when every word was stripped (estimate() does not guard against this)."
+    }
+  }
+}

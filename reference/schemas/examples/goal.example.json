@@ -1,0 +1,21 @@
+{
+  "id": "gm3a0k0",
+  "name": "Summer",
+  "why": "Feel strong on the demo hiking trip.",
+  "type": "lose",
+  "start": "2026-09-01",
+  "due": "2026-11-23",
+  "event": "2026-11-28",
+  "trainStart": "2026-09-01",
+  "startKg": 82,
+  "targetKg": 76,
+  "kcal": 2100,
+  "protein": 145,
+  "steps": 8000,
+  "homeFirst": false,
+  "done": false,
+  "milestones": [
+    { "d": "2026-10-05", "k": "lab", "t": "Routine blood panel (demo)" },
+    { "d": "2026-10-20", "k": "task", "t": "Buy new running shoes" }
+  ]
+}

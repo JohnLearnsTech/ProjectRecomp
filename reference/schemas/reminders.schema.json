@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "reminders.schema.json",
+  "title": "Reminder settings",
+  "description": "Reminder preferences and the Google Calendar events the app created for them (remState). Web app storage: localStorage goa:rem and db doc state/reminders (whole object via dbSet). The app only loads a stored value that has an items object. A backup only carries {items}. In the native app these should become local or push notifications; the events list is only needed to clean up calendar events made by the web app.",
+  "type": "object",
+  "required": ["items"],
+  "additionalProperties": false,
+  "properties": {
+    "items": {
+      "type": "object",
+      "description": "One setting per reminder row, created lazily with a default the first time the row is drawn (remItem). Keys: 'train' (training days, default 18:30 on), 'chk:<checkId>' for each daily check that is not skipped (default time from the check's 'when' label, off), 'dates' (milestones and bloods, default on, fixed alert times), 'review' (weekly review on the last weekday of the plan week, default 19:00 on). Skipped check ids: waist, photos, lab, task, mobility, train, protein, water.",
+      "propertyNames": { "pattern": "^(train|dates|review|chk:.+)$" },
+      "additionalProperties": { "$ref": "#/$defs/item" }
+    },
+    "events": {
+      "type": "array",
+      "default": [],
+      "description": "Calendar events created by the last 'Add to Google Calendar' or 'Update calendar'. Emptied when removed.",
+      "items": { "$ref": "#/$defs/event" }
+    },
+    "tag": {
+      "type": ["string", "null"],
+      "description": "'ft-' + base36 time, written into every event description so events can be found again by full-text search."
+    },
+    "at": {
+      "type": ["number", "null"],
+      "description": "Epoch ms of the last successful create."
+    }
+  },
+  "$defs": {
+    "item": {
+      "type": "object",
+      "required": ["on", "time"],
+      "additionalProperties": false,
+      "properties": {
+        "on": { "type": "boolean", "description": "Reminder enabled." },
+        "time": { "type": "string", "pattern": "^\\d{2}:\\d{2}$", "description": "Local time HH:MM (device time zone). Ignored for 'dates', which alerts at 08:00 on the day and 18:00 the day before." }
+      }
+    },
+    "event": {
+      "type": "object",
+      "required": ["k"],
+      "additionalProperties": false,
+      "properties": {
+        "k": { "type": "string", "description": "Item key the event belongs to." },
+        "id": { "type": ["string", "null"], "description": "Google Calendar event id, or null when the create response did not return one (found later by tag)." },
+        "title": { "type": "string", "description": "Event summary." }
+      }
+    }
+  }
+}

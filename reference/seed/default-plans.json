@@ -1,0 +1,1764 @@
+{
+  "_about": "Default plans exactly as the app generates them with no saved edits, for a demo goal of 2,150 kcal, 145 g protein, 7,000 steps, type lose, maintenance week 7. Day 1 of each week is the training start's weekday. Odd plan weeks use weeks[0], even weeks use weeks[1]. Slot t: lift (s = program key), cardio, rest; c = the instruction shown for the day.",
+  "gym_4_days": {
+    "v": 1,
+    "by": "default",
+    "at": null,
+    "note": "",
+    "programs": {
+      "lowerA": {
+        "name": "Lower A",
+        "kit": "gym",
+        "ex": [
+          "Leg press|4 × 8-10|Feet mid-platform, hip-width. Lower to about 90° at the knee or until the lower back lifts off the pad. Push through the whole foot, not the toes.",
+          "DB Romanian deadlift|3 × 10|Knees softly bent and fixed, push the hips back, weights sliding down the thighs. Stop at the hamstring stretch. Flat back throughout.",
+          "Seated leg curl|3 × 12|Full curl, slow return. Hips stay down on the seat — lifting them is your hamstrings asking for less weight.",
+          "Leg extension|3 × 15|Pad on the lower shin, straighten fully, pause a beat, lower slowly. Stop if it pinches the front of the knee.",
+          "Standing calf raise|3 × 15|Full stretch at the bottom, full squeeze at the top, no bouncing. One second up, two seconds down."
+        ]
+      },
+      "upperA": {
+        "name": "Upper A",
+        "kit": "gym",
+        "ex": [
+          "Chest press machine|4 × 8-10|Handles at mid-chest height, shoulder blades pinned back. Press without locking out hard, return under control.",
+          "Seated cable row|4 × 10|Chest tall, pull to the belly, elbows past the ribs. No rocking.",
+          "Shoulder press machine|3 × 10|Handles at shoulder height, press overhead without arching your lower back off the pad. Ribs stay down.",
+          "Lat pulldown|3 × 12|Bar to the upper chest, elbows driving down toward the ribs. Slight lean back, held constant.",
+          "DB curl|3 × 12|Elbows at your sides, no swinging. Lower slower than you lift.",
+          "Rope pushdown|3 × 12|Elbows pinned, forearms only. Push down and slightly apart at the bottom."
+        ]
+      },
+      "lowerB": {
+        "name": "Lower B",
+        "kit": "gym",
+        "ex": [
+          "Hip thrust|4 × 10|Shoulder blades on the bench, shins vertical at the top, drive through the heels. Squeeze the glutes, keep the ribs down, stop at hips level with knees.",
+          "Hack squat or goblet squat to box|3 × 10|Feet mid-platform, descend under control to about 90°, drive up through the heels. Keep the lower back flat against the pad.",
+          "Lying leg curl|3 × 12|Hips pressed into the pad, curl fully, lower slowly. Don't let the hips rise to help.",
+          "Low-box step-up with DBs|3 × 10 / leg|Box at or below knee height. Whole foot on the box, push through that heel, step down slowly. The back leg is for balance, not for pushing.",
+          "Seated calf raise|3 × 15|Full stretch, full squeeze, no bouncing. This one targets the deeper calf muscle, so slow it down."
+        ]
+      },
+      "upperB": {
+        "name": "Upper B",
+        "kit": "gym",
+        "ex": [
+          "Incline DB press|4 × 10|Bench at 30°, elbows about 45° from the body, press up and slightly together. Control the lowering to a chest stretch.",
+          "Chest-supported DB row|4 × 10|Chest on the incline bench so your lower back is out of it. Pull the elbows past your ribs and squeeze. No jerking.",
+          "Cable lateral raise|3 × 15|Cable at the low setting, slight elbow bend, raise to shoulder height only. Light weight, lead with the elbow.",
+          "Face pull|3 × 15|Rope at upper-chest height, pull toward your forehead with elbows high and wide, rotating the hands back. This is the antidote to a desk job.",
+          "Hammer curl|3 × 12|Palms facing each other, elbows tucked, no torso swing.",
+          "Overhead cable extension|3 × 12|Facing away from the cable, elbows beside your ears and fixed. Straighten the arms overhead, lower slowly to a triceps stretch."
+        ]
+      }
+    },
+    "targets": {
+      "carb": 242,
+      "fat": 67,
+      "fiber": 30
+    },
+    "phases": [
+      {
+        "name": "Phase 1 · Base",
+        "steps": 7000,
+        "weeks": [
+          [
+            {
+              "t": "lift",
+              "s": "lowerA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "lift",
+              "s": "upperA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Zone 2, 30 minutes: bike, incline walk or elliptical."
+            },
+            {
+              "t": "lift",
+              "s": "lowerB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "lift",
+              "s": "upperB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ],
+          [
+            {
+              "t": "lift",
+              "s": "lowerA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "lift",
+              "s": "upperA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Zone 2, 30 minutes: bike, incline walk or elliptical."
+            },
+            {
+              "t": "lift",
+              "s": "lowerB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "lift",
+              "s": "upperB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ]
+        ],
+        "detail": "Learn the movements and find your working loads. Stop every set with two or three reps left. The job of this block is a habit that survives a busy week."
+      },
+      {
+        "name": "Phase 2 · Build",
+        "steps": 8000,
+        "weeks": [
+          [
+            {
+              "t": "lift",
+              "s": "lowerA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "lift",
+              "s": "upperA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Zone 2, 30 minutes: bike, incline walk or elliptical."
+            },
+            {
+              "t": "lift",
+              "s": "lowerB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "lift",
+              "s": "upperB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ],
+          [
+            {
+              "t": "lift",
+              "s": "lowerA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "lift",
+              "s": "upperA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Zone 2, 30 minutes: bike, incline walk or elliptical."
+            },
+            {
+              "t": "lift",
+              "s": "lowerB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "lift",
+              "s": "upperB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ]
+        ],
+        "detail": "Loads climb on double progression: reach the top of the rep range on every set, then add a little weight. Week 7 is a planned maintenance week at 2,650 kcal. It is scheduled, not a failure."
+      },
+      {
+        "name": "Phase 3 · Push",
+        "steps": 8500,
+        "weeks": [
+          [
+            {
+              "t": "lift",
+              "s": "lowerA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "lift",
+              "s": "upperA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Zone 2, 30 minutes: bike, incline walk or elliptical."
+            },
+            {
+              "t": "lift",
+              "s": "lowerB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "lift",
+              "s": "upperB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ],
+          [
+            {
+              "t": "lift",
+              "s": "lowerA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "lift",
+              "s": "upperA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Zone 2, 30 minutes: bike, incline walk or elliptical."
+            },
+            {
+              "t": "lift",
+              "s": "lowerB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "lift",
+              "s": "upperB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ]
+        ],
+        "detail": "The hardest block. Take the last set of each exercise close to failure, keep your steps up and protect your sleep."
+      },
+      {
+        "name": "Phase 4 · Sharpen",
+        "steps": 8500,
+        "weeks": [
+          [
+            {
+              "t": "lift",
+              "s": "lowerA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "lift",
+              "s": "upperA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Zone 2, 30 minutes: bike, incline walk or elliptical."
+            },
+            {
+              "t": "lift",
+              "s": "lowerB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "lift",
+              "s": "upperB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ],
+          [
+            {
+              "t": "lift",
+              "s": "lowerA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "lift",
+              "s": "upperA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Zone 2, 30 minutes: bike, incline walk or elliptical."
+            },
+            {
+              "t": "lift",
+              "s": "lowerB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "lift",
+              "s": "upperB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ]
+        ],
+        "detail": "Hold your loads, no new maxes. Sleep more and arrive at the end of the block rested rather than depleted."
+      }
+    ]
+  },
+  "gym_3_days": {
+    "v": 1,
+    "by": "default",
+    "at": null,
+    "note": "",
+    "programs": {
+      "fullA": {
+        "name": "Full Body A",
+        "kit": "gym",
+        "ex": [
+          "Leg press|3 × 10-12|Feet mid-platform, hip-width. Lower until your knees reach about 90° or your lower back starts to round off the pad, whichever comes first. Never lock the knees hard at the top.",
+          "Chest press machine|3 × 10-12|Set the seat so the handles sit level with mid-chest. Press away without locking out hard, and control the return. Keep the shoulder blades pinned back into the pad.",
+          "Seated cable row|3 × 10-12|Chest tall, slight forward lean at the start. Pull the handle to your belly, elbows past your ribs, squeeze. Don't rock backward to move the weight.",
+          "Seated leg curl|2 × 12|Pad just above the heels, thighs strapped down. Curl fully, then lower slowly — the lowering is where hamstrings grow. Keep your hips on the seat.",
+          "DB lateral raise|2 × 15|Light dumbbells, slight elbow bend, raise out to the sides only to shoulder height. Lead with the elbows, not the hands. If you have to swing, halve the weight.",
+          "Incline plank, hands on a bench|3 × 20-30 s|Hands on a bench, body in one line, squeeze the glutes and tuck the ribs down. Hips neither sagging nor piked up. Breathe normally throughout."
+        ]
+      },
+      "fullB": {
+        "name": "Full Body B",
+        "kit": "gym",
+        "ex": [
+          "Goblet squat to box|3 × 8-10|Hold one dumbbell at your chest, stand in front of a bench. Sit back until you touch it lightly, then stand. The dumbbell at the chest is what lets you stay upright.",
+          "Lat pulldown|3 × 10-12|Thighs under the pads, slight backward lean, bar to your upper chest. Drive the elbows down toward your ribs. Don't lean back further to finish the rep.",
+          "Incline DB press|3 × 10-12|Bench at about 30°, dumbbells at chest level, elbows about 45° from your body. Press up and slightly together, lower under control until you feel a stretch.",
+          "Hip thrust|3 × 10|Shoulder blades on a bench, feet flat and shins vertical at the top. Drive through the heels, squeeze the glutes hard, keep the ribs down. Stop at hips level with knees — don't overarch.",
+          "Rope triceps pushdown|2 × 12-15|Elbows pinned to your sides, push the rope down and slightly apart at the bottom. Only the forearms move.",
+          "Standing Pallof press|3 × 10 / side|Side-on to the cable at chest height, feet hip-width. Press straight out and resist the rotation. Nothing moves but your arms."
+        ]
+      }
+    },
+    "targets": {
+      "carb": 242,
+      "fat": 67,
+      "fiber": 30
+    },
+    "phases": [
+      {
+        "name": "Phase 1 · Base",
+        "steps": 7000,
+        "weeks": [
+          [
+            {
+              "t": "lift",
+              "s": "fullA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "fullB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "fullA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ],
+          [
+            {
+              "t": "lift",
+              "s": "fullB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "fullA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "fullB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ]
+        ],
+        "detail": "Learn the movements and find your working loads. Stop every set with two or three reps left. The job of this block is a habit that survives a busy week."
+      },
+      {
+        "name": "Phase 2 · Build",
+        "steps": 8000,
+        "weeks": [
+          [
+            {
+              "t": "lift",
+              "s": "fullA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "fullB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "fullA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ],
+          [
+            {
+              "t": "lift",
+              "s": "fullB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "fullA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "fullB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ]
+        ],
+        "detail": "Loads climb on double progression: reach the top of the rep range on every set, then add a little weight. Week 7 is a planned maintenance week at 2,650 kcal. It is scheduled, not a failure."
+      },
+      {
+        "name": "Phase 3 · Push",
+        "steps": 8500,
+        "weeks": [
+          [
+            {
+              "t": "lift",
+              "s": "fullA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "fullB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "fullA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ],
+          [
+            {
+              "t": "lift",
+              "s": "fullB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "fullA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "fullB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ]
+        ],
+        "detail": "The hardest block. Take the last set of each exercise close to failure, keep your steps up and protect your sleep."
+      },
+      {
+        "name": "Phase 4 · Sharpen",
+        "steps": 8500,
+        "weeks": [
+          [
+            {
+              "t": "lift",
+              "s": "fullA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "fullB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "fullA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ],
+          [
+            {
+              "t": "lift",
+              "s": "fullB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "fullA",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "fullB",
+              "c": "10 to 15 minutes of easy cardio after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ]
+        ],
+        "detail": "Hold your loads, no new maxes. Sleep more and arrive at the end of the block rested rather than depleted."
+      }
+    ]
+  },
+  "home_3_days": {
+    "v": 1,
+    "by": "default",
+    "at": null,
+    "note": "",
+    "programs": {
+      "homeA": {
+        "name": "Home Full Body A",
+        "kit": "home",
+        "ex": [
+          "Chair sit-to-stand (DBs at chest when easy)|3 × 12-15|Feet flat and hip-width, just in front of the chair. Stand by pushing the floor away; sit back down slowly instead of dropping. Don't rock forward to build momentum — chest up, let the legs do it.",
+          "Band seated row, anchored at chest height|3 × 15|Loop the band around a table leg at chest height and sit tall on a chair. Pull your elbows back past your ribs and squeeze the shoulder blades together. Keep the shoulders down — if they creep toward your ears, the band is too heavy.",
+          "Incline push-up, hands on a kitchen counter|3 × 8-12|Hands slightly wider than your shoulders on the counter edge, body in one straight line from head to heels. Lower your chest to the counter, press away. The higher the surface, the easier — start high and lower it over the weeks.",
+          "DB Romanian deadlift, 3 s lowering|3 × 12-15|Dumbbells in front of your thighs, knees softly bent and fixed. Push your hips backward, let the weights slide down your legs, stop when your hamstrings pull. Your back stays flat — this is a hip movement, not a bend of the spine.",
+          "Band pull-apart|2 × 15|Band held at shoulder height with straight arms. Pull it apart until it touches your chest, squeezing the shoulder blades. Keep your ribs down and don't arch your lower back to finish the rep.",
+          "Standing Pallof press, band at chest height|3 × 10 / side|Stand side-on to the anchor with the band at your chest, feet hip-width. Press the band straight out and resist its pull to rotate you. Nothing moves but your arms — the work is in not twisting."
+        ]
+      },
+      "homeB": {
+        "name": "Home Full Body B",
+        "kit": "home",
+        "ex": [
+          "Split squat, hand on chair|3 × 8-10 / leg|One foot forward, one back, about two shoe-lengths apart, hand resting on a chair for balance. Drop the back knee straight down, then drive through the front heel. Keep your torso upright — leaning forward turns it into a different exercise.",
+          "Band lat pulldown, high door anchor|3 × 15|Anchor the band above a closed door, kneel or sit facing it. Pull your elbows down toward your ribs, not your hands toward your waist. Lead with the elbows and you will feel it in your back rather than your arms.",
+          "Seated DB shoulder press|3 × 12-15|Sit upright with back support, dumbbells at shoulder height, palms forward. Press up until your arms are nearly straight, lower under control. Don't let your lower back arch off the chair to finish the press.",
+          "Low-step step-up, hand on a chair|3 × 10 / leg|A step no higher than your knee, hand on a chair. Put the whole foot on the step and push through that heel to stand — the back leg only helps you balance. Step down slowly rather than dropping.",
+          "DB hammer curl|2 × 12-15|Dumbbells at your sides, palms facing each other, elbows tucked against your ribs. Curl up without swinging your torso. If your body moves to start the rep, the weight is too heavy.",
+          "Band triceps pushdown|2 × 15|Band anchored high, elbows pinned to your sides. Straighten the arms fully, then let them bend back slowly. Only the forearms move — the upper arms stay still.",
+          "Suitcase hold, one DB at your side|3 × 30 s / side|Hold one dumbbell at one side, stand tall, and resist leaning toward it. Shoulders level, ribs down. The side without the weight is the one doing the work."
+        ]
+      }
+    },
+    "targets": {
+      "carb": 242,
+      "fat": 67,
+      "fiber": 30
+    },
+    "phases": [
+      {
+        "name": "Phase 1 · Base",
+        "steps": 7000,
+        "weeks": [
+          [
+            {
+              "t": "lift",
+              "s": "homeA",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "homeB",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "homeA",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ],
+          [
+            {
+              "t": "lift",
+              "s": "homeB",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "homeA",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "homeB",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ]
+        ],
+        "detail": "Learn the movements and find your working loads. Stop every set with two or three reps left. The job of this block is a habit that survives a busy week."
+      },
+      {
+        "name": "Phase 2 · Build",
+        "steps": 8000,
+        "weeks": [
+          [
+            {
+              "t": "lift",
+              "s": "homeA",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "homeB",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "homeA",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ],
+          [
+            {
+              "t": "lift",
+              "s": "homeB",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "homeA",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "homeB",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ]
+        ],
+        "detail": "Loads climb on double progression: reach the top of the rep range on every set, then add a little weight. Week 7 is a planned maintenance week at 2,650 kcal. It is scheduled, not a failure."
+      },
+      {
+        "name": "Phase 3 · Push",
+        "steps": 8500,
+        "weeks": [
+          [
+            {
+              "t": "lift",
+              "s": "homeA",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "homeB",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "homeA",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ],
+          [
+            {
+              "t": "lift",
+              "s": "homeB",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "homeA",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "homeB",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ]
+        ],
+        "detail": "The hardest block. Take the last set of each exercise close to failure, keep your steps up and protect your sleep."
+      },
+      {
+        "name": "Phase 4 · Sharpen",
+        "steps": 8500,
+        "weeks": [
+          [
+            {
+              "t": "lift",
+              "s": "homeA",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "homeB",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "homeA",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ],
+          [
+            {
+              "t": "lift",
+              "s": "homeB",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "homeA",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "homeB",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ]
+        ],
+        "detail": "Hold your loads, no new maxes. Sleep more and arrive at the end of the block rested rather than depleted."
+      }
+    ]
+  },
+  "no_equipment_3_days": {
+    "v": 1,
+    "by": "default",
+    "at": null,
+    "note": "",
+    "programs": {
+      "bodyA": {
+        "name": "Bodyweight A",
+        "kit": "body",
+        "ex": [
+          "Chair squat|3 × 10-15|Sit back to a chair, touch it lightly, stand tall. Push the floor away and keep your knees in line with your toes.",
+          "Incline push-up, hands on a counter|3 × 8-12|Body in one straight line, lower your chest to the edge, press away. Higher surface is easier.",
+          "Reverse lunge, hand on a chair|3 × 8 / leg|Step back, lower the back knee toward the floor, drive up through the front heel.",
+          "Towel row on a door handle|3 × 10-12|Loop a towel round a sturdy handle, lean back with straight arms, pull your chest to it.",
+          "Wall sit|3 × 30 s|Back flat on the wall, thighs as low as is comfortable, knees over ankles.",
+          "Standing march with arm drive|3 × 40 s|Lift the knees to hip height, drive the arms, stay tall."
+        ]
+      },
+      "bodyB": {
+        "name": "Bodyweight B",
+        "kit": "body",
+        "ex": [
+          "Split squat, hand on chair|3 × 8-10 / leg|One foot forward, one back. Drop the back knee straight down, drive through the front heel.",
+          "Wall push-up|3 × 10-15|Hands on the wall at shoulder height, body straight, chest to the wall and back. Step further out to make it harder.",
+          "Single-leg RDL, hand on chair|3 × 8 / leg|Hinge at the hip with a flat back, reach down, stand by squeezing the glute.",
+          "Doorway isometric row hold|3 × 20 s|Hold the door frame, lean back, pull your shoulder blades together and hold.",
+          "Calf raise on a step|3 × 15|Heels off the edge, rise up high, lower slowly below the step.",
+          "Standing knee-to-elbow crunch|3 × 10 / side|Bring the knee up and across to the opposite elbow, tall between reps."
+        ]
+      }
+    },
+    "targets": {
+      "carb": 242,
+      "fat": 67,
+      "fiber": 30
+    },
+    "phases": [
+      {
+        "name": "Phase 1 · Base",
+        "steps": 7000,
+        "weeks": [
+          [
+            {
+              "t": "lift",
+              "s": "bodyA",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "bodyB",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "bodyA",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ],
+          [
+            {
+              "t": "lift",
+              "s": "bodyB",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "bodyA",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "bodyB",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ]
+        ],
+        "detail": "Learn the movements and find your working loads. Stop every set with two or three reps left. The job of this block is a habit that survives a busy week."
+      },
+      {
+        "name": "Phase 2 · Build",
+        "steps": 8000,
+        "weeks": [
+          [
+            {
+              "t": "lift",
+              "s": "bodyA",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "bodyB",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "bodyA",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ],
+          [
+            {
+              "t": "lift",
+              "s": "bodyB",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "bodyA",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "bodyB",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ]
+        ],
+        "detail": "Loads climb on double progression: reach the top of the rep range on every set, then add a little weight. Week 7 is a planned maintenance week at 2,650 kcal. It is scheduled, not a failure."
+      },
+      {
+        "name": "Phase 3 · Push",
+        "steps": 8500,
+        "weeks": [
+          [
+            {
+              "t": "lift",
+              "s": "bodyA",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "bodyB",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "bodyA",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ],
+          [
+            {
+              "t": "lift",
+              "s": "bodyB",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "bodyA",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "bodyB",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ]
+        ],
+        "detail": "The hardest block. Take the last set of each exercise close to failure, keep your steps up and protect your sleep."
+      },
+      {
+        "name": "Phase 4 · Sharpen",
+        "steps": 8500,
+        "weeks": [
+          [
+            {
+              "t": "lift",
+              "s": "bodyA",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "bodyB",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "bodyA",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ],
+          [
+            {
+              "t": "lift",
+              "s": "bodyB",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "bodyA",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "lift",
+              "s": "bodyB",
+              "c": "A 10-minute brisk walk after the session."
+            },
+            {
+              "t": "cardio",
+              "c": "Walk 20 to 30 minutes at an easy pace."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. A walk if you feel like it."
+            }
+          ]
+        ],
+        "detail": "Hold your loads, no new maxes. Sleep more and arrive at the end of the block rested rather than depleted."
+      }
+    ]
+  },
+  "home_first_then_gym": {
+    "v": 1,
+    "by": "default",
+    "at": null,
+    "note": "",
+    "programs": {
+      "homeA": {
+        "name": "Home Full Body A",
+        "kit": "home",
+        "ex": [
+          "Chair sit-to-stand (DBs at chest when easy)|3 × 12-15|Feet flat and hip-width, just in front of the chair. Stand by pushing the floor away; sit back down slowly instead of dropping. Don't rock forward to build momentum — chest up, let the legs do it.",
+          "Band seated row, anchored at chest height|3 × 15|Loop the band around a table leg at chest height and sit tall on a chair. Pull your elbows back past your ribs and squeeze the shoulder blades together. Keep the shoulders down — if they creep toward your ears, the band is too heavy.",
+          "Incline push-up, hands on a kitchen counter|3 × 8-12|Hands slightly wider than your shoulders on the counter edge, body in one straight line from head to heels. Lower your chest to the counter, press away. The higher the surface, the easier — start high and lower it over the weeks.",
+          "DB Romanian deadlift, 3 s lowering|3 × 12-15|Dumbbells in front of your thighs, knees softly bent and fixed. Push your hips backward, let the weights slide down your legs, stop when your hamstrings pull. Your back stays flat — this is a hip movement, not a bend of the spine.",
+          "Band pull-apart|2 × 15|Band held at shoulder height with straight arms. Pull it apart until it touches your chest, squeezing the shoulder blades. Keep your ribs down and don't arch your lower back to finish the rep.",
+          "Standing Pallof press, band at chest height|3 × 10 / side|Stand side-on to the anchor with the band at your chest, feet hip-width. Press the band straight out and resist its pull to rotate you. Nothing moves but your arms — the work is in not twisting."
+        ]
+      },
+      "homeB": {
+        "name": "Home Full Body B",
+        "kit": "home",
+        "ex": [
+          "Split squat, hand on chair|3 × 8-10 / leg|One foot forward, one back, about two shoe-lengths apart, hand resting on a chair for balance. Drop the back knee straight down, then drive through the front heel. Keep your torso upright — leaning forward turns it into a different exercise.",
+          "Band lat pulldown, high door anchor|3 × 15|Anchor the band above a closed door, kneel or sit facing it. Pull your elbows down toward your ribs, not your hands toward your waist. Lead with the elbows and you will feel it in your back rather than your arms.",
+          "Seated DB shoulder press|3 × 12-15|Sit upright with back support, dumbbells at shoulder height, palms forward. Press up until your arms are nearly straight, lower under control. Don't let your lower back arch off the chair to finish the press.",
+          "Low-step step-up, hand on a chair|3 × 10 / leg|A step no higher than your knee, hand on a chair. Put the whole foot on the step and push through that heel to stand — the back leg only helps you balance. Step down slowly rather than dropping.",
+          "DB hammer curl|2 × 12-15|Dumbbells at your sides, palms facing each other, elbows tucked against your ribs. Curl up without swinging your torso. If your body moves to start the rep, the weight is too heavy.",
+          "Band triceps pushdown|2 × 15|Band anchored high, elbows pinned to your sides. Straighten the arms fully, then let them bend back slowly. Only the forearms move — the upper arms stay still.",
+          "Suitcase hold, one DB at your side|3 × 30 s / side|Hold one dumbbell at one side, stand tall, and resist leaning toward it. Shoulders level, ribs down. The side without the weight is the one doing the work."
+        ]
+      },
+      "fullA": {
+        "name": "Full Body A",
+        "kit": "gym",
+        "ex": [
+          "Leg press|3 × 10-12|Feet mid-platform, hip-width. Lower until your knees reach about 90° or your lower back starts to round off the pad, whichever comes first. Never lock the knees hard at the top.",
+          "Chest press machine|3 × 10-12|Set the seat so the handles sit level with mid-chest. Press away without locking out hard, and control the return. Keep the shoulder blades pinned back into the pad.",
+          "Seated cable row|3 × 10-12|Chest tall, slight forward lean at the start. Pull the handle to your belly, elbows past your ribs, squeeze. Don't rock backward to move the weight.",
+          "Seated leg curl|2 × 12|Pad just above the heels, thighs strapped down. Curl fully, then lower slowly — the lowering is where hamstrings grow. Keep your hips on the seat.",
+          "DB lateral raise|2 × 15|Light dumbbells, slight elbow bend, raise out to the sides only to shoulder height. Lead with the elbows, not the hands. If you have to swing, halve the weight.",
+          "Incline plank, hands on a bench|3 × 20-30 s|Hands on a bench, body in one line, squeeze the glutes and tuck the ribs down. Hips neither sagging nor piked up. Breathe normally throughout."
+        ]
+      },
+      "fullB": {
+        "name": "Full Body B",
+        "kit": "gym",
+        "ex": [
+          "Goblet squat to box|3 × 8-10|Hold one dumbbell at your chest, stand in front of a bench. Sit back until you touch it lightly, then stand. The dumbbell at the chest is what lets you stay upright.",
+          "Lat pulldown|3 × 10-12|Thighs under the pads, slight backward lean, bar to your upper chest. Drive the elbows down toward your ribs. Don't lean back further to finish the rep.",
+          "Incline DB press|3 × 10-12|Bench at about 30°, dumbbells at chest level, elbows about 45° from your body. Press up and slightly together, lower under control until you feel a stretch.",
+          "Hip thrust|3 × 10|Shoulder blades on a bench, feet flat and shins vertical at the top. Drive through the heels, squeeze the glutes hard, keep the ribs down. Stop at hips level with knees — don't overarch.",
+          "Rope triceps pushdown|2 × 12-15|Elbows pinned to your sides, push the rope down and slightly apart at the bottom. Only the forearms move.",
+          "Standing Pallof press|3 × 10 / side|Side-on to the cable at chest height, feet hip-width. Press straight out and resist the rotation. Nothing moves but your arms."
+        ]
+      },
+      "lowerA": {
+        "name": "Lower A",
+        "kit": "gym",
+        "ex": [
+          "Leg press|4 × 8-10|Feet mid-platform, hip-width. Lower to about 90° at the knee or until the lower back lifts off the pad. Push through the whole foot, not the toes.",
+          "DB Romanian deadlift|3 × 10|Knees softly bent and fixed, push the hips back, weights sliding down the thighs. Stop at the hamstring stretch. Flat back throughout.",
+          "Seated leg curl|3 × 12|Full curl, slow return. Hips stay down on the seat — lifting them is your hamstrings asking for less weight.",
+          "Leg extension|3 × 15|Pad on the lower shin, straighten fully, pause a beat, lower slowly. Stop if it pinches the front of the knee.",
+          "Standing calf raise|3 × 15|Full stretch at the bottom, full squeeze at the top, no bouncing. One second up, two seconds down."
+        ]
+      },
+      "upperA": {
+        "name": "Upper A",
+        "kit": "gym",
+        "ex": [
+          "Chest press machine|4 × 8-10|Handles at mid-chest height, shoulder blades pinned back. Press without locking out hard, return under control.",
+          "Seated cable row|4 × 10|Chest tall, pull to the belly, elbows past the ribs. No rocking.",
+          "Shoulder press machine|3 × 10|Handles at shoulder height, press overhead without arching your lower back off the pad. Ribs stay down.",
+          "Lat pulldown|3 × 12|Bar to the upper chest, elbows driving down toward the ribs. Slight lean back, held constant.",
+          "DB curl|3 × 12|Elbows at your sides, no swinging. Lower slower than you lift.",
+          "Rope pushdown|3 × 12|Elbows pinned, forearms only. Push down and slightly apart at the bottom."
+        ]
+      },
+      "lowerB": {
+        "name": "Lower B",
+        "kit": "gym",
+        "ex": [
+          "Hip thrust|4 × 10|Shoulder blades on the bench, shins vertical at the top, drive through the heels. Squeeze the glutes, keep the ribs down, stop at hips level with knees.",
+          "Hack squat or goblet squat to box|3 × 10|Feet mid-platform, descend under control to about 90°, drive up through the heels. Keep the lower back flat against the pad.",
+          "Lying leg curl|3 × 12|Hips pressed into the pad, curl fully, lower slowly. Don't let the hips rise to help.",
+          "Low-box step-up with DBs|3 × 10 / leg|Box at or below knee height. Whole foot on the box, push through that heel, step down slowly. The back leg is for balance, not for pushing.",
+          "Seated calf raise|3 × 15|Full stretch, full squeeze, no bouncing. This one targets the deeper calf muscle, so slow it down."
+        ]
+      },
+      "upperB": {
+        "name": "Upper B",
+        "kit": "gym",
+        "ex": [
+          "Incline DB press|4 × 10|Bench at 30°, elbows about 45° from the body, press up and slightly together. Control the lowering to a chest stretch.",
+          "Chest-supported DB row|4 × 10|Chest on the incline bench so your lower back is out of it. Pull the elbows past your ribs and squeeze. No jerking.",
+          "Cable lateral raise|3 × 15|Cable at the low setting, slight elbow bend, raise to shoulder height only. Light weight, lead with the elbow.",
+          "Face pull|3 × 15|Rope at upper-chest height, pull toward your forehead with elbows high and wide, rotating the hands back. This is the antidote to a desk job.",
+          "Hammer curl|3 × 12|Palms facing each other, elbows tucked, no torso swing.",
+          "Overhead cable extension|3 × 12|Facing away from the cable, elbows beside your ears and fixed. Straighten the arms overhead, lower slowly to a triceps stretch."
+        ]
+      }
+    },
+    "targets": {
+      "carb": 200,
+      "fat": 65,
+      "fiber": 33
+    },
+    "phases": [
+      {
+        "name": "Phase 1 · Home base",
+        "steps": 7000,
+        "weeks": [
+          [
+            {
+              "t": "lift",
+              "s": "homeA",
+              "c": "20 min brisk walk after the session — outdoors or on the spot."
+            },
+            {
+              "t": "cardio",
+              "c": "25 min brisk walk. No lifting."
+            },
+            {
+              "t": "lift",
+              "s": "homeB",
+              "c": "20 min brisk walk after the session — outdoors or on the spot."
+            },
+            {
+              "t": "cardio",
+              "c": "25 min brisk walk. No lifting."
+            },
+            {
+              "t": "lift",
+              "s": "homeA",
+              "c": "20 min brisk walk after the session — outdoors or on the spot."
+            },
+            {
+              "t": "cardio",
+              "c": "25 min brisk walk. No lifting."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. Walk if you feel like it, nothing structured."
+            }
+          ],
+          [
+            {
+              "t": "lift",
+              "s": "homeB",
+              "c": "20 min brisk walk after the session — outdoors or on the spot."
+            },
+            {
+              "t": "cardio",
+              "c": "25 min brisk walk. No lifting."
+            },
+            {
+              "t": "lift",
+              "s": "homeA",
+              "c": "20 min brisk walk after the session — outdoors or on the spot."
+            },
+            {
+              "t": "cardio",
+              "c": "25 min brisk walk. No lifting."
+            },
+            {
+              "t": "lift",
+              "s": "homeB",
+              "c": "20 min brisk walk after the session — outdoors or on the spot."
+            },
+            {
+              "t": "cardio",
+              "c": "25 min brisk walk. No lifting."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. Walk if you feel like it, nothing structured."
+            }
+          ]
+        ],
+        "detail": "Three full-body sessions a week at home with dumbbells, bands and a chair. Walking builds toward 7,000 steps. The job of this block is joint tolerance and a habit that survives a bad work week, not weight on the bar."
+      },
+      {
+        "name": "Phase 2 · Build",
+        "steps": 8000,
+        "weeks": [
+          [
+            {
+              "t": "lift",
+              "s": "lowerA",
+              "c": "15 min easy walk after lifting. Save the long Zone 2 for tomorrow."
+            },
+            {
+              "t": "lift",
+              "s": "upperA",
+              "c": "15 min easy walk after lifting. Save the long Zone 2 for tomorrow."
+            },
+            {
+              "t": "cardio",
+              "c": "30–35 min Zone 2 (bike, elliptical or incline treadmill)."
+            },
+            {
+              "t": "lift",
+              "s": "lowerB",
+              "c": "15 min easy walk after lifting. Save the long Zone 2 for tomorrow."
+            },
+            {
+              "t": "lift",
+              "s": "upperB",
+              "c": "15 min easy walk after lifting. Save the long Zone 2 for tomorrow."
+            },
+            {
+              "t": "cardio",
+              "c": "30–35 min Zone 2."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. Hit your step target, nothing structured."
+            }
+          ],
+          [
+            {
+              "t": "lift",
+              "s": "lowerA",
+              "c": "15 min easy walk after lifting. Save the long Zone 2 for tomorrow."
+            },
+            {
+              "t": "lift",
+              "s": "upperA",
+              "c": "15 min easy walk after lifting. Save the long Zone 2 for tomorrow."
+            },
+            {
+              "t": "cardio",
+              "c": "30–35 min Zone 2 (bike, elliptical or incline treadmill)."
+            },
+            {
+              "t": "lift",
+              "s": "lowerB",
+              "c": "15 min easy walk after lifting. Save the long Zone 2 for tomorrow."
+            },
+            {
+              "t": "lift",
+              "s": "upperB",
+              "c": "15 min easy walk after lifting. Save the long Zone 2 for tomorrow."
+            },
+            {
+              "t": "cardio",
+              "c": "30–35 min Zone 2."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. Hit your step target, nothing structured."
+            }
+          ]
+        ],
+        "detail": "Four sessions on an upper/lower split, Zone 2 three times a week at 30 to 35 minutes, steps to 8,000. Loads climb on double progression. Week 7 is a deliberate maintenance week at 2,650 kcal. It is not a failure week, it is scheduled."
+      },
+      {
+        "name": "Phase 3 · Push",
+        "steps": 9000,
+        "weeks": [
+          [
+            {
+              "t": "lift",
+              "s": "lowerA",
+              "c": "15 min easy walk after lifting. Save the long Zone 2 for tomorrow."
+            },
+            {
+              "t": "lift",
+              "s": "upperA",
+              "c": "15 min easy walk after lifting. Save the long Zone 2 for tomorrow."
+            },
+            {
+              "t": "cardio",
+              "c": "40–45 min Zone 2 (bike, elliptical or incline treadmill)."
+            },
+            {
+              "t": "lift",
+              "s": "lowerB",
+              "c": "15 min easy walk after lifting. Save the long Zone 2 for tomorrow."
+            },
+            {
+              "t": "lift",
+              "s": "upperB",
+              "c": "15 min easy walk after lifting. Save the long Zone 2 for tomorrow."
+            },
+            {
+              "t": "cardio",
+              "c": "Intervals: 8 × (1 min hard / 2 min easy) on the bike, plus 10 min easy."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. Hit your step target, nothing structured."
+            }
+          ],
+          [
+            {
+              "t": "lift",
+              "s": "lowerA",
+              "c": "15 min easy walk after lifting. Save the long Zone 2 for tomorrow."
+            },
+            {
+              "t": "lift",
+              "s": "upperA",
+              "c": "15 min easy walk after lifting. Save the long Zone 2 for tomorrow."
+            },
+            {
+              "t": "cardio",
+              "c": "40–45 min Zone 2 (bike, elliptical or incline treadmill)."
+            },
+            {
+              "t": "lift",
+              "s": "lowerB",
+              "c": "15 min easy walk after lifting. Save the long Zone 2 for tomorrow."
+            },
+            {
+              "t": "lift",
+              "s": "upperB",
+              "c": "15 min easy walk after lifting. Save the long Zone 2 for tomorrow."
+            },
+            {
+              "t": "cardio",
+              "c": "Intervals: 8 × (1 min hard / 2 min easy) on the bike, plus 10 min easy."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. Hit your step target, nothing structured."
+            }
+          ]
+        ],
+        "detail": "Same four-day split with a weekly interval session added, Zone 2 out to 40 to 45 minutes, steps to 9,000. This is the block where the visible change happens, and the one where sleep and adherence usually slip."
+      },
+      {
+        "name": "Phase 4 · Sharpen",
+        "steps": 9000,
+        "weeks": [
+          [
+            {
+              "t": "lift",
+              "s": "fullA",
+              "c": "30 min Zone 2 after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "30 min Zone 2 walk. No lifting."
+            },
+            {
+              "t": "lift",
+              "s": "fullB",
+              "c": "30 min Zone 2 after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "30 min Zone 2 walk. No lifting."
+            },
+            {
+              "t": "lift",
+              "s": "fullA",
+              "c": "30 min Zone 2 after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "30 min Zone 2 walk. No lifting."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. Walk if you feel like it, nothing structured."
+            }
+          ],
+          [
+            {
+              "t": "lift",
+              "s": "fullB",
+              "c": "30 min Zone 2 after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "30 min Zone 2 walk. No lifting."
+            },
+            {
+              "t": "lift",
+              "s": "fullA",
+              "c": "30 min Zone 2 after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "30 min Zone 2 walk. No lifting."
+            },
+            {
+              "t": "lift",
+              "s": "fullB",
+              "c": "30 min Zone 2 after lifting."
+            },
+            {
+              "t": "cardio",
+              "c": "30 min Zone 2 walk. No lifting."
+            },
+            {
+              "t": "rest",
+              "c": "Rest day. Walk if you feel like it, nothing structured."
+            }
+          ]
+        ],
+        "detail": "Back to three full-body sessions at Phase 2 loads. No new personal bests, no new stimulus, no last-minute crash dieting. Calories hold at 2,150, sleep goes to eight hours, water and salt stay steady. The point is to arrive recovered rather than depleted."
+      }
+    ]
+  }
+}

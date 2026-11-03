@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "day-log.schema.json",
+  "title": "Day log",
+  "description": "Everything logged for one calendar day (entries[k] in the code). Web app storage: localStorage goa:<YYYY-MM-DD> and db doc log/<YYYY-MM-DD>; the date is the document id, not a field. persist() writes the object as-is with db.doc().set(e) (no dbEnc; a day log has no array directly inside an array). Every field is optional and absent means 'not logged'. The date key is the device's local calendar date (localKey). Contains sensitive health data: weight, waist, sleep, free-text notes, and checks that may represent medicines.",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "w": { "type": "number", "description": "Body weight in kg (input step 0.1). Written by collect() from #fW / quick sheet #qW, and by finishOnboarding on the setup day. Removed when the field is cleared." },
+    "steps": { "type": "number", "minimum": 0, "description": "Step count for the day (integer in practice). Written by collect() (#fS) and setDaySteps() (walk-habit wheels, rounded)." },
+    "sleep": { "type": "number", "minimum": 0, "description": "Hours slept (input step 0.25)." },
+    "waist": { "type": "number", "description": "Waist circumference in cm at the navel (step 0.5). The input only shows on the waist weekday (profile.waistDay, default Monday) but a value on any day is accepted." },
+    "note": { "type": "string", "description": "Free-text session note from the Train tab (#fNote). Sensitive." },
+    "kcal": { "type": "integer", "description": "Day calorie total. DERIVED: whenever the day has food rows, syncFoodToDay/collect set it to round(sum of food[].kcal) and delete it when the last row is removed. A day with no food rows may still carry a hand-typed or legacy value (no r14 UI writes one); readers treat kcal>0 as 'food logged'." },
+    "protein": { "type": "integer", "description": "Day protein total in grams. Derived exactly like kcal from food[].p." },
+    "food": {
+      "type": "array",
+      "description": "Food rows in the order entered. Order matters (meal grouping relies on consecutive rows sharing a meal number).",
+      "items": { "$ref": "#/$defs/foodRow" }
+    },
+    "sets": {
+      "type": "object",
+      "description": "Strength sets keyed by the exercise's DISPLAY name as shown that day (after any swap), e.g. 'Leg press'. Value is an array of sets in order. Legacy days stored a single {w,r} object instead of an array; setsFor() reads that as a one-set list. writeSet trims empty trailing sets and deletes the key when no set is left.",
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "array", "items": { "$ref": "#/$defs/set" } },
+          { "$ref": "#/$defs/legacySet" }
+        ]
+      }
+    },
+    "habits": {
+      "type": "object",
+      "description": "Habit values for the day keyed by habit id. Number in the habit's unit (hours as decimal hours, e.g. 1.25). Absent means not logged (for a limit habit, 'not logged' is treated as met for some statistics and skipped for others).",
+      "additionalProperties": { "type": "number", "minimum": 0 }
+    },
+    "hlog": {
+      "type": "object",
+      "description": "Timed sessions per habit id: start/end instants recorded by the habit timer, Pomodoro focus blocks, and Undo. Sorted by start. The habits[id] value is the source of truth for the day's amount; sessionsHTML shows any difference as 'Entered by hand'.",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "$ref": "#/$defs/habitSession" }
+      }
+    },
+    "checks": {
+      "type": "object",
+      "description": "Checklist ticks keyed by check id. The UI writes true when ticked and FALSE when unticked (the key is not removed). Built-in ids: waist, photos, water, protein, lab, task, mobility, train, sleep. User checks use ids 'u_<base36 time><random>'. checks.train=true also marks the workout as done (Workout mode 'Save and close' sets it).",
+      "additionalProperties": { "type": "boolean" }
+    }
+  },
+  "$defs": {
+    "foodRow": {
+      "type": "object",
+      "required": ["label"],
+      "additionalProperties": true,
+      "description": "One food item. Macro values are for the whole portion eaten, not per 100 g, and may be fractional (table and label rows are not rounded).",
+      "properties": {
+        "label": { "type": "string", "description": "Display text, usually 'Name (amount)', e.g. 'Chicken breast, cooked (150 g)'. May end with ' · assumed serving', ', from photo' or ' \u2014 from label' (U+2014 em dash) inside the brackets." },
+        "raw": { "type": "string", "description": "What the person typed for this item (the estimate cache key is derived from it). Absent on some legacy rows." },
+        "kcal": { "type": "number", "minimum": 0, "description": "Calories for the portion." },
+        "p": { "type": "number", "minimum": 0, "description": "Protein grams." },
+        "c": { "type": "number", "minimum": 0, "description": "Carbohydrate grams." },
+        "f": { "type": "number", "minimum": 0, "description": "Fat grams." },
+        "fib": { "type": "number", "minimum": 0, "description": "Fiber grams." },
+        "meal": { "type": "integer", "minimum": 1, "description": "Meal number within the day. One 'Add' (text, saved meal, plate photo or label) is one meal and takes max(existing meal)+1. Rows without it are legacy and shown ungrouped." },
+        "src": {
+          "type": "string",
+          "enum": ["table", "claude", "you", "label", "none", "pending"],
+          "description": "Where the numbers came from: table = built-in or personal food table; claude = Claude estimate (text or plate photo); you = typed or corrected by the person (also the default when a saved meal row had no src); label = nutrition label (photo scan or manual per-100 g entry); none = no numbers yet; pending = an estimate request is in flight (transient; renderFood resets stale 'pending' rows to 'none', so a stored 'pending' should be read as 'none')."
+        }
+      }
+    },
+    "set": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "One set. All fields optional; an all-empty set is trimmed when it is the last one.",
+      "properties": {
+        "w": { "type": "number", "minimum": 0, "description": "Load in kg (weight exercises)." },
+        "r": { "type": "number", "minimum": 0, "description": "Reps, or seconds held when the exercise scheme is timed." },
+        "b": { "type": "integer", "minimum": 1, "maximum": 5, "description": "Band slot 1 (lightest) to 5 (heaviest) for band exercises; see the bands list for names and kg." }
+      }
+    },
+    "legacySet": {
+      "type": "object",
+      "required": [],
+      "additionalProperties": false,
+      "description": "Old single-set shape {w, r}. Still read by setsFor(); never written by r14.",
+      "properties": {
+        "w": { "type": ["number", "null"] },
+        "r": { "type": ["number", "null"] }
+      }
+    },
+    "habitSession": {
+      "type": "object",
+      "required": ["s", "e"],
+      "additionalProperties": false,
+      "description": "One timed segment. e must be greater than s (addSegs drops others).",
+      "properties": {
+        "s": { "type": "number", "description": "Start, epoch milliseconds." },
+        "e": { "type": "number", "description": "End, epoch milliseconds." }
+      }
+    }
+  }
+}

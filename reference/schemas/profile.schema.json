@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "profile.schema.json",
+  "title": "Profile",
+  "description": "Everything the app knows about the person that is not a goal. Web app storage: localStorage key goa:profile and db doc state/profile (the whole object, written by saveProfile through dbSet). Every field is optional: a brand-new user has an empty object {}. Contains sensitive personal and health data (age, sex, height, weight history, free-text rules and notes that often hold medical details).",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "name": {
+      "type": "string",
+      "maxLength": 30,
+      "description": "First name. Written by renderAbout (abSave) and finishOnboarding. Trimmed, sliced to 30 characters."
+    },
+    "sex": {
+      "type": "string",
+      "enum": ["female", "male", ""],
+      "description": "Used by calcTargets (BMR constant) and kcalFloor. Empty string means 'Prefer not to say'."
+    },
+    "age": {
+      "type": ["integer", "number", "null"],
+      "minimum": 13,
+      "maximum": 100,
+      "description": "Years. renderAbout stores null when the input is outside 13-100. Onboarding stores +A.age after validating 13-100."
+    },
+    "heightCm": {
+      "type": ["number", "null"],
+      "minimum": 120,
+      "maximum": 230,
+      "description": "Height in centimeters. null when outside 120-230 in the About form."
+    },
+    "cuisine": {
+      "type": "string",
+      "maxLength": 40,
+      "description": "What the person usually eats, e.g. 'Mediterranean'. Injected into the Claude food-estimate and plate-photo prompts."
+    },
+    "waterL": {
+      "type": ["number", "null"],
+      "minimum": 1,
+      "maximum": 6,
+      "description": "Daily water target in liters. Shown in the 'water' check text. Default when missing: 3."
+    },
+    "kcalFloor": {
+      "type": ["number", "null"],
+      "minimum": 900,
+      "maximum": 4000,
+      "description": "Lowest daily calories ever allowed. When missing or null, kcalFloor() falls back to 1200 (female), 1500 (male), 1400 (other)."
+    },
+    "proteinFloor": {
+      "type": ["number", "null"],
+      "minimum": 30,
+      "maximum": 300,
+      "description": "Lowest daily protein in grams. When missing, proteinFloor() uses round(goal.protein * 0.85 / 5) * 5."
+    },
+    "jointFriendly": {
+      "type": "boolean",
+      "description": "Go easy on joints: no running, jumping or floor work. Added to the plan-change prompt rules."
+    },
+    "rules": {
+      "type": "string",
+      "maxLength": 1200,
+      "description": "Free text, one rule per line, that Claude must always respect (e.g. injuries). Sensitive health data."
+    },
+    "equip": {
+      "type": "string",
+      "enum": ["gym", "home", "body"],
+      "description": "Training equipment. Set only by finishOnboarding ('homefirst' answer is stored as 'gym' plus goal.homeFirst=true). makePlan defaults to 'gym'."
+    },
+    "days": {
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 5,
+      "description": "Training days per week. Set by finishOnboarding. makePlan clamps to 2-5, default 3."
+    },
+    "setupAt": {
+      "type": "number",
+      "description": "Epoch milliseconds when onboarding last finished."
+    },
+    "waistDay": {
+      "type": ["integer", "string", "null"],
+      "description": "Weekday for the waist measurement, 0 = Sunday .. 6 = Saturday. Read by waistWeekday(); default 1 (Monday). No UI writes it in r14; only a restored backup or a hand-edited doc can set it. Accepts a numeric string because the code does +w."
+    },
+    "notes": {
+      "type": "array",
+      "description": "Personal notes (doctor advice, reasoning). Edited in renderNotes. Sensitive.",
+      "items": { "$ref": "#/$defs/note" }
+    },
+    "history": {
+      "type": "array",
+      "description": "Weigh-ins from before tracking started. Shown as a faded line on the weight chart's Goal range (histW only uses entries with d before the goal start). One entry per date: adding a date replaces the old one.",
+      "items": { "$ref": "#/$defs/historyEntry" }
+    },
+    "myFoods": {
+      "type": "array",
+      "description": "Personal food-table entries placed in front of the built-in FOODS table by buildFoodIndex. No UI in r14 writes this; it can only arrive from a backup or a hand-edited doc. Invalid entries are silently skipped.",
+      "items": { "$ref": "#/$defs/myFood" }
+    }
+  },
+  "$defs": {
+    "note": {
+      "type": "object",
+      "required": ["id", "title"],
+      "additionalProperties": true,
+      "properties": {
+        "id": { "type": "string", "description": "'n' + Date.now() base 36." },
+        "group": { "type": "string", "default": "My notes", "description": "Grouping heading. The UI always writes 'My notes'." },
+        "title": { "type": "string", "maxLength": 80, "description": "Defaults to 'New note' on creation and 'Note' when saved empty." },
+        "body": { "type": "string", "maxLength": 8000, "description": "Plain text. A line starting with '- ' renders as a bullet; a blank line starts a new paragraph." }
+      }
+    },
+    "historyEntry": {
+      "type": "object",
+      "required": ["d", "kg"],
+      "additionalProperties": false,
+      "properties": {
+        "d": { "type": "string", "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "Calendar date YYYY-MM-DD." },
+        "kg": { "type": "number", "exclusiveMinimum": 20, "exclusiveMaximum": 400, "description": "Body weight in kilograms." },
+        "note": { "type": "string", "maxLength": 40, "description": "Optional short note." }
+      }
+    },
+    "myFood": {
+      "type": "object",
+      "required": ["n", "k", "per", "g", "v"],
+      "properties": {
+        "n": { "type": "string", "description": "Display name, e.g. 'Overnight oats'." },
+        "k": { "type": "array", "minItems": 1, "items": { "type": "string" }, "description": "Match keywords. The longest matching keyword wins across all foods." },
+        "per": { "type": "string", "enum": ["unit", "100g"], "description": "Whether v is per piece or per 100 g." },
+        "g": { "type": "number", "exclusiveMinimum": 0, "description": "Grams of one unit (per='unit') or default serving grams (per='100g')." },
+        "v": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "items": { "type": "number" },
+          "description": "[kcal, protein g, carbs g, fat g, fiber g] per unit or per 100 g."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "plan.schema.json",
+  "title": "Training plan",
+  "description": "The training plan as data, in its decoded (in-memory) shape after normPlan. Web app storage: localStorage goa:plan (this object, or key absent) and db doc state/plan as {plan: Plan|null}. In the db the inner week arrays are wrapped as {__arr:[...]} by dbEnc, because the db refuses an array directly inside an array; decode with dbDec before validating. A null or absent plan means 'use the default protocol', which is rebuilt from the goal and profile every time (defaultPlan) and never stored. The previous plan lives in state/planprev and goa:planprev as {plan: Plan|null, kcal: number|null, protein: number|null}; see $defs/planPrev.",
+  "type": "object",
+  "required": ["v", "by", "programs", "phases", "targets"],
+  "additionalProperties": false,
+  "properties": {
+    "v": { "const": 1, "description": "Shape version. Always 1." },
+    "by": { "type": "string", "enum": ["default", "claude", "you"], "description": "Who made it. normPlan maps anything else to 'default'." },
+    "at": { "type": ["number", "null"], "description": "Epoch ms of the last change, or null for the default plan." },
+    "note": { "type": "string", "maxLength": 140, "description": "Short note on the change, e.g. 'Targets edited' or the request sent to Claude (sliced to 80)." },
+    "programs": {
+      "type": "object",
+      "description": "Sessions keyed by program key. normPlan keeps at most 16 programs, strips the key to [A-Za-z0-9_-] and 24 characters, and drops programs with no valid exercises. Default keys: homeA, homeB, bodyA, bodyB, fullA, fullB, lowerA, upperA, lowerB, upperB.",
+      "minProperties": 1,
+      "maxProperties": 16,
+      "propertyNames": { "pattern": "^[A-Za-z0-9_-]{1,24}$" },
+      "additionalProperties": { "$ref": "#/$defs/program" }
+    },
+    "phases": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "description": "Exactly four phases (base, build, push, sharpen). Their week ranges are not stored: phaseBounds() splits the training weeks roughly 23.5% / 35.3% / 29.4% / remainder.",
+      "items": { "$ref": "#/$defs/phase" }
+    },
+    "targets": {
+      "type": "object",
+      "required": ["carb", "fat", "fiber"],
+      "additionalProperties": false,
+      "description": "Daily macro targets in grams. Calories and protein are NOT here: they live on the goal.",
+      "properties": {
+        "carb": { "type": "integer", "minimum": 50, "maximum": 500, "default": 200, "description": "Carbohydrate grams (a ceiling)." },
+        "fat": { "type": "integer", "minimum": 20, "maximum": 200, "default": 65, "description": "Fat grams (a ceiling)." },
+        "fiber": { "type": "integer", "minimum": 10, "maximum": 80, "default": 33, "description": "Fiber grams (a floor)." }
+      }
+    }
+  },
+  "$defs": {
+    "program": {
+      "type": "object",
+      "required": ["name", "kit", "ex"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "maxLength": 40, "description": "Display name, e.g. 'Full Body A'." },
+        "kit": { "type": "string", "enum": ["gym", "home", "body"], "description": "Equipment context. home and body use the home alternate-exercise pool; gym uses the gym pool. normPlan maps unknown values to 'gym'." },
+        "ex": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "description": "Exercise lines in order.",
+          "items": { "$ref": "#/$defs/exerciseLine" }
+        }
+      }
+    },
+    "exerciseLine": {
+      "type": "string",
+      "pattern": "^[^|]{1,90}\\|[^|]*\\d[^|]*\\|.*$",
+      "description": "Pipe-delimited 'name|scheme|cue'. name up to 90 chars; scheme up to 30 chars and must contain a digit, e.g. '3 × 8-10', '3 × 30 s / side' (normPlan rewrites '3x10' to '3 × 10'); cue up to 400 chars, may be empty. The scheme's first number before '×' is the planned set count; a scheme whose reps part contains 's' or 'sec' is a timed hold (reps field then holds seconds). Logged sets are matched to exercises by exact name, so renaming starts a fresh history."
+    },
+    "phase": {
+      "type": "object",
+      "required": ["name", "steps", "weeks"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "maxLength": 40, "description": "e.g. 'Phase 1 · Base'. The text after the last '·' is used as the short label." },
+        "detail": { "type": "string", "maxLength": 700, "description": "Coaching text for the phase." },
+        "steps": { "type": "integer", "minimum": 2000, "maximum": 30000, "default": 8000, "description": "Daily step target during this phase." },
+        "weeks": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "description": "One or two week layouts of 7 slots. Odd plan weeks use weeks[0], even weeks use weeks[1] when present (that is how session A/B alternate). Slot index 0 is the weekday of goal.trainStart, not Monday.",
+          "items": {
+            "type": "array",
+            "minItems": 7,
+            "maxItems": 7,
+            "items": { "$ref": "#/$defs/slot" }
+          }
+        }
+      }
+    },
+    "slot": {
+      "description": "One day of a plan week.",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["t", "s"],
+          "additionalProperties": false,
+          "properties": {
+            "t": { "const": "lift" },
+            "s": { "type": "string", "description": "Program key; must exist in programs or normPlan turns the slot into cardio." },
+            "c": { "type": "string", "maxLength": 220, "description": "Cardio to do after the session." }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["t"],
+          "additionalProperties": false,
+          "properties": {
+            "t": { "const": "cardio" },
+            "c": { "type": "string", "maxLength": 220, "default": "Walk at an easy pace.", "description": "What to do." }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["t"],
+          "additionalProperties": false,
+          "properties": {
+            "t": { "const": "rest" },
+            "c": { "type": "string", "maxLength": 220, "default": "Rest day.", "description": "Note for the rest day." }
+          }
+        }
+      ]
+    },
+    "planPrev": {
+      "type": "object",
+      "description": "Shape of state/planprev and goa:planprev: the plan that was replaced plus the calorie and protein targets at the time, for 'Restore previous plan'. Written by savePlan. When nothing was ever replaced the db doc is {plan:null}.",
+      "properties": {
+        "plan": { "anyOf": [ { "$ref": "#" }, { "type": "null" } ], "description": "The replaced plan, or null when it was the default." },
+        "kcal": { "type": ["number", "null"] },
+        "protein": { "type": ["number", "null"] }
+      }
+    }
+  }
+}

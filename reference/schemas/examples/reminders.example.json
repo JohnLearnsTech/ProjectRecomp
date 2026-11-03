@@ -1,0 +1,15 @@
+{
+  "items": {
+    "train": { "on": true, "time": "18:30" },
+    "chk:sleep": { "on": true, "time": "22:45" },
+    "chk:u_m3a1b2c417": { "on": false, "time": "09:00" },
+    "dates": { "on": true, "time": "08:00" },
+    "review": { "on": true, "time": "19:00" }
+  },
+  "events": [
+    { "k": "train", "id": "demoevt001", "title": "Lift · Base" },
+    { "k": "review", "id": null, "title": "Weekly review · Recomp" }
+  ],
+  "tag": "ft-m3a0k9",
+  "at": 1790000000000
+}

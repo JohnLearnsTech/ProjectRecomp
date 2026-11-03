@@ -1,0 +1,25 @@
+{
+  "name": "Alex",
+  "sex": "male",
+  "age": 31,
+  "heightCm": 178,
+  "cuisine": "Mediterranean",
+  "waterL": 3,
+  "kcalFloor": 1600,
+  "proteinFloor": null,
+  "jointFriendly": false,
+  "rules": "Old left shoulder strain: no overhead barbell pressing.",
+  "equip": "gym",
+  "days": 3,
+  "setupAt": 1788253200000,
+  "notes": [
+    { "id": "nm3a0k1", "group": "My notes", "title": "Why 2,100 kcal", "body": "Maintenance is about 2,600.\n\n- Aim for 0.5 kg a week\n- Protein first at every meal" }
+  ],
+  "history": [
+    { "d": "2026-08-01", "kg": 83.4, "note": "Demo weigh-in" },
+    { "d": "2026-08-15", "kg": 82.9, "note": "" }
+  ],
+  "myFoods": [
+    { "n": "Overnight oats, demo recipe", "k": ["overnight oats"], "per": "unit", "g": 250, "v": [380, 22, 48, 10, 7] }
+  ]
+}

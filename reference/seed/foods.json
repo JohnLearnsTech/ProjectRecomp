@@ -1,0 +1,1229 @@
+{
+  "_about": "Built-in food table. Values are per 100 g (basis per_100g) or per one unit (basis per_unit). serving_g is the default portion when no amount is given (per_100g) or the weight of one unit (per_unit). keywords are matched against normalized user text; the LONGEST matching keyword wins, so specific entries (\"boneless chicken biryani\") beat generic ones (\"biryani\"). Order matters only for equal-length ties. See docs/05-business-logic.md, food pipeline.",
+  "foods": [
+    {
+      "name": "Chapati / roti, whole wheat",
+      "keywords": [
+        "chapati",
+        "chapatti",
+        "roti",
+        "phulka"
+      ],
+      "basis": "per_unit",
+      "serving_g": 45,
+      "per": {
+        "kcal": 120,
+        "protein_g": 4,
+        "carbs_g": 22,
+        "fat_g": 2,
+        "fiber_g": 3
+      }
+    },
+    {
+      "name": "Naan",
+      "keywords": [
+        "naan"
+      ],
+      "basis": "per_unit",
+      "serving_g": 90,
+      "per": {
+        "kcal": 260,
+        "protein_g": 8,
+        "carbs_g": 45,
+        "fat_g": 5,
+        "fiber_g": 2
+      }
+    },
+    {
+      "name": "Paratha, plain",
+      "keywords": [
+        "paratha",
+        "parantha"
+      ],
+      "basis": "per_unit",
+      "serving_g": 70,
+      "per": {
+        "kcal": 210,
+        "protein_g": 5,
+        "carbs_g": 28,
+        "fat_g": 9,
+        "fiber_g": 3
+      }
+    },
+    {
+      "name": "White rice, cooked",
+      "keywords": [
+        "rice",
+        "white rice",
+        "steamed rice"
+      ],
+      "basis": "per_100g",
+      "serving_g": 150,
+      "per": {
+        "kcal": 130,
+        "protein_g": 2.7,
+        "carbs_g": 28,
+        "fat_g": 0.3,
+        "fiber_g": 0.4
+      }
+    },
+    {
+      "name": "Brown rice, cooked",
+      "keywords": [
+        "brown rice"
+      ],
+      "basis": "per_100g",
+      "serving_g": 150,
+      "per": {
+        "kcal": 110,
+        "protein_g": 2.3,
+        "carbs_g": 23,
+        "fat_g": 0.9,
+        "fiber_g": 1.3
+      }
+    },
+    {
+      "name": "Chicken biryani, boneless",
+      "keywords": [
+        "boneless chicken biryani",
+        "boneless chicken biriyani",
+        "chicken biryani boneless",
+        "chicken biriyani boneless",
+        "boneless biryani",
+        "boneless biriyani",
+        "biryani boneless",
+        "biriyani boneless"
+      ],
+      "basis": "per_100g",
+      "serving_g": 350,
+      "per": {
+        "kcal": 180,
+        "protein_g": 10.5,
+        "carbs_g": 20,
+        "fat_g": 6.5,
+        "fiber_g": 1
+      }
+    },
+    {
+      "name": "Chicken biryani",
+      "keywords": [
+        "biryani",
+        "biriyani"
+      ],
+      "basis": "per_100g",
+      "serving_g": 350,
+      "per": {
+        "kcal": 165,
+        "protein_g": 8,
+        "carbs_g": 20,
+        "fat_g": 6,
+        "fiber_g": 1
+      }
+    },
+    {
+      "name": "Idli",
+      "keywords": [
+        "idli",
+        "idly"
+      ],
+      "basis": "per_unit",
+      "serving_g": 40,
+      "per": {
+        "kcal": 58,
+        "protein_g": 2,
+        "carbs_g": 12,
+        "fat_g": 0.2,
+        "fiber_g": 0.6
+      }
+    },
+    {
+      "name": "Dosa, plain",
+      "keywords": [
+        "dosa",
+        "dosai"
+      ],
+      "basis": "per_unit",
+      "serving_g": 80,
+      "per": {
+        "kcal": 165,
+        "protein_g": 4,
+        "carbs_g": 25,
+        "fat_g": 5,
+        "fiber_g": 1.5
+      }
+    },
+    {
+      "name": "Masala dosa",
+      "keywords": [
+        "masala dosa"
+      ],
+      "basis": "per_unit",
+      "serving_g": 150,
+      "per": {
+        "kcal": 290,
+        "protein_g": 6,
+        "carbs_g": 45,
+        "fat_g": 9,
+        "fiber_g": 3
+      }
+    },
+    {
+      "name": "Upma",
+      "keywords": [
+        "upma"
+      ],
+      "basis": "per_100g",
+      "serving_g": 200,
+      "per": {
+        "kcal": 145,
+        "protein_g": 3.5,
+        "carbs_g": 20,
+        "fat_g": 5.5,
+        "fiber_g": 1.5
+      }
+    },
+    {
+      "name": "Poha",
+      "keywords": [
+        "poha"
+      ],
+      "basis": "per_100g",
+      "serving_g": 200,
+      "per": {
+        "kcal": 130,
+        "protein_g": 2.5,
+        "carbs_g": 24,
+        "fat_g": 3,
+        "fiber_g": 1
+      }
+    },
+    {
+      "name": "White bread",
+      "keywords": [
+        "white bread",
+        "bread"
+      ],
+      "basis": "per_unit",
+      "serving_g": 27,
+      "per": {
+        "kcal": 70,
+        "protein_g": 2.4,
+        "carbs_g": 13,
+        "fat_g": 0.9,
+        "fiber_g": 0.7
+      }
+    },
+    {
+      "name": "Corn flakes, plain",
+      "keywords": [
+        "corn flakes",
+        "cornflakes"
+      ],
+      "basis": "per_100g",
+      "serving_g": 45,
+      "per": {
+        "kcal": 383,
+        "protein_g": 6.7,
+        "carbs_g": 86.9,
+        "fat_g": 1,
+        "fiber_g": 2.5
+      }
+    },
+    {
+      "name": "Multigrain bread",
+      "keywords": [
+        "multigrain bread",
+        "brown bread",
+        "multigrain"
+      ],
+      "basis": "per_unit",
+      "serving_g": 30,
+      "per": {
+        "kcal": 75,
+        "protein_g": 3,
+        "carbs_g": 13,
+        "fat_g": 1,
+        "fiber_g": 2
+      }
+    },
+    {
+      "name": "Oats, dry",
+      "keywords": [
+        "oats",
+        "oatmeal"
+      ],
+      "basis": "per_100g",
+      "serving_g": 40,
+      "per": {
+        "kcal": 380,
+        "protein_g": 13,
+        "carbs_g": 67,
+        "fat_g": 7,
+        "fiber_g": 10
+      }
+    },
+    {
+      "name": "Dal, cooked with tadka",
+      "keywords": [
+        "dal",
+        "daal",
+        "dhal",
+        "lentil"
+      ],
+      "basis": "per_100g",
+      "serving_g": 150,
+      "per": {
+        "kcal": 87,
+        "protein_g": 4.7,
+        "carbs_g": 12,
+        "fat_g": 2.3,
+        "fiber_g": 3.3
+      }
+    },
+    {
+      "name": "Rajma, cooked",
+      "keywords": [
+        "rajma",
+        "kidney bean"
+      ],
+      "basis": "per_100g",
+      "serving_g": 150,
+      "per": {
+        "kcal": 127,
+        "protein_g": 8.7,
+        "carbs_g": 22.8,
+        "fat_g": 0.5,
+        "fiber_g": 6.4
+      }
+    },
+    {
+      "name": "Chana / chickpea, cooked",
+      "keywords": [
+        "chana",
+        "chole",
+        "chickpea",
+        "channa"
+      ],
+      "basis": "per_100g",
+      "serving_g": 150,
+      "per": {
+        "kcal": 164,
+        "protein_g": 8.9,
+        "carbs_g": 27,
+        "fat_g": 2.6,
+        "fiber_g": 7.6
+      }
+    },
+    {
+      "name": "Sambar",
+      "keywords": [
+        "sambar",
+        "sambhar"
+      ],
+      "basis": "per_100g",
+      "serving_g": 150,
+      "per": {
+        "kcal": 63,
+        "protein_g": 3,
+        "carbs_g": 8,
+        "fat_g": 2,
+        "fiber_g": 2
+      }
+    },
+    {
+      "name": "Chicken breast, cooked",
+      "keywords": [
+        "chicken breast",
+        "chicken"
+      ],
+      "basis": "per_100g",
+      "serving_g": 150,
+      "per": {
+        "kcal": 165,
+        "protein_g": 31,
+        "carbs_g": 0,
+        "fat_g": 3.6,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Chicken thigh, boneless, cooked",
+      "keywords": [
+        "chicken thigh",
+        "thigh"
+      ],
+      "basis": "per_100g",
+      "serving_g": 150,
+      "per": {
+        "kcal": 179,
+        "protein_g": 24.8,
+        "carbs_g": 0,
+        "fat_g": 8.2,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Chicken curry",
+      "keywords": [
+        "chicken curry",
+        "butter chicken",
+        "chicken masala",
+        "chicken gravy"
+      ],
+      "basis": "per_100g",
+      "serving_g": 200,
+      "per": {
+        "kcal": 180,
+        "protein_g": 15,
+        "carbs_g": 5,
+        "fat_g": 11,
+        "fiber_g": 1
+      }
+    },
+    {
+      "name": "Tandoori chicken, bone-in",
+      "keywords": [
+        "bone-in tandoori",
+        "bone in tandoori",
+        "tandoori chicken bone",
+        "tandoori chicken leg",
+        "tandoori chicken thigh",
+        "tandoori leg",
+        "tandoori thigh"
+      ],
+      "basis": "per_100g",
+      "serving_g": 200,
+      "per": {
+        "kcal": 175,
+        "protein_g": 27,
+        "carbs_g": 2,
+        "fat_g": 6.5,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Tandoori chicken, boneless",
+      "keywords": [
+        "tandoori chicken",
+        "tandoori"
+      ],
+      "basis": "per_100g",
+      "serving_g": 200,
+      "per": {
+        "kcal": 178,
+        "protein_g": 30,
+        "carbs_g": 2,
+        "fat_g": 5.5,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Chicken tikka, bone-in",
+      "keywords": [
+        "chicken tikka bone",
+        "chicken tikka bone-in",
+        "chicken tikka bonein",
+        "bone-in chicken tikka",
+        "bone in chicken tikka",
+        "bonein chicken tikka",
+        "tikka bone-in",
+        "tikka bonein",
+        "bone-in tikka"
+      ],
+      "basis": "per_100g",
+      "serving_g": 150,
+      "per": {
+        "kcal": 130,
+        "protein_g": 21,
+        "carbs_g": 3,
+        "fat_g": 4.3,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Chicken tikka, boneless",
+      "keywords": [
+        "chicken tikka"
+      ],
+      "basis": "per_100g",
+      "serving_g": 150,
+      "per": {
+        "kcal": 185,
+        "protein_g": 30,
+        "carbs_g": 3,
+        "fat_g": 6,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Egg, whole, boiled",
+      "keywords": [
+        "egg",
+        "eggs",
+        "boiled egg"
+      ],
+      "basis": "per_unit",
+      "serving_g": 43,
+      "per": {
+        "kcal": 67,
+        "protein_g": 5.4,
+        "carbs_g": 0.5,
+        "fat_g": 4.6,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Egg white",
+      "keywords": [
+        "egg white",
+        "egg whites"
+      ],
+      "basis": "per_unit",
+      "serving_g": 33,
+      "per": {
+        "kcal": 17,
+        "protein_g": 3.6,
+        "carbs_g": 0.2,
+        "fat_g": 0.05,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Egg bhurji / omelette",
+      "keywords": [
+        "bhurji",
+        "omelette",
+        "omelet"
+      ],
+      "basis": "per_unit",
+      "serving_g": 120,
+      "per": {
+        "kcal": 220,
+        "protein_g": 14,
+        "carbs_g": 4,
+        "fat_g": 17,
+        "fiber_g": 1
+      }
+    },
+    {
+      "name": "Rohu / freshwater fish, cooked",
+      "keywords": [
+        "rohu",
+        "fish",
+        "katla"
+      ],
+      "basis": "per_100g",
+      "serving_g": 150,
+      "per": {
+        "kcal": 124,
+        "protein_g": 23.9,
+        "carbs_g": 0,
+        "fat_g": 2.9,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Basa fillet, cooked",
+      "keywords": [
+        "basa"
+      ],
+      "basis": "per_100g",
+      "serving_g": 150,
+      "per": {
+        "kcal": 144,
+        "protein_g": 18.5,
+        "carbs_g": 0,
+        "fat_g": 7.2,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Prawns, cooked",
+      "keywords": [
+        "prawn",
+        "prawns",
+        "shrimp"
+      ],
+      "basis": "per_100g",
+      "serving_g": 150,
+      "per": {
+        "kcal": 99,
+        "protein_g": 24,
+        "carbs_g": 0.2,
+        "fat_g": 0.3,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Mutton (goat), cooked",
+      "keywords": [
+        "mutton",
+        "goat meat",
+        "goat"
+      ],
+      "basis": "per_100g",
+      "serving_g": 150,
+      "per": {
+        "kcal": 210,
+        "protein_g": 29,
+        "carbs_g": 0,
+        "fat_g": 10.4,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Lamb, lean, cooked",
+      "keywords": [
+        "lamb"
+      ],
+      "basis": "per_100g",
+      "serving_g": 150,
+      "per": {
+        "kcal": 206,
+        "protein_g": 28.2,
+        "carbs_g": 0,
+        "fat_g": 9.4,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Paneer, full fat",
+      "keywords": [
+        "paneer"
+      ],
+      "basis": "per_100g",
+      "serving_g": 100,
+      "per": {
+        "kcal": 296,
+        "protein_g": 18,
+        "carbs_g": 3.5,
+        "fat_g": 23,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Paneer, low fat",
+      "keywords": [
+        "low fat paneer",
+        "lite paneer"
+      ],
+      "basis": "per_100g",
+      "serving_g": 100,
+      "per": {
+        "kcal": 200,
+        "protein_g": 22,
+        "carbs_g": 4,
+        "fat_g": 11,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Tofu",
+      "keywords": [
+        "tofu"
+      ],
+      "basis": "per_100g",
+      "serving_g": 100,
+      "per": {
+        "kcal": 76,
+        "protein_g": 8,
+        "carbs_g": 1.9,
+        "fat_g": 4.8,
+        "fiber_g": 0.3
+      }
+    },
+    {
+      "name": "Soya chunks, dry",
+      "keywords": [
+        "soya chunk",
+        "soya chunks",
+        "soya",
+        "soy chunk"
+      ],
+      "basis": "per_100g",
+      "serving_g": 30,
+      "per": {
+        "kcal": 345,
+        "protein_g": 52,
+        "carbs_g": 33,
+        "fat_g": 0.5,
+        "fiber_g": 13
+      }
+    },
+    {
+      "name": "Whey protein, 1 scoop",
+      "keywords": [
+        "whey",
+        "protein powder",
+        "protein shake",
+        "whey isolate"
+      ],
+      "basis": "per_unit",
+      "serving_g": 32,
+      "per": {
+        "kcal": 125,
+        "protein_g": 24,
+        "carbs_g": 3,
+        "fat_g": 1.5,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Curd / dahi, full fat",
+      "keywords": [
+        "curd",
+        "dahi",
+        "yogurt",
+        "yoghurt"
+      ],
+      "basis": "per_100g",
+      "serving_g": 100,
+      "per": {
+        "kcal": 60,
+        "protein_g": 3.5,
+        "carbs_g": 4.5,
+        "fat_g": 3.3,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Greek yogurt, 0% fat",
+      "keywords": [
+        "greek yogurt",
+        "greek yoghurt"
+      ],
+      "basis": "per_100g",
+      "serving_g": 200,
+      "per": {
+        "kcal": 59,
+        "protein_g": 10,
+        "carbs_g": 3.6,
+        "fat_g": 0.4,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Toned milk",
+      "keywords": [
+        "milk",
+        "toned milk"
+      ],
+      "basis": "per_100g",
+      "serving_g": 200,
+      "per": {
+        "kcal": 59,
+        "protein_g": 3.3,
+        "carbs_g": 4.8,
+        "fat_g": 3.05,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Skim milk",
+      "keywords": [
+        "skim milk",
+        "double toned"
+      ],
+      "basis": "per_100g",
+      "serving_g": 200,
+      "per": {
+        "kcal": 35,
+        "protein_g": 3.4,
+        "carbs_g": 5,
+        "fat_g": 0.1,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Ghee",
+      "keywords": [
+        "ghee"
+      ],
+      "basis": "per_unit",
+      "serving_g": 5,
+      "per": {
+        "kcal": 45,
+        "protein_g": 0,
+        "carbs_g": 0,
+        "fat_g": 5,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Butter",
+      "keywords": [
+        "butter"
+      ],
+      "basis": "per_unit",
+      "serving_g": 5,
+      "per": {
+        "kcal": 36,
+        "protein_g": 0,
+        "carbs_g": 0,
+        "fat_g": 4,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Cheese slice",
+      "keywords": [
+        "cheese slice",
+        "cheese"
+      ],
+      "basis": "per_unit",
+      "serving_g": 20,
+      "per": {
+        "kcal": 65,
+        "protein_g": 4,
+        "carbs_g": 1,
+        "fat_g": 5,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Cooking oil",
+      "keywords": [
+        "oil",
+        "olive oil",
+        "sunflower oil"
+      ],
+      "basis": "per_unit",
+      "serving_g": 5,
+      "per": {
+        "kcal": 45,
+        "protein_g": 0,
+        "carbs_g": 0,
+        "fat_g": 5,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Peanut butter",
+      "keywords": [
+        "peanut butter"
+      ],
+      "basis": "per_100g",
+      "serving_g": 15,
+      "per": {
+        "kcal": 588,
+        "protein_g": 25,
+        "carbs_g": 20,
+        "fat_g": 50,
+        "fiber_g": 6
+      }
+    },
+    {
+      "name": "Almonds",
+      "keywords": [
+        "almond",
+        "almonds",
+        "badam"
+      ],
+      "basis": "per_100g",
+      "serving_g": 15,
+      "per": {
+        "kcal": 579,
+        "protein_g": 21,
+        "carbs_g": 22,
+        "fat_g": 50,
+        "fiber_g": 12.5
+      }
+    },
+    {
+      "name": "Peanuts",
+      "keywords": [
+        "peanut",
+        "peanuts",
+        "groundnut"
+      ],
+      "basis": "per_100g",
+      "serving_g": 30,
+      "per": {
+        "kcal": 567,
+        "protein_g": 26,
+        "carbs_g": 16,
+        "fat_g": 49,
+        "fiber_g": 8.5
+      }
+    },
+    {
+      "name": "Cashews",
+      "keywords": [
+        "cashew",
+        "cashews",
+        "kaju"
+      ],
+      "basis": "per_100g",
+      "serving_g": 20,
+      "per": {
+        "kcal": 553,
+        "protein_g": 18,
+        "carbs_g": 30,
+        "fat_g": 44,
+        "fiber_g": 3.3
+      }
+    },
+    {
+      "name": "Walnuts",
+      "keywords": [
+        "walnut",
+        "walnuts",
+        "akhrot"
+      ],
+      "basis": "per_100g",
+      "serving_g": 20,
+      "per": {
+        "kcal": 654,
+        "protein_g": 15,
+        "carbs_g": 14,
+        "fat_g": 65,
+        "fiber_g": 6.7
+      }
+    },
+    {
+      "name": "Banana",
+      "keywords": [
+        "banana",
+        "kela"
+      ],
+      "basis": "per_unit",
+      "serving_g": 118,
+      "per": {
+        "kcal": 105,
+        "protein_g": 1.3,
+        "carbs_g": 27,
+        "fat_g": 0.4,
+        "fiber_g": 3.1
+      }
+    },
+    {
+      "name": "Yelaki / elaichi banana",
+      "keywords": [
+        "yelaki banana",
+        "elaichi banana",
+        "yelakki banana",
+        "yelaki",
+        "elaichi",
+        "ney poovan"
+      ],
+      "basis": "per_unit",
+      "serving_g": 35,
+      "per": {
+        "kcal": 37,
+        "protein_g": 0.5,
+        "carbs_g": 8.2,
+        "fat_g": 0.1,
+        "fiber_g": 0.8
+      }
+    },
+    {
+      "name": "Apple",
+      "keywords": [
+        "apple",
+        "seb"
+      ],
+      "basis": "per_unit",
+      "serving_g": 180,
+      "per": {
+        "kcal": 94,
+        "protein_g": 0.5,
+        "carbs_g": 25,
+        "fat_g": 0.3,
+        "fiber_g": 4.3
+      }
+    },
+    {
+      "name": "Orange",
+      "keywords": [
+        "orange",
+        "mosambi",
+        "sweet lime"
+      ],
+      "basis": "per_unit",
+      "serving_g": 130,
+      "per": {
+        "kcal": 62,
+        "protein_g": 1.2,
+        "carbs_g": 15,
+        "fat_g": 0.2,
+        "fiber_g": 3.1
+      }
+    },
+    {
+      "name": "Guava",
+      "keywords": [
+        "guava",
+        "peru"
+      ],
+      "basis": "per_unit",
+      "serving_g": 100,
+      "per": {
+        "kcal": 68,
+        "protein_g": 2.6,
+        "carbs_g": 14,
+        "fat_g": 1,
+        "fiber_g": 5.4
+      }
+    },
+    {
+      "name": "Papaya",
+      "keywords": [
+        "papaya"
+      ],
+      "basis": "per_100g",
+      "serving_g": 150,
+      "per": {
+        "kcal": 43,
+        "protein_g": 0.5,
+        "carbs_g": 11,
+        "fat_g": 0.3,
+        "fiber_g": 1.7
+      }
+    },
+    {
+      "name": "Mango",
+      "keywords": [
+        "mango",
+        "aam"
+      ],
+      "basis": "per_100g",
+      "serving_g": 150,
+      "per": {
+        "kcal": 60,
+        "protein_g": 0.8,
+        "carbs_g": 15,
+        "fat_g": 0.4,
+        "fiber_g": 1.6
+      }
+    },
+    {
+      "name": "Mixed veg sabzi, lightly oiled",
+      "keywords": [
+        "sabzi",
+        "sabji",
+        "mixed veg",
+        "vegetable curry",
+        "stir fry",
+        "stir-fry"
+      ],
+      "basis": "per_100g",
+      "serving_g": 200,
+      "per": {
+        "kcal": 55,
+        "protein_g": 2,
+        "carbs_g": 6,
+        "fat_g": 2.5,
+        "fiber_g": 2.5
+      }
+    },
+    {
+      "name": "Spinach, raw",
+      "keywords": [
+        "spinach",
+        "palak"
+      ],
+      "basis": "per_100g",
+      "serving_g": 100,
+      "per": {
+        "kcal": 23,
+        "protein_g": 2.9,
+        "carbs_g": 3.6,
+        "fat_g": 0.4,
+        "fiber_g": 2.2
+      }
+    },
+    {
+      "name": "Salad, undressed",
+      "keywords": [
+        "salad",
+        "greens",
+        "lettuce"
+      ],
+      "basis": "per_100g",
+      "serving_g": 150,
+      "per": {
+        "kcal": 20,
+        "protein_g": 1.5,
+        "carbs_g": 3,
+        "fat_g": 0.2,
+        "fiber_g": 1.8
+      }
+    },
+    {
+      "name": "Potato, boiled",
+      "keywords": [
+        "potato",
+        "aloo"
+      ],
+      "basis": "per_100g",
+      "serving_g": 150,
+      "per": {
+        "kcal": 87,
+        "protein_g": 2,
+        "carbs_g": 20,
+        "fat_g": 0.1,
+        "fiber_g": 1.8
+      }
+    },
+    {
+      "name": "Sweet potato, boiled",
+      "keywords": [
+        "sweet potato",
+        "shakarkandi"
+      ],
+      "basis": "per_100g",
+      "serving_g": 150,
+      "per": {
+        "kcal": 76,
+        "protein_g": 1.4,
+        "carbs_g": 17.7,
+        "fat_g": 0.1,
+        "fiber_g": 2.5
+      }
+    },
+    {
+      "name": "Onion",
+      "keywords": [
+        "onion",
+        "pyaz"
+      ],
+      "basis": "per_100g",
+      "serving_g": 50,
+      "per": {
+        "kcal": 40,
+        "protein_g": 1.1,
+        "carbs_g": 9.3,
+        "fat_g": 0.1,
+        "fiber_g": 1.7
+      }
+    },
+    {
+      "name": "Tomato",
+      "keywords": [
+        "tomato"
+      ],
+      "basis": "per_100g",
+      "serving_g": 100,
+      "per": {
+        "kcal": 18,
+        "protein_g": 0.9,
+        "carbs_g": 3.9,
+        "fat_g": 0.2,
+        "fiber_g": 1.2
+      }
+    },
+    {
+      "name": "Green tea",
+      "keywords": [
+        "green tea"
+      ],
+      "basis": "per_unit",
+      "serving_g": 300,
+      "per": {
+        "kcal": 0,
+        "protein_g": 0,
+        "carbs_g": 0,
+        "fat_g": 0,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Black coffee",
+      "keywords": [
+        "black coffee",
+        "americano"
+      ],
+      "basis": "per_unit",
+      "serving_g": 200,
+      "per": {
+        "kcal": 2,
+        "protein_g": 0.3,
+        "carbs_g": 0,
+        "fat_g": 0,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Tea with milk and sugar",
+      "keywords": [
+        "chai",
+        "tea with milk",
+        "masala chai"
+      ],
+      "basis": "per_unit",
+      "serving_g": 150,
+      "per": {
+        "kcal": 90,
+        "protein_g": 2,
+        "carbs_g": 12,
+        "fat_g": 3.5,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Samosa",
+      "keywords": [
+        "samosa"
+      ],
+      "basis": "per_unit",
+      "serving_g": 60,
+      "per": {
+        "kcal": 175,
+        "protein_g": 3.5,
+        "carbs_g": 21,
+        "fat_g": 9,
+        "fiber_g": 2
+      }
+    },
+    {
+      "name": "Beer",
+      "keywords": [
+        "beer"
+      ],
+      "basis": "per_unit",
+      "serving_g": 330,
+      "per": {
+        "kcal": 145,
+        "protein_g": 1.6,
+        "carbs_g": 11,
+        "fat_g": 0,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Spirits, 30 ml peg",
+      "keywords": [
+        "whisky",
+        "whiskey",
+        "vodka",
+        "rum",
+        "gin",
+        "peg"
+      ],
+      "basis": "per_unit",
+      "serving_g": 30,
+      "per": {
+        "kcal": 70,
+        "protein_g": 0,
+        "carbs_g": 0,
+        "fat_g": 0,
+        "fiber_g": 0
+      }
+    },
+    {
+      "name": "Wine",
+      "keywords": [
+        "wine"
+      ],
+      "basis": "per_unit",
+      "serving_g": 150,
+      "per": {
+        "kcal": 125,
+        "protein_g": 0.1,
+        "carbs_g": 4,
+        "fat_g": 0,
+        "fiber_g": 0
+      }
+    }
+  ]
+}

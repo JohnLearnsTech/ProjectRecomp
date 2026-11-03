@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "goal.schema.json",
+  "title": "Goal",
+  "description": "One goal (a time-boxed block with weight, calorie, protein and step targets). The web app keeps an ordered list: localStorage goa:goals (array) and db doc state/goals as {list:[Goal,...]}. The active goal is the LAST goal with done=false (activeGoal); if all are done, the last goal. History is kept: finished goals stay in the list with done=true and endKg.",
+  "type": "object",
+  "required": ["id", "start", "due"],
+  "additionalProperties": true,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "'g' + Date.now() in base 36 (e.g. 'gm3k1x2a'). The provisional placeholder uses 'g0'."
+    },
+    "provisional": {
+      "type": "boolean",
+      "description": "True only on the in-memory placeholder created before setup (provisionalGoal). saveGoals deletes this flag; it should never be persisted."
+    },
+    "name": { "type": "string", "maxLength": 40, "description": "What the person is aiming at, e.g. 'Summer'. Onboarding defaults by type: Lean out, Recomp, Build muscle, Feel better." },
+    "why": { "type": "string", "maxLength": 160, "description": "One line on why it matters. Free text, may be personal." },
+    "type": {
+      "type": "string",
+      "enum": ["lose", "recomp", "muscle", "health", "gain", "maintain"],
+      "description": "Goal kind. Onboarding writes lose|recomp|muscle|health. The provisional goal uses recomp. The 'Next goal' button branches on 'gain' and 'maintain' but nothing in r14 writes those (legacy or reserved). Code treats a missing type as 'lose'. Only 'lose' gets the planned maintenance week (+500 kcal); only 'muscle' flips the weekly-review calorie rule to increases."
+    },
+    "start": { "type": "string", "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "First day of the goal (weight timeline and projection run from here)." },
+    "due": { "type": "string", "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "Last day of the plan. Must be after start (gSave refuses otherwise)." },
+    "event": {
+      "type": ["string", "null"],
+      "format": "date",
+      "description": "The day itself (wedding, trip). Drives the countdown. gSave clears it unless it is on or within 30 days after due."
+    },
+    "trainStart": {
+      "type": "string",
+      "format": "date",
+      "description": "Training schedule start. Defaults to start when missing (applyGoal). Lets a restarted block begin Phase 1 without moving the weight timeline. Not set by the 'Next goal' button."
+    },
+    "startKg": { "type": ["number", "null"], "description": "Start weight in kg. When null or 0, applyGoal uses the first logged weight on or after start." },
+    "targetKg": { "type": ["number", "null"], "description": "Target weight in kg. When null or 0, treated as equal to the start weight." },
+    "endKg": { "type": ["number", "null"], "description": "Latest logged weight when the goal was finished. Only present on done goals." },
+    "kcal": { "type": "number", "default": 2200, "description": "Daily calorie target (kcal). Code fallback 2200 when 0 or missing; provisional goal uses 2000." },
+    "protein": { "type": "number", "default": 180, "description": "Daily protein target in grams. Code fallbacks differ: 180 in plan(k) and gSave, 120 in checkList and the table colors. Provisional goal uses 120." },
+    "steps": { "type": "number", "default": 8000, "description": "Starting daily step target. Used for the default plan's phase steps. When a saved plan exists, editing this shifts every phase's steps by the same delta." },
+    "homeFirst": { "type": "boolean", "default": false, "description": "Use the original 'home first' layout (homeFirstPlan) instead of makePlan." },
+    "done": { "type": "boolean", "default": false, "description": "Finished goals stay in the list for history." },
+    "milestones": {
+      "type": "array",
+      "description": "Dated tasks and blood tests. Shown in the checklist on that day, on the phase timeline, in the blood-test table, and optionally as calendar reminders.",
+      "items": { "$ref": "#/$defs/milestone" }
+    }
+  },
+  "$defs": {
+    "milestone": {
+      "type": "object",
+      "required": ["d", "k", "t"],
+      "additionalProperties": false,
+      "properties": {
+        "d": { "type": "string", "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "Date." },
+        "k": { "type": "string", "enum": ["task", "lab"], "description": "'lab' = book or take bloods (sensitive medical data), 'task' = generic milestone." },
+        "t": { "type": "string", "maxLength": 120, "description": "What has to happen." }
+      }
+    }
+  }
+}

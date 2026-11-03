@@ -1,0 +1,1073 @@
+{
+  "_about": "Session programs, warm-up and stretch lists, and the swap system. Each exercise line in the app is stored as \"name|scheme|cue\"; here it is split. scheme reads like \"3 × 8-10\" or \"3 × 30 s / side\". A swap replaces an exercise with another from the same muscle-group pool and the same kit; slot_of maps an exercise to its pool; pools[slot][kit] lists the alternatives for that kit (name, cue, muscles). The swapped-in exercise inherits the session's sets and reps.",
+  "programs": {
+    "homeA": {
+      "name": "Home Full Body A",
+      "kit": "home",
+      "exercises": [
+        {
+          "name": "Chair sit-to-stand (DBs at chest when easy)",
+          "scheme": "3 × 12-15",
+          "cue": "Feet flat and hip-width, just in front of the chair. Stand by pushing the floor away; sit back down slowly instead of dropping. Don't rock forward to build momentum — chest up, let the legs do it."
+        },
+        {
+          "name": "Band seated row, anchored at chest height",
+          "scheme": "3 × 15",
+          "cue": "Loop the band around a table leg at chest height and sit tall on a chair. Pull your elbows back past your ribs and squeeze the shoulder blades together. Keep the shoulders down — if they creep toward your ears, the band is too heavy."
+        },
+        {
+          "name": "Incline push-up, hands on a kitchen counter",
+          "scheme": "3 × 8-12",
+          "cue": "Hands slightly wider than your shoulders on the counter edge, body in one straight line from head to heels. Lower your chest to the counter, press away. The higher the surface, the easier — start high and lower it over the weeks."
+        },
+        {
+          "name": "DB Romanian deadlift, 3 s lowering",
+          "scheme": "3 × 12-15",
+          "cue": "Dumbbells in front of your thighs, knees softly bent and fixed. Push your hips backward, let the weights slide down your legs, stop when your hamstrings pull. Your back stays flat — this is a hip movement, not a bend of the spine."
+        },
+        {
+          "name": "Band pull-apart",
+          "scheme": "2 × 15",
+          "cue": "Band held at shoulder height with straight arms. Pull it apart until it touches your chest, squeezing the shoulder blades. Keep your ribs down and don't arch your lower back to finish the rep."
+        },
+        {
+          "name": "Standing Pallof press, band at chest height",
+          "scheme": "3 × 10 / side",
+          "cue": "Stand side-on to the anchor with the band at your chest, feet hip-width. Press the band straight out and resist its pull to rotate you. Nothing moves but your arms — the work is in not twisting."
+        }
+      ]
+    },
+    "homeB": {
+      "name": "Home Full Body B",
+      "kit": "home",
+      "exercises": [
+        {
+          "name": "Split squat, hand on chair",
+          "scheme": "3 × 8-10 / leg",
+          "cue": "One foot forward, one back, about two shoe-lengths apart, hand resting on a chair for balance. Drop the back knee straight down, then drive through the front heel. Keep your torso upright — leaning forward turns it into a different exercise."
+        },
+        {
+          "name": "Band lat pulldown, high door anchor",
+          "scheme": "3 × 15",
+          "cue": "Anchor the band above a closed door, kneel or sit facing it. Pull your elbows down toward your ribs, not your hands toward your waist. Lead with the elbows and you will feel it in your back rather than your arms."
+        },
+        {
+          "name": "Seated DB shoulder press",
+          "scheme": "3 × 12-15",
+          "cue": "Sit upright with back support, dumbbells at shoulder height, palms forward. Press up until your arms are nearly straight, lower under control. Don't let your lower back arch off the chair to finish the press."
+        },
+        {
+          "name": "Low-step step-up, hand on a chair",
+          "scheme": "3 × 10 / leg",
+          "cue": "A step no higher than your knee, hand on a chair. Put the whole foot on the step and push through that heel to stand — the back leg only helps you balance. Step down slowly rather than dropping."
+        },
+        {
+          "name": "DB hammer curl",
+          "scheme": "2 × 12-15",
+          "cue": "Dumbbells at your sides, palms facing each other, elbows tucked against your ribs. Curl up without swinging your torso. If your body moves to start the rep, the weight is too heavy."
+        },
+        {
+          "name": "Band triceps pushdown",
+          "scheme": "2 × 15",
+          "cue": "Band anchored high, elbows pinned to your sides. Straighten the arms fully, then let them bend back slowly. Only the forearms move — the upper arms stay still."
+        },
+        {
+          "name": "Suitcase hold, one DB at your side",
+          "scheme": "3 × 30 s / side",
+          "cue": "Hold one dumbbell at one side, stand tall, and resist leaning toward it. Shoulders level, ribs down. The side without the weight is the one doing the work."
+        }
+      ]
+    },
+    "bodyA": {
+      "name": "Bodyweight A",
+      "kit": "body",
+      "exercises": [
+        {
+          "name": "Chair squat",
+          "scheme": "3 × 10-15",
+          "cue": "Sit back to a chair, touch it lightly, stand tall. Push the floor away and keep your knees in line with your toes."
+        },
+        {
+          "name": "Incline push-up, hands on a counter",
+          "scheme": "3 × 8-12",
+          "cue": "Body in one straight line, lower your chest to the edge, press away. Higher surface is easier."
+        },
+        {
+          "name": "Reverse lunge, hand on a chair",
+          "scheme": "3 × 8 / leg",
+          "cue": "Step back, lower the back knee toward the floor, drive up through the front heel."
+        },
+        {
+          "name": "Towel row on a door handle",
+          "scheme": "3 × 10-12",
+          "cue": "Loop a towel round a sturdy handle, lean back with straight arms, pull your chest to it."
+        },
+        {
+          "name": "Wall sit",
+          "scheme": "3 × 30 s",
+          "cue": "Back flat on the wall, thighs as low as is comfortable, knees over ankles."
+        },
+        {
+          "name": "Standing march with arm drive",
+          "scheme": "3 × 40 s",
+          "cue": "Lift the knees to hip height, drive the arms, stay tall."
+        }
+      ]
+    },
+    "bodyB": {
+      "name": "Bodyweight B",
+      "kit": "body",
+      "exercises": [
+        {
+          "name": "Split squat, hand on chair",
+          "scheme": "3 × 8-10 / leg",
+          "cue": "One foot forward, one back. Drop the back knee straight down, drive through the front heel."
+        },
+        {
+          "name": "Wall push-up",
+          "scheme": "3 × 10-15",
+          "cue": "Hands on the wall at shoulder height, body straight, chest to the wall and back. Step further out to make it harder."
+        },
+        {
+          "name": "Single-leg RDL, hand on chair",
+          "scheme": "3 × 8 / leg",
+          "cue": "Hinge at the hip with a flat back, reach down, stand by squeezing the glute."
+        },
+        {
+          "name": "Doorway isometric row hold",
+          "scheme": "3 × 20 s",
+          "cue": "Hold the door frame, lean back, pull your shoulder blades together and hold."
+        },
+        {
+          "name": "Calf raise on a step",
+          "scheme": "3 × 15",
+          "cue": "Heels off the edge, rise up high, lower slowly below the step."
+        },
+        {
+          "name": "Standing knee-to-elbow crunch",
+          "scheme": "3 × 10 / side",
+          "cue": "Bring the knee up and across to the opposite elbow, tall between reps."
+        }
+      ]
+    },
+    "fullA": {
+      "name": "Full Body A",
+      "kit": "gym",
+      "exercises": [
+        {
+          "name": "Leg press",
+          "scheme": "3 × 10-12",
+          "cue": "Feet mid-platform, hip-width. Lower until your knees reach about 90° or your lower back starts to round off the pad, whichever comes first. Never lock the knees hard at the top."
+        },
+        {
+          "name": "Chest press machine",
+          "scheme": "3 × 10-12",
+          "cue": "Set the seat so the handles sit level with mid-chest. Press away without locking out hard, and control the return. Keep the shoulder blades pinned back into the pad."
+        },
+        {
+          "name": "Seated cable row",
+          "scheme": "3 × 10-12",
+          "cue": "Chest tall, slight forward lean at the start. Pull the handle to your belly, elbows past your ribs, squeeze. Don't rock backward to move the weight."
+        },
+        {
+          "name": "Seated leg curl",
+          "scheme": "2 × 12",
+          "cue": "Pad just above the heels, thighs strapped down. Curl fully, then lower slowly — the lowering is where hamstrings grow. Keep your hips on the seat."
+        },
+        {
+          "name": "DB lateral raise",
+          "scheme": "2 × 15",
+          "cue": "Light dumbbells, slight elbow bend, raise out to the sides only to shoulder height. Lead with the elbows, not the hands. If you have to swing, halve the weight."
+        },
+        {
+          "name": "Incline plank, hands on a bench",
+          "scheme": "3 × 20-30 s",
+          "cue": "Hands on a bench, body in one line, squeeze the glutes and tuck the ribs down. Hips neither sagging nor piked up. Breathe normally throughout."
+        }
+      ]
+    },
+    "fullB": {
+      "name": "Full Body B",
+      "kit": "gym",
+      "exercises": [
+        {
+          "name": "Goblet squat to box",
+          "scheme": "3 × 8-10",
+          "cue": "Hold one dumbbell at your chest, stand in front of a bench. Sit back until you touch it lightly, then stand. The dumbbell at the chest is what lets you stay upright."
+        },
+        {
+          "name": "Lat pulldown",
+          "scheme": "3 × 10-12",
+          "cue": "Thighs under the pads, slight backward lean, bar to your upper chest. Drive the elbows down toward your ribs. Don't lean back further to finish the rep."
+        },
+        {
+          "name": "Incline DB press",
+          "scheme": "3 × 10-12",
+          "cue": "Bench at about 30°, dumbbells at chest level, elbows about 45° from your body. Press up and slightly together, lower under control until you feel a stretch."
+        },
+        {
+          "name": "Hip thrust",
+          "scheme": "3 × 10",
+          "cue": "Shoulder blades on a bench, feet flat and shins vertical at the top. Drive through the heels, squeeze the glutes hard, keep the ribs down. Stop at hips level with knees — don't overarch."
+        },
+        {
+          "name": "Rope triceps pushdown",
+          "scheme": "2 × 12-15",
+          "cue": "Elbows pinned to your sides, push the rope down and slightly apart at the bottom. Only the forearms move."
+        },
+        {
+          "name": "Standing Pallof press",
+          "scheme": "3 × 10 / side",
+          "cue": "Side-on to the cable at chest height, feet hip-width. Press straight out and resist the rotation. Nothing moves but your arms."
+        }
+      ]
+    },
+    "lowerA": {
+      "name": "Lower A",
+      "kit": "gym",
+      "exercises": [
+        {
+          "name": "Leg press",
+          "scheme": "4 × 8-10",
+          "cue": "Feet mid-platform, hip-width. Lower to about 90° at the knee or until the lower back lifts off the pad. Push through the whole foot, not the toes."
+        },
+        {
+          "name": "DB Romanian deadlift",
+          "scheme": "3 × 10",
+          "cue": "Knees softly bent and fixed, push the hips back, weights sliding down the thighs. Stop at the hamstring stretch. Flat back throughout."
+        },
+        {
+          "name": "Seated leg curl",
+          "scheme": "3 × 12",
+          "cue": "Full curl, slow return. Hips stay down on the seat — lifting them is your hamstrings asking for less weight."
+        },
+        {
+          "name": "Leg extension",
+          "scheme": "3 × 15",
+          "cue": "Pad on the lower shin, straighten fully, pause a beat, lower slowly. Stop if it pinches the front of the knee."
+        },
+        {
+          "name": "Standing calf raise",
+          "scheme": "3 × 15",
+          "cue": "Full stretch at the bottom, full squeeze at the top, no bouncing. One second up, two seconds down."
+        }
+      ]
+    },
+    "upperA": {
+      "name": "Upper A",
+      "kit": "gym",
+      "exercises": [
+        {
+          "name": "Chest press machine",
+          "scheme": "4 × 8-10",
+          "cue": "Handles at mid-chest height, shoulder blades pinned back. Press without locking out hard, return under control."
+        },
+        {
+          "name": "Seated cable row",
+          "scheme": "4 × 10",
+          "cue": "Chest tall, pull to the belly, elbows past the ribs. No rocking."
+        },
+        {
+          "name": "Shoulder press machine",
+          "scheme": "3 × 10",
+          "cue": "Handles at shoulder height, press overhead without arching your lower back off the pad. Ribs stay down."
+        },
+        {
+          "name": "Lat pulldown",
+          "scheme": "3 × 12",
+          "cue": "Bar to the upper chest, elbows driving down toward the ribs. Slight lean back, held constant."
+        },
+        {
+          "name": "DB curl",
+          "scheme": "3 × 12",
+          "cue": "Elbows at your sides, no swinging. Lower slower than you lift."
+        },
+        {
+          "name": "Rope pushdown",
+          "scheme": "3 × 12",
+          "cue": "Elbows pinned, forearms only. Push down and slightly apart at the bottom."
+        }
+      ]
+    },
+    "lowerB": {
+      "name": "Lower B",
+      "kit": "gym",
+      "exercises": [
+        {
+          "name": "Hip thrust",
+          "scheme": "4 × 10",
+          "cue": "Shoulder blades on the bench, shins vertical at the top, drive through the heels. Squeeze the glutes, keep the ribs down, stop at hips level with knees."
+        },
+        {
+          "name": "Hack squat or goblet squat to box",
+          "scheme": "3 × 10",
+          "cue": "Feet mid-platform, descend under control to about 90°, drive up through the heels. Keep the lower back flat against the pad."
+        },
+        {
+          "name": "Lying leg curl",
+          "scheme": "3 × 12",
+          "cue": "Hips pressed into the pad, curl fully, lower slowly. Don't let the hips rise to help."
+        },
+        {
+          "name": "Low-box step-up with DBs",
+          "scheme": "3 × 10 / leg",
+          "cue": "Box at or below knee height. Whole foot on the box, push through that heel, step down slowly. The back leg is for balance, not for pushing."
+        },
+        {
+          "name": "Seated calf raise",
+          "scheme": "3 × 15",
+          "cue": "Full stretch, full squeeze, no bouncing. This one targets the deeper calf muscle, so slow it down."
+        }
+      ]
+    },
+    "upperB": {
+      "name": "Upper B",
+      "kit": "gym",
+      "exercises": [
+        {
+          "name": "Incline DB press",
+          "scheme": "4 × 10",
+          "cue": "Bench at 30°, elbows about 45° from the body, press up and slightly together. Control the lowering to a chest stretch."
+        },
+        {
+          "name": "Chest-supported DB row",
+          "scheme": "4 × 10",
+          "cue": "Chest on the incline bench so your lower back is out of it. Pull the elbows past your ribs and squeeze. No jerking."
+        },
+        {
+          "name": "Cable lateral raise",
+          "scheme": "3 × 15",
+          "cue": "Cable at the low setting, slight elbow bend, raise to shoulder height only. Light weight, lead with the elbow."
+        },
+        {
+          "name": "Face pull",
+          "scheme": "3 × 15",
+          "cue": "Rope at upper-chest height, pull toward your forehead with elbows high and wide, rotating the hands back. This is the antidote to a desk job."
+        },
+        {
+          "name": "Hammer curl",
+          "scheme": "3 × 12",
+          "cue": "Palms facing each other, elbows tucked, no torso swing."
+        },
+        {
+          "name": "Overhead cable extension",
+          "scheme": "3 × 12",
+          "cue": "Facing away from the cable, elbows beside your ears and fixed. Straighten the arms overhead, lower slowly to a triceps stretch."
+        }
+      ]
+    }
+  },
+  "warmup": {
+    "note": "Standing and chair only — nothing on the floor. Keep a hand on something solid.",
+    "items": [
+      {
+        "name": "Wall ankle rocks",
+        "scheme": "10 / side",
+        "cue": "Hands on the wall, one foot stepped back. Keep that heel glued down and rock your knee forward over the toes. You should feel it in the calf, not the front of the ankle."
+      },
+      {
+        "name": "Standing knee circles, hand on a chair",
+        "scheme": "8 / side",
+        "cue": "Hand on a chair back, lift one knee toward hip height and draw slow circles outward. Stand tall — don't lean away from the working leg."
+      },
+      {
+        "name": "Wall slides, back and arms against the wall",
+        "scheme": "10",
+        "cue": "Back against the wall, arms in a goalpost with the backs of the hands touching the wall. Slide them up and down while keeping contact. If the hands lift off, only go as high as they stay."
+      },
+      {
+        "name": "Standing torso rotations, arms crossed",
+        "scheme": "10 / side",
+        "cue": "Feet planted, arms crossed over the chest. Rotate your ribcage side to side and let the hips stay still. Smooth and controlled, no ballistic twisting."
+      },
+      {
+        "name": "Slow chair sit-to-stand",
+        "scheme": "10",
+        "cue": "Same movement as the exercise but empty-handed and deliberately slow. This is a rehearsal, not a set — stop well short of tired."
+      }
+    ]
+  },
+  "stretch": {
+    "note": "If your torso blocks the fold, shorten the range and hold longer. Never force it against your own body mass.",
+    "items": [
+      {
+        "name": "Doorway chest stretch, forearm on the frame",
+        "scheme": "30 s / side",
+        "cue": "Forearm flat on the door frame, elbow at shoulder height. Step through with the same-side foot and turn your chest away. Stop at a stretch, never a pinch in the shoulder."
+      },
+      {
+        "name": "Standing hip flexor, hands on a counter, tailbone tucked",
+        "scheme": "30 s / side",
+        "cue": "Split stance, hands on the counter, back leg straight. Squeeze that back glute and tuck your tailbone under — the tuck is the whole stretch. Don't lunge deeper to feel more."
+      },
+      {
+        "name": "Seated figure-4 glute stretch on a chair",
+        "scheme": "30 s / side",
+        "cue": "Sit on a chair, ankle across the opposite knee. Sit tall and hinge forward from the hips. If your belly blocks the fold, skip the lean and press the raised knee down instead."
+      },
+      {
+        "name": "Standing hamstring, heel on a low step, hinge at the hips",
+        "scheme": "30 s / side",
+        "cue": "Heel on a low step, leg straight, chest tall. Push your hips backward rather than rounding down toward the foot. A flat back with a small range beats a rounded back with a big one."
+      },
+      {
+        "name": "Wall calf stretch, back leg straight, heel down",
+        "scheme": "30 s / side",
+        "cue": "Hands on the wall, one leg back with the knee straight and the heel pressed down. Keep that back foot pointing forward, not turned out."
+      },
+      {
+        "name": "Lat stretch, hands on the counter edge, chest sinking",
+        "scheme": "30 s",
+        "cue": "Hands on the counter, step back until your arms are straight, then let your chest sink toward the floor between them. Keep your head between your arms."
+      },
+      {
+        "name": "Seated neck side-bend",
+        "scheme": "20 s / side",
+        "cue": "Sit tall, hold the edge of the seat with one hand, tilt your head away from that hand. Gentle — the neck needs far less force than you think."
+      }
+    ]
+  },
+  "swaps": {
+    "slot_of": {
+      "Chair sit-to-stand (DBs at chest when easy)": "squat-h",
+      "Band seated row, anchored at chest height": "hrow-h",
+      "Incline push-up, hands on a kitchen counter": "hpush-h",
+      "DB Romanian deadlift, 3 s lowering": "hinge-h",
+      "Band pull-apart": "reardelt-h",
+      "Standing Pallof press, band at chest height": "antirot-h",
+      "Split squat, hand on chair": "lunge-h",
+      "Band lat pulldown, high door anchor": "vpull-h",
+      "Seated DB shoulder press": "vpush-h",
+      "Low-step step-up, hand on a chair": "lunge-h",
+      "DB hammer curl": "biceps-h",
+      "Band triceps pushdown": "triceps-h",
+      "Suitcase hold, one DB at your side": "antilat-h",
+      "Leg press": "squat-g",
+      "Chest press machine": "hpush-g",
+      "Seated cable row": "hrow-g",
+      "Seated leg curl": "ham-g",
+      "DB lateral raise": "sidedelt-g",
+      "Incline plank, hands on a bench": "antiext-g",
+      "Goblet squat to box": "squat-g",
+      "Lat pulldown": "vpull-g",
+      "Incline DB press": "hpush-g",
+      "Hip thrust": "glute-g",
+      "Rope triceps pushdown": "triceps-g",
+      "Standing Pallof press": "antirot-g",
+      "Leg extension": "quad-g",
+      "Standing calf raise": "calf-g",
+      "Shoulder press machine": "vpush-g",
+      "DB curl": "biceps-g",
+      "Rope pushdown": "triceps-g",
+      "Hack squat or goblet squat to box": "squat-g",
+      "Lying leg curl": "ham-g",
+      "Low-box step-up with DBs": "lunge-g",
+      "Seated calf raise": "calf-g",
+      "Chest-supported DB row": "hrow-g",
+      "Cable lateral raise": "sidedelt-g",
+      "Face pull": "reardelt-g",
+      "Overhead cable extension": "triceps-g",
+      "DB Romanian deadlift": "ham-g",
+      "Hammer curl": "biceps-g"
+    },
+    "pools": {
+      "squat-h": {
+        "home": [
+          {
+            "name": "Goblet squat to box",
+            "cue": "One DB at the chest, sit back to a chair edge, then stand. Chest stays up.",
+            "muscles": "quads, glutes"
+          },
+          {
+            "name": "Split squat, hand on chair",
+            "cue": "One foot forward, drop the back knee, drive the front heel. Hand on a chair.",
+            "muscles": "quads, glutes"
+          },
+          {
+            "name": "Reverse lunge to a chair",
+            "cue": "Step back, tap the back knee down, drive up. Hold a chair if you need it.",
+            "muscles": "quads, glutes"
+          }
+        ]
+      },
+      "hrow-h": {
+        "home": [
+          {
+            "name": "Bent-over DB row, hand on chair",
+            "cue": "Hinge with a flat back, one hand on a chair, row the DB to the hip.",
+            "muscles": "upper back, lats"
+          },
+          {
+            "name": "Band bent-over row",
+            "cue": "Stand on the band, hinge flat-backed, pull both handles to the ribs.",
+            "muscles": "upper back"
+          },
+          {
+            "name": "Single-arm band row",
+            "cue": "Anchor the band low, pull the elbow back past the ribs, one side at a time.",
+            "muscles": "lats"
+          }
+        ]
+      },
+      "hpush-h": {
+        "home": [
+          {
+            "name": "Wall push-up",
+            "cue": "Same movement against a wall, the easiest version. Step further out to make it harder.",
+            "muscles": "chest, triceps"
+          },
+          {
+            "name": "Band standing chest press",
+            "cue": "Band behind the back at chest height, press both hands forward and together.",
+            "muscles": "chest"
+          },
+          {
+            "name": "Knee push-up on a counter",
+            "cue": "Hands on the counter, from the knees, lower the chest and press away.",
+            "muscles": "chest, triceps"
+          }
+        ]
+      },
+      "hinge-h": {
+        "home": [
+          {
+            "name": "DB sumo deadlift",
+            "cue": "Wide stance, one DB between the feet, hinge and stand tall, hips through at the top.",
+            "muscles": "hamstrings, glutes"
+          },
+          {
+            "name": "Band pull-through",
+            "cue": "Band anchored low behind you, hinge, then drive the hips forward against it.",
+            "muscles": "glutes, hamstrings"
+          },
+          {
+            "name": "Single-leg RDL, hand on chair",
+            "cue": "One leg, hinge and reach the DB down with a flat back. Hand on a chair.",
+            "muscles": "hamstrings, glutes"
+          }
+        ]
+      },
+      "reardelt-h": {
+        "home": [
+          {
+            "name": "Band face pull",
+            "cue": "Band at face height, pull toward the forehead, elbows high and wide.",
+            "muscles": "rear delts"
+          },
+          {
+            "name": "Hinged reverse DB fly",
+            "cue": "Hinge with a flat back, raise light DBs out to the sides, lead with the elbows.",
+            "muscles": "rear delts"
+          },
+          {
+            "name": "Band W-pull",
+            "cue": "Band at chest height, pull apart and down into a W, squeezing the blades.",
+            "muscles": "rear delts, upper back"
+          }
+        ]
+      },
+      "antirot-h": {
+        "home": [
+          {
+            "name": "Suitcase hold",
+            "cue": "Hold one DB at the side, stand tall, do not lean. The empty side does the work.",
+            "muscles": "core, obliques"
+          },
+          {
+            "name": "Band chop",
+            "cue": "High anchor, pull the band down and across the body, hips still.",
+            "muscles": "core, obliques"
+          },
+          {
+            "name": "Half-kneeling band hold",
+            "cue": "Kneel side-on, hold the band out at the chest, resist the pull.",
+            "muscles": "core"
+          }
+        ]
+      },
+      "lunge-h": {
+        "home": [
+          {
+            "name": "Reverse lunge to a chair",
+            "cue": "Step back, tap the knee, drive up. Hold a chair for balance.",
+            "muscles": "quads, glutes"
+          },
+          {
+            "name": "Low-step step-up",
+            "cue": "Whole foot on a low step, push through that heel, step down slowly.",
+            "muscles": "quads, glutes"
+          },
+          {
+            "name": "Split squat, hand on chair",
+            "cue": "Front heel drives you up, torso upright, hand on a chair.",
+            "muscles": "quads, glutes"
+          }
+        ]
+      },
+      "vpull-h": {
+        "home": [
+          {
+            "name": "Band straight-arm pulldown",
+            "cue": "Arms straight, pull the band down to the thighs from overhead.",
+            "muscles": "lats"
+          },
+          {
+            "name": "Single-arm band pulldown",
+            "cue": "One arm at a time, drive the elbow down and back.",
+            "muscles": "lats"
+          },
+          {
+            "name": "Band bent-over row",
+            "cue": "Stand on the band, hinge, pull the handles to the ribs.",
+            "muscles": "lats, upper back"
+          }
+        ]
+      },
+      "vpush-h": {
+        "home": [
+          {
+            "name": "Standing DB press",
+            "cue": "Press the DBs overhead standing, brace the abs, ribs down.",
+            "muscles": "shoulders"
+          },
+          {
+            "name": "Band overhead press",
+            "cue": "Stand on the band, press the handles overhead.",
+            "muscles": "shoulders"
+          },
+          {
+            "name": "Seated Arnold press",
+            "cue": "Start palms-in, rotate to palms-forward as you press up.",
+            "muscles": "shoulders"
+          }
+        ]
+      },
+      "biceps-h": {
+        "home": [
+          {
+            "name": "DB curl",
+            "cue": "Palms up, curl without moving the elbows, slow lowering.",
+            "muscles": "biceps"
+          },
+          {
+            "name": "Band curl",
+            "cue": "Stand on the band, curl both handles, slow return.",
+            "muscles": "biceps"
+          },
+          {
+            "name": "Cross-body hammer curl",
+            "cue": "Palms in, curl each DB across to the opposite shoulder.",
+            "muscles": "biceps, forearms"
+          }
+        ]
+      },
+      "triceps-h": {
+        "home": [
+          {
+            "name": "Seated DB overhead extension",
+            "cue": "One DB overhead, lower behind the head, elbows still.",
+            "muscles": "triceps"
+          },
+          {
+            "name": "DB kickback, hand on chair",
+            "cue": "Hinge, upper arm still, straighten the arm back.",
+            "muscles": "triceps"
+          },
+          {
+            "name": "Close-grip push-up on a counter",
+            "cue": "Hands narrow on the counter, elbows brushing the ribs.",
+            "muscles": "triceps, chest"
+          }
+        ]
+      },
+      "antilat-h": {
+        "home": [
+          {
+            "name": "Standing Pallof press",
+            "cue": "Band at the chest, press out, resist the rotation.",
+            "muscles": "core"
+          },
+          {
+            "name": "Side plank on a bench",
+            "cue": "Forearm on a bench, body straight, hold. A higher surface is easier.",
+            "muscles": "obliques"
+          },
+          {
+            "name": "Standing band side-bend hold",
+            "cue": "Hold the band at one side, stand tall, resist the pull sideways.",
+            "muscles": "obliques"
+          }
+        ]
+      },
+      "squat-g": {
+        "gym": [
+          {
+            "name": "Hack squat",
+            "cue": "Shoulders under the pads, descend under control to about 90 degrees, push the heels.",
+            "muscles": "quads"
+          },
+          {
+            "name": "Goblet squat to box",
+            "cue": "One DB at the chest, sit back to a box, then stand.",
+            "muscles": "quads, glutes"
+          },
+          {
+            "name": "Leg press",
+            "cue": "Feet mid-platform, lower to about 90 degrees, drive through the whole foot.",
+            "muscles": "quads, glutes"
+          },
+          {
+            "name": "Smith machine squat",
+            "cue": "Bar on the back, controlled descent to about 90 degrees, drive the heels.",
+            "muscles": "quads, glutes"
+          }
+        ]
+      },
+      "hpush-g": {
+        "gym": [
+          {
+            "name": "Incline DB press",
+            "cue": "Bench at about 30 degrees, press up and slightly together, stretch at the bottom.",
+            "muscles": "upper chest, triceps"
+          },
+          {
+            "name": "Flat DB press",
+            "cue": "Press the DBs over the chest, elbows about 45 degrees, control the lowering.",
+            "muscles": "chest, triceps"
+          },
+          {
+            "name": "Cable chest press",
+            "cue": "Handles at chest height, press forward and together.",
+            "muscles": "chest"
+          },
+          {
+            "name": "Chest press machine",
+            "cue": "Handles at mid-chest, press without locking hard, control back.",
+            "muscles": "chest, triceps"
+          }
+        ]
+      },
+      "hrow-g": {
+        "gym": [
+          {
+            "name": "Chest-supported DB row",
+            "cue": "Chest on an incline bench, row the elbows past the ribs.",
+            "muscles": "upper back"
+          },
+          {
+            "name": "Machine row",
+            "cue": "Chest on the pad, drive the elbows back and squeeze.",
+            "muscles": "upper back"
+          },
+          {
+            "name": "Single-arm DB row",
+            "cue": "One hand and knee on a bench, row the DB to the hip.",
+            "muscles": "lats, upper back"
+          },
+          {
+            "name": "Seated cable row",
+            "cue": "Chest tall, pull to the belly, elbows past the ribs.",
+            "muscles": "upper back, lats"
+          }
+        ]
+      },
+      "ham-g": {
+        "gym": [
+          {
+            "name": "Lying leg curl",
+            "cue": "Hips into the pad, curl fully, lower slowly.",
+            "muscles": "hamstrings"
+          },
+          {
+            "name": "Cable pull-through",
+            "cue": "Rope between the legs, hinge and drive the hips forward.",
+            "muscles": "hamstrings, glutes"
+          },
+          {
+            "name": "DB Romanian deadlift",
+            "cue": "Hips back, flat back, stop at the hamstring stretch.",
+            "muscles": "hamstrings, glutes"
+          },
+          {
+            "name": "Seated leg curl",
+            "cue": "Curl fully, slow return, hips stay down on the seat.",
+            "muscles": "hamstrings"
+          }
+        ]
+      },
+      "sidedelt-g": {
+        "gym": [
+          {
+            "name": "Cable lateral raise",
+            "cue": "Low cable, one arm, raise to shoulder height, lead with the elbow.",
+            "muscles": "side delts"
+          },
+          {
+            "name": "Machine lateral raise",
+            "cue": "Pads on the forearms, raise smoothly to shoulder height.",
+            "muscles": "side delts"
+          },
+          {
+            "name": "DB lateral raise",
+            "cue": "Light DBs, raise to shoulder height, lead with the elbow.",
+            "muscles": "side delts"
+          }
+        ]
+      },
+      "antiext-g": {
+        "gym": [
+          {
+            "name": "Side plank on a bench",
+            "cue": "Forearm on a bench, body in one line, hold. A higher surface is easier.",
+            "muscles": "obliques, core"
+          },
+          {
+            "name": "Reverse plank on a bench",
+            "cue": "Hands on a bench behind you, hips up, body straight, hold.",
+            "muscles": "core, glutes"
+          },
+          {
+            "name": "Standing plank on the wall",
+            "cue": "Forearms on the wall, walk the feet back, brace and hold.",
+            "muscles": "core"
+          }
+        ]
+      },
+      "vpull-g": {
+        "gym": [
+          {
+            "name": "Assisted pull-up machine",
+            "cue": "Neutral or wide grip, pull the chest toward the bar.",
+            "muscles": "lats"
+          },
+          {
+            "name": "Close-grip pulldown",
+            "cue": "Neutral handle, pull to the chest, elbows driving down.",
+            "muscles": "lats"
+          },
+          {
+            "name": "Single-arm cable pulldown",
+            "cue": "One arm, drive the elbow down and back.",
+            "muscles": "lats"
+          },
+          {
+            "name": "Lat pulldown",
+            "cue": "Bar to the upper chest, elbows down to the ribs.",
+            "muscles": "lats"
+          }
+        ]
+      },
+      "glute-g": {
+        "gym": [
+          {
+            "name": "Glute bridge machine",
+            "cue": "Pad on the hips, drive up, squeeze, control down.",
+            "muscles": "glutes"
+          },
+          {
+            "name": "Forty-five degree back extension",
+            "cue": "Round only at the hips, squeeze the glutes at the top.",
+            "muscles": "glutes, hamstrings"
+          },
+          {
+            "name": "Cable pull-through",
+            "cue": "Hinge and drive the hips forward against the rope.",
+            "muscles": "glutes, hamstrings"
+          },
+          {
+            "name": "Hip thrust",
+            "cue": "Shoulders on a bench, drive the heels, squeeze hard at the top.",
+            "muscles": "glutes"
+          }
+        ]
+      },
+      "triceps-g": {
+        "gym": [
+          {
+            "name": "Overhead cable extension",
+            "cue": "Face away, elbows by the ears, straighten overhead.",
+            "muscles": "triceps"
+          },
+          {
+            "name": "DB overhead extension",
+            "cue": "One DB overhead, lower behind the head, elbows still.",
+            "muscles": "triceps"
+          },
+          {
+            "name": "Close-grip machine press",
+            "cue": "Narrow hands, press and control back.",
+            "muscles": "triceps"
+          },
+          {
+            "name": "Rope triceps pushdown",
+            "cue": "Elbows pinned, push down and apart at the bottom.",
+            "muscles": "triceps"
+          }
+        ]
+      },
+      "antirot-g": {
+        "gym": [
+          {
+            "name": "Cable chop",
+            "cue": "High anchor, pull the cable down and across, hips still.",
+            "muscles": "core, obliques"
+          },
+          {
+            "name": "Suitcase carry",
+            "cue": "One DB at the side, walk tall without leaning.",
+            "muscles": "core, obliques"
+          },
+          {
+            "name": "Standing Pallof press",
+            "cue": "Cable at the chest, press out, resist the rotation.",
+            "muscles": "core"
+          }
+        ]
+      },
+      "quad-g": {
+        "gym": [
+          {
+            "name": "Leg press",
+            "cue": "Lower to about 90 degrees, push through the whole foot.",
+            "muscles": "quads, glutes"
+          },
+          {
+            "name": "Goblet squat to box",
+            "cue": "DB at the chest, sit back to a box, then stand.",
+            "muscles": "quads"
+          },
+          {
+            "name": "Split squat",
+            "cue": "Front heel drives you up, torso upright.",
+            "muscles": "quads, glutes"
+          },
+          {
+            "name": "Leg extension",
+            "cue": "Straighten fully, pause, lower slowly. Stop if the knee pinches.",
+            "muscles": "quads"
+          }
+        ]
+      },
+      "calf-g": {
+        "gym": [
+          {
+            "name": "Seated calf raise",
+            "cue": "Targets the deeper calf muscle, so go slow.",
+            "muscles": "calves"
+          },
+          {
+            "name": "Leg-press calf press",
+            "cue": "Balls of the feet on the platform, press and stretch.",
+            "muscles": "calves"
+          },
+          {
+            "name": "Single-leg calf raise",
+            "cue": "One leg, full range, hold a rail for balance.",
+            "muscles": "calves"
+          },
+          {
+            "name": "Standing calf raise",
+            "cue": "Full stretch down, full squeeze up, no bounce.",
+            "muscles": "calves"
+          }
+        ]
+      },
+      "vpush-g": {
+        "gym": [
+          {
+            "name": "Seated DB shoulder press",
+            "cue": "Back supported, press the DBs overhead, no lower-back arch.",
+            "muscles": "shoulders"
+          },
+          {
+            "name": "Cable shoulder press",
+            "cue": "Press the handles overhead, brace the abs.",
+            "muscles": "shoulders"
+          },
+          {
+            "name": "Seated Arnold press",
+            "cue": "Rotate palms-in to out as you press up.",
+            "muscles": "shoulders"
+          },
+          {
+            "name": "Shoulder press machine",
+            "cue": "Handles at shoulder height, press overhead, ribs down.",
+            "muscles": "shoulders"
+          }
+        ]
+      },
+      "biceps-g": {
+        "gym": [
+          {
+            "name": "Cable curl",
+            "cue": "Constant tension, curl and control back.",
+            "muscles": "biceps"
+          },
+          {
+            "name": "Hammer curl",
+            "cue": "Palms facing in, elbows tucked, no swing.",
+            "muscles": "biceps, forearms"
+          },
+          {
+            "name": "Machine preacher curl",
+            "cue": "Arms on the pad, curl through the full range.",
+            "muscles": "biceps"
+          },
+          {
+            "name": "DB curl",
+            "cue": "Elbows still, palms up, slow lowering.",
+            "muscles": "biceps"
+          }
+        ]
+      },
+      "lunge-g": {
+        "gym": [
+          {
+            "name": "Split squat",
+            "cue": "Drop the back knee straight down, drive the front heel.",
+            "muscles": "quads, glutes"
+          },
+          {
+            "name": "Reverse lunge",
+            "cue": "Step back, tap the knee, drive up.",
+            "muscles": "quads, glutes"
+          },
+          {
+            "name": "Walking lunge",
+            "cue": "Step and lunge, alternate legs, torso tall.",
+            "muscles": "quads, glutes"
+          },
+          {
+            "name": "Low-box step-up with DBs",
+            "cue": "Whole foot on the box, push that heel, step down slowly.",
+            "muscles": "quads, glutes"
+          }
+        ]
+      },
+      "reardelt-g": {
+        "gym": [
+          {
+            "name": "Reverse pec-deck",
+            "cue": "Chest on the pad, open the arms back, squeeze the blades.",
+            "muscles": "rear delts"
+          },
+          {
+            "name": "Hinged reverse DB fly",
+            "cue": "Hinge with a flat back, raise light DBs out to the sides.",
+            "muscles": "rear delts"
+          },
+          {
+            "name": "Band pull-apart",
+            "cue": "Arms straight, pull the band apart to the chest.",
+            "muscles": "rear delts, upper back"
+          },
+          {
+            "name": "Face pull",
+            "cue": "Rope at face height, pull to the forehead, elbows high and wide.",
+            "muscles": "rear delts"
+          }
+        ]
+      }
+    }
+  }
+}

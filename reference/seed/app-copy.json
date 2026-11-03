@@ -1,0 +1,26 @@
+{
+  "_about": "Small fixed copy the plan uses: the minimum acceptable day by session type, and the setup equipment options.",
+  "session_floors": {
+    "lift": "The warm-up plus the first two exercises. If you still want to leave after that, leave — and it still counts.",
+    "cardio": "Ten minutes of walking. Not the target, not the plan. Ten minutes.",
+    "rest": "Water, protein, a short walk. That is the whole job today."
+  },
+  "equipment_options": [
+    {
+      "id": "gym",
+      "label": "A gym"
+    },
+    {
+      "id": "home",
+      "label": "Home: dumbbells and bands"
+    },
+    {
+      "id": "body",
+      "label": "No equipment"
+    },
+    {
+      "id": "homefirst",
+      "label": "Home now, gym later"
+    }
+  ]
+}

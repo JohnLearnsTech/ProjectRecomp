@@ -1,0 +1,27 @@
+{
+  "w": 80.6,
+  "steps": 9120,
+  "sleep": 7.25,
+  "note": "Left knee fine today.",
+  "kcal": 1607,
+  "protein": 162,
+  "food": [
+    { "label": "Egg, whole, boiled (2 × 43 g)", "raw": "2 eggs", "kcal": 134, "p": 10.8, "c": 1, "f": 9.2, "fib": 0, "src": "table", "meal": 1 },
+    { "label": "Oats, dry (40 g)", "raw": "40 g oats", "kcal": 152, "p": 5.2, "c": 26.8, "f": 2.8, "fib": 4, "src": "table", "meal": 1 },
+    { "label": "Grilled halloumi wrap (220 g)", "raw": "grilled halloumi wrap", "kcal": 560, "p": 28, "c": 52, "f": 26, "fib": 4, "src": "claude", "meal": 2 },
+    { "label": "Greek yogurt, 0% fat (200 g)", "raw": "200 g greek yogurt", "kcal": 118, "p": 20, "c": 7.2, "f": 0.8, "fib": 0, "src": "table", "meal": 3 },
+    { "label": "Demo protein bar (60 g \u2014 from label)", "raw": "Demo protein bar", "kcal": 230, "p": 20, "c": 22, "f": 8, "fib": 5, "src": "label", "meal": 3 },
+    { "label": "Chicken breast, cooked (250 g)", "raw": "250 g chicken breast", "kcal": 412.5, "p": 77.5, "c": 0, "f": 9, "fib": 0, "src": "table", "meal": 4 },
+    { "label": "Mystery stew", "raw": "mystery stew", "kcal": 0, "p": 0, "c": 0, "f": 0, "fib": 0, "src": "none", "meal": 4 }
+  ],
+  "sets": {
+    "Leg press": [ { "w": 80, "r": 12 }, { "w": 80, "r": 11 }, { "w": 80, "r": 10 } ],
+    "Chest press machine": [ { "w": 35, "r": 12 }, { "w": 35, "r": 10 } ],
+    "Incline plank, hands on a bench": [ { "r": 30 }, { "r": 25 } ]
+  },
+  "habits": { "walk": 25, "gaming": 1.5 },
+  "hlog": {
+    "gaming": [ { "s": 1790348400000, "e": 1790353800000 } ]
+  },
+  "checks": { "water": true, "protein": true, "mobility": true, "train": true, "sleep": false, "u_m3a1b2c417": true }
+}

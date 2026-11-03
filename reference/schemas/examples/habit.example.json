@@ -1,0 +1,8 @@
+{
+  "id": "hm3a0k2c3",
+  "name": "Read",
+  "type": "build",
+  "unit": "pages",
+  "goal": 10,
+  "step": 5
+}
