@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as P from '../src/domain/plan';
 import * as F from '../src/domain/food';
+import * as O from '../src/domain/onboarding';
 import type { Goal, Profile } from '../src/domain/types';
 
 const html = readFileSync(new URL('../../reference/app/recomp.html', import.meta.url), 'utf8');
@@ -39,7 +40,7 @@ const names = ['d', 'key', 'addDays', 'diffDays', 'localKey', 'todayKey', 'trimN
   'applyGoal', 'LIFTS_DEFAULT', 'NAMES_DEFAULT', 'LEGACY_KEYS', 'slotL', 'slotC', 'slotR', 'defaultPlan', 'makePlan', 'homeFirstPlan', 'normPlan', 'applyPlan',
   'plan', 'WHEN_RANK', 'whenRank', 'checkList', 'kcalFloor', 'proteinFloor',
   'normFood', 'foodRe', 'FOODS', 'buildFoodIndex', 'parseItem', 'MODIFIER', 'matchFood', 'fromEntry', 'DISH_RX', 'WITH_RX', 'isDish', 'joinDish', 'splitItems',
-  'parseGrams', 'canonName', 'portionOf', 'scaleEst', 'needsNumbers', 'shortFoodLabel', 'foodName', 'fqQty'];
+  'parseGrams', 'canonName', 'calcTargets', 'portionOf', 'scaleEst', 'needsNumbers', 'shortFoodLabel', 'foodName', 'fqQty'];
 const code = names.map(src).join('\n') + `
   var PROFILE={}, goals=[], G=null, entries={}, PL=null, planSaved=null, LIFTS={}, NAMES={}, PHASES, userChecks=[], hiddenChecks={};
   var START, END, DEPART, TOTAL, WEEKS_N, START_KG, TARGET_KG, PROJ, PHASE_W, MAINT_W, LABS, TASKS, TSTART, TTOTAL, TWEEKS, TPHASE_W, TMAINT_W, FOODS_ALL=[];
@@ -152,4 +153,16 @@ test('label helpers match', () => {
   }
   for (const r of [{ src: 'none', kcal: 1, p: 1 }, { src: 'claude', kcal: 0, p: 0 }, { src: 'claude', kcal: 5, p: 0 }, { src: undefined, kcal: 0, p: 0 }, { src: 'table', kcal: 0, p: 0 }] as any[])
     assert.equal(F.needsNumbers(r), ctx.needsNumbers(r));
+});
+
+test('calcTargets matches across sexes, goals, sizes, steps and days', () => {
+  let n = 0;
+  for (const sex of ['female', 'male', '']) for (const type of ['lose', 'recomp', 'muscle', 'health'])
+    for (const [weight, height, age] of [[30, 120, 13], [52, 155, 24], [82, 178, 31], [118, 190, 58], [350, 230, 100], ['', '', '']])
+      for (const steps of [3000, 5000, 8000, 11000, undefined]) for (const days of [2, 3, 5, undefined]) for (const weeks of [8, 12, 24, undefined]) {
+        const a = { sex, type, weight, height, age, steps, days, weeks } as any;
+        assert.deepEqual(O.calcTargets(a), clone(ctx.calcTargets(clone(a))), JSON.stringify(a));
+        n++;
+      }
+  assert.ok(n > 5000);
 });

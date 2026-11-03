@@ -221,3 +221,23 @@ export async function lookupCache(keys: string[]) {
 export const upsertUserCache = async (row: CacheRow) => {
   must(await supabase.from('food_cache_user').upsert(row, { onConflict: 'user_id,key' }));
 };
+
+// ── Setup ──
+export type OnboardingPayload = {
+  day: string; weight_kg: number;
+  goal: { name: string; type: GoalType; due_date: string; target_kg: number; kcal: number; protein_g: number; steps: number; home_first: boolean };
+  profile: { name: string; sex: Sex; age: number; height_cm: number; cuisine: string; equipment: 'gym' | 'home' | 'body'; training_days: number; joint_friendly: boolean };
+  habits: { name: string; type: 'build' | 'limit'; unit: string; goal: number; step: number }[];
+};
+/** One transaction: closes the active goal, starts the new one, updates profile, habits, today's weight, plan. */
+export const finishOnboarding = async (p: OnboardingPayload) => must(await supabase.rpc('finish_onboarding', { p })) as string;
+
+/** Latest goal of any status: r19 activeGoal() falls back to the last goal when none is live. */
+export const getLatestGoal = async () =>
+  must(await supabase.from('goals').select('*').order('sort', { ascending: false }).limit(1).maybeSingle()) as Goal | null;
+
+/** r19 latestWeight(): last weigh-in inside a window. */
+export const latestWeightIn = async (from: string, to: string) => {
+  const r = must(await supabase.from('day_logs').select('weight_kg').gte('date', from).lte('date', to).not('weight_kg', 'is', null).order('date', { ascending: false }).limit(1)) as { weight_kg: number }[];
+  return r[0]?.weight_kg ?? null;
+};

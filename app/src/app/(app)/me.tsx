@@ -1,8 +1,10 @@
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
 import { clearApiKey, getApiKey, maskKey, saveApiKey } from '../../lib/apiKey';
 import { signOut, useAuth } from '../../lib/auth';
 import { getProfile, updateProfile, type Sex } from '../../lib/db';
+import { useRecomp } from '../../lib/recomp';
 import { useTheme } from '../../lib/theme';
 
 // Me: About you and Settings > AI for now. Plan, Targets, Goal, Notes, Reminders
@@ -14,6 +16,7 @@ const SEXES: [Sex, string][] = [['female', 'Female'], ['male', 'Male'], ['unspec
 export default function Me() {
   const { c, s } = useTheme();
   const { session } = useAuth();
+  const { reload } = useRecomp();
   const [f, setF] = useState({ name: '', age: '', height: '', cuisine: '', water: '', rules: '' });
   const [sex, setSex] = useState<Sex>('unspecified');
   const [joint, setJoint] = useState(false);
@@ -51,7 +54,7 @@ export default function Me() {
       water_l: inRange(water, 1, 6),
       joint_friendly: joint,
       rules: f.rules.trim().slice(0, 1200) || null,
-    }), 'Saved.');
+    }).then(reload), 'Saved.');
   };
 
   const input = (k: keyof typeof f, label: string, numeric = false, multiline = false) => (
@@ -141,6 +144,14 @@ export default function Me() {
       </View>
 
       {msg && <Text style={msg.err ? s.error : s.label}>{msg.t}</Text>}
+
+      <View style={s.card}>
+        <Text style={s.cardTitle}>Setup</Text>
+        <Text style={s.body2}>Answer the setup questions again to start a new goal with fresh targets and the default plan for your answers.</Text>
+        <Pressable style={s.outline} onPress={() => router.push({ pathname: '/onboarding', params: { again: '1' } })}>
+          <Text style={s.outlineText}>Run setup again</Text>
+        </Pressable>
+      </View>
 
       <Text style={[s.label, { textAlign: 'center' }]}>Signed in as {session?.user.email}</Text>
       <Pressable style={s.outline} onPress={signOut}>

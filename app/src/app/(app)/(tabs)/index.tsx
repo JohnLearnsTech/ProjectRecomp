@@ -16,7 +16,7 @@ import { font, useTheme } from '../../../lib/theme';
 const n = (x: number) => Math.round(x).toLocaleString('en-IN');
 
 export default function Today() {
-  const { engine, day, maxDay, rev, reload, ready, error } = useRecomp();
+  const { engine, day, maxDay, rev, reload, error } = useRecomp();
   const { c, s } = useTheme('move');
   const h = useHistory();
   const [log, setLog] = useState<db.DayLog | null>(null);
@@ -50,15 +50,6 @@ export default function Today() {
       <ScrollView contentContainerStyle={s.screen} refreshControl={<RefreshControl refreshing={false} onRefresh={reload} />}>
         <ScreenHeader title="Today" />
         {error && <Text style={s.error}>{error}</Text>}
-
-        {G.provisional && ready && (
-          <View style={[s.card, { backgroundColor: c.cat.move.soft }]}>
-            <Text style={s.section}>Using starter targets</Text>
-            <Text style={s.body2}>
-              No goal is set yet, so Recomp uses 2,000 kcal, 120 g protein and 8,000 steps on a 12-week plan from today. Setup arrives with the next build.
-            </Text>
-          </View>
-        )}
 
         <View style={[s.card, { borderTopWidth: 4, borderTopColor: c.cat.move.fill }]}>
           {!P.inRange ? (

@@ -57,7 +57,9 @@ export function RecompProvider({ children }: { children: ReactNode }) {
 
   const reload = useCallback(async () => {
     try {
-      const [p, g, foods, planRow] = await Promise.all([db.getProfile(), db.getActiveGoal(), db.listPersonalFoods(), db.getCurrentPlan()]);
+      const [p, active, foods, planRow] = await Promise.all([db.getProfile(), db.getActiveGoal(), db.listPersonalFoods(), db.getCurrentPlan()]);
+      // r19 activeGoal(): the live goal, else the last goal, else a provisional one (which opens setup).
+      const g = active ?? (await db.getLatestGoal());
       const goal = g ? toDomainGoal(g, await db.listMilestones(g.id)) : provisionalGoal();
       const profile = toDomainProfile(p, foods);
       const firstW = goal.startKg ? null : await db.firstWeightFrom(goal.start);

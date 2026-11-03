@@ -60,9 +60,16 @@ Set up custom SMTP (e.g. Resend free tier) in Supabase Auth. The built-in sender
 
 Train and Progress are placeholders until steps 3 and 4.
 
+## Setup (onboarding, done)
+
+r19's wizard: a hero, then About you, Goal, Training, Life and a summary with calories, protein and steps from `calcTargets` (Mifflin-St Jeor, ported and covered by the parity test across more than 5,000 inputs). It opens on its own when an account has no goal; Me has "Run setup again", which starts at step 1 and can be closed. Screenshots in `docs/onboarding/`.
+
+Finishing calls `finish_onboarding` (`supabase/migrations/0002_onboarding.sql`), one transaction that closes the active goal at its latest weigh-in, creates the new goal, updates the profile, adds r19's seed habits on a first run plus up to three picks that aren't already there, logs today's weight unless one exists, and returns the plan to the default. Tested live: first run, a re-run, isolation between users, anonymous calls refused, and an invalid setup rolling back completely. The same migration raises the goal calorie cap to 12,000, because `calcTargets` can exceed 6,000 for very large "build muscle" users that r19 accepts.
+
+With no active goal the app now uses the most recent goal, as r19's `activeGoal()` does, instead of the starter goal.
+
 ## Known gaps
 
-- **No onboarding yet.** Without a goal row the app runs on r19's provisional goal (2,000 kcal, 120 g protein, 8,000 steps, 12 weeks from today), and Today says so. Setup (`calcTargets`, the wizard) is not in the build order but blocks real use by friends.
 - The food guides (Protein first, Eating out, ...) and the 7-day average line on the chart are not ported yet.
 - "Estimate with Claude" waits for the connector (step 6) or a pasted key (step 5).
 
