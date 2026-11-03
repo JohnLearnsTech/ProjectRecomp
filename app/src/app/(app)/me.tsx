@@ -97,7 +97,7 @@ export default function Me() {
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Text style={s.body}>Joint-friendly exercises</Text>
-          <Switch value={joint} onValueChange={setJoint} trackColor={{ true: c.accent }} />
+          <Switch value={joint} onValueChange={setJoint} trackColor={{ true: c.cat.move.fill }} />
         </View>
         {input('rules', 'Your rules for Claude (one per line)', false, true)}
         <Pressable style={s.primary} onPress={saveAbout}>

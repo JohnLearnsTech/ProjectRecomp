@@ -1,0 +1,204 @@
+// Food pipeline, ported from recomp.html r19 (05-business-logic §5).
+import foodsJson from './data/foods.json';
+import { trimNum } from './dates';
+import type { FoodDef, FoodRow } from './types';
+
+export const FOODS = foodsJson as FoodDef[];
+
+export function normFood(s: string) {
+  return String(s || '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\b(with|and|of|in|a|an|the)\b/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+
+type Indexed = FoodDef & { re: { kw: string; len: number; rx: RegExp }[] };
+const reEsc = (s: string) => s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+const foodRe = (f: FoodDef): Indexed => ({
+  ...f,
+  re: f.k.map((kw) => { const n = normFood(kw); return { kw: n, len: n.length, rx: new RegExp('\\b' + reEsc(n) + 's?\\b', 'i') }; }),
+});
+const BUILTIN = FOODS.map(foodRe);
+
+/** User foods first (they win ties), then the built-in table. */
+export function buildFoodIndex(myFoods: FoodDef[] = []): Indexed[] {
+  const mine = myFoods.filter((f) => f && f.n && Array.isArray(f.k) && f.k.length && Array.isArray(f.v) && f.v.length === 5 && (f.per === 'unit' || f.per === '100g') && +f.g > 0)
+    .map((f) => foodRe({ n: String(f.n), k: f.k.map(String), per: f.per, g: +f.g, v: f.v.map(Number) as FoodDef['v'] }));
+  return mine.concat(BUILTIN);
+}
+
+export type Item = { grams: number | null; count: number | null; name: string; raw: string };
+export function parseItem(raw: string): Item {
+  let s = ' ' + raw.trim().replace(/\s+/g, ' ') + ' ', grams: number | null = null, count: number | null = null;
+  const mg = s.match(/(\d+(?:\.\d+)?)\s*(kgs?|gms?|grams?|g|ml|litres?|l)\b/i);
+  if (mg) {
+    const v = parseFloat(mg[1]), u = mg[2].toLowerCase();
+    grams = u.charAt(0) === 'k' || u.charAt(0) === 'l' ? v * 1000 : v;
+    s = s.replace(mg[0], ' ');
+  }
+  const mc = s.match(/(?:^|\s)(\d+(?:\.\d+)?|half|one|two|three|four)(?=\s)/i);
+  if (mc) {
+    const w = mc[1].toLowerCase();
+    count = ({ half: 0.5, one: 1, two: 2, three: 3, four: 4 } as Record<string, number>)[w] || parseFloat(w);
+    s = s.replace(mc[0], ' ');
+  }
+  s = s.replace(/\b(katoris?|bowls?|cups?|slices?|pieces?|pcs?|scoops?|tsps?|tbsps?|teaspoons?|tablespoons?|plates?|glass(?:es)?|bottles?|pegs?|nos?|of|a|an|small|medium|large|approx|about|around)\b/gi, ' ');
+  return { grams, count, name: s.replace(/\s+/g, ' ').trim(), raw: raw.trim() };
+}
+
+const MODIFIER = /^(raw|cooked|uncooked|boiled|grilled|roasted|baked|steamed|air|fried|airfried|pan|plain|fresh|leftover|skinless|home|homemade|hot|cold|warm|chopped|sliced|diced|whole|light|lightly|soft|dry|wet|extra|and|with|for|from|the|my|some)$/i;
+
+/** Longest keyword wins; any leftover word that is not a modifier or part of the entry's name means no match. */
+export function matchFood(name0: string, index: Indexed[] = BUILTIN): FoodDef | null {
+  const name = normFood(name0);
+  let best: Indexed | null = null, bestKw = '', bestLen = 0;
+  for (const f of index) for (const e of f.re) if (e.len > bestLen && e.rx.test(name)) { bestLen = e.len; best = f; bestKw = e.kw; }
+  if (!best) return null;
+  const rest = name.replace(new RegExp('\\b' + reEsc(bestKw) + 's?\\b', 'ig'), ' ');
+  const ownWords = best.n.toLowerCase().split(/[^a-z]+/).filter(Boolean);
+  const over = rest.split(/[^A-Za-z]+/).filter((w0) => { const w = w0.toLowerCase(); return w.length > 2 && !MODIFIER.test(w) && ownWords.indexOf(w) < 0; });
+  if (over.length) return null;
+  const { re, ...def } = best;
+  return def;
+}
+
+export function fromEntry(it: Item, f: FoodDef): FoodRow & { grams: number } {
+  let mult: number, label: string, assumed = false, grams: number;
+  if (f.per === 'unit') {
+    if (it.grams != null) { mult = it.grams / f.g; label = f.n + ' (' + trimNum(it.grams) + ' g)'; grams = it.grams; }
+    else {
+      const c = it.count != null ? it.count : 1; if (it.count == null) assumed = true;
+      mult = c; label = f.n + ' (' + trimNum(c) + ' × ' + f.g + ' g)'; grams = c * f.g;
+    }
+  } else {
+    if (it.grams != null) grams = it.grams;
+    else if (it.count != null) grams = it.count * f.g;
+    else { grams = f.g; assumed = true; }
+    mult = grams / 100;
+    label = f.n + ' (' + (it.count != null && it.count !== 1 && it.grams == null ? trimNum(it.count) + ' × ' + f.g + ' g = ' : '') + trimNum(grams) + ' g)';
+  }
+  return { label: label + (assumed ? ' · assumed serving' : ''), kcal: f.v[0] * mult, p: f.v[1] * mult, c: f.v[2] * mult, f: f.v[3] * mult, fib: f.v[4] * mult, src: 'table', raw: it.raw, grams };
+}
+
+const DISH_RX = /\b(salads?|bowls?|sandwich(es)?|subs?|wraps?|rolls?|smoothies?|shakes?|soups?|burritos?|poke|omelett?es?|pasta|noodles|stir[\s-]?fry|platters?|thalis?|parfaits?|oats|oatmeal|porridge|muesli|granola|burgers?|tacos?|quesadillas?|pizzas?|frankies?|kathi)\b/i;
+const WITH_RX = /\bwith\b|\bmade (?:with|of)\b|\bcontain(?:s|ing)\b|\bincluding\b|:/i;
+export const isDish = (desc: string) => DISH_RX.test(String(desc || '')) && WITH_RX.test(String(desc || ''));
+
+export function joinDish(parts: string[]): string[] {
+  for (let i = 0; i < parts.length; i++) {
+    const pt = parts[i];
+    if (DISH_RX.test(pt) && WITH_RX.test(pt) && i < parts.length - 1) {
+      const rest = parts.slice(i + 1).map((x) => x.trim()).filter(Boolean);
+      const ci = pt.indexOf(':');
+      const whole = ci >= 0
+        ? pt.slice(0, ci).trim() + ' with ' + [pt.slice(ci + 1).trim()].concat(rest).filter(Boolean).join(', ')
+        : pt.trim() + ', ' + rest.join(', ');
+      return parts.slice(0, i).concat([whole]);
+    }
+  }
+  return parts;
+}
+
+export function splitItems(raw: string): string[] {
+  const out: string[] = []; let buf = '', depth = 0, i = 0; const n = raw.length;
+  const word = (c: string) => /[A-Za-z0-9]/.test(c);
+  while (i < n) {
+    const ch = raw[i];
+    if (ch === '(' || ch === '[') { depth++; buf += ch; i++; continue; }
+    if (ch === ')' || ch === ']') { if (depth > 0) depth--; buf += ch; i++; continue; }
+    if (depth === 0) {
+      if (ch === ',' || ch === ';' || ch === '\n') { out.push(buf); buf = ''; i++; continue; }
+      if (ch === '.' && /\s/.test(raw.charAt(i + 1) || ' ')) { out.push(buf); buf = ''; i++; continue; }
+      if ((ch === 'a' || ch === 'A') && /^and$/i.test(raw.substr(i, 3))) {
+        const before = i === 0 ? ' ' : raw[i - 1], after = i + 3 < n ? raw[i + 3] : ' ';
+        if (!word(before) && !word(after)) { out.push(buf); buf = ''; i += 3; continue; }
+      }
+    }
+    buf += ch; i++;
+  }
+  out.push(buf);
+  return out.map((s) => s.trim()).filter(Boolean);
+}
+
+/** addFood's split: a dish only absorbs the items on its own line. */
+export const splitFoodInput = (raw: string) =>
+  raw.split(/\n+/).filter((l) => l.trim()).flatMap((line) => joinDish(splitItems(line)));
+
+export function parseGrams(desc: string) {
+  const m = String(desc || '').match(/(\d+(?:\.\d+)?)\s*(kg|kgs|g|gm|gms|grams?|ml|l|litres?|liters?)\b/i);
+  if (!m) return null;
+  let n = parseFloat(m[1]); const u = m[2].toLowerCase();
+  if (/^(kg|kgs|l|litres?|liters?)$/.test(u)) n *= 1000;
+  return n > 0 ? n : null;
+}
+
+/** Estimate-cache key body: quantity-free, word-order-free. Key = "v2:" + canonName. */
+export function canonName(desc: string) {
+  let s = String(desc || '').toLowerCase();
+  s = s.replace(/\b\d+(?:\.\d+)?\s*(?:kg|kgs|g|gm|gms|grams?|ml|l|litres?|liters?|katori|cups?|glass(?:es)?|tbsp|tsp|scoops?|pieces?|pcs?|slices?|nos?|packets?|bars?|sticks?|bowls?|plates?)\b/g, ' ');
+  s = s.replace(/\bfrom\b[\s\S]*$/, '');
+  s = s.replace(/^\s*(?:\d+(?:\.\d+)?|half|one|two|three|four)\s*(?:x|×)?\s+/, '');
+  s = s.replace(/[^a-z0-9 ]+/g, ' ');
+  const STOP = /^(cooked|uncooked|homemade|home|made|plain|fresh|leftover|hot|cold|warm|some|a|an|the|of|with|and|in|assorted|approx|est|typical|serving|servings|large|small|medium|regular|each|whole)$/;
+  return s.split(/\s+/).filter((w) => w && !STOP.test(w)).sort().join(' ');
+}
+export const cacheKeyOf = (desc: string) => { const c = canonName(desc); return c ? 'v2:' + c : null; };
+
+export type CacheRec = { name: string; serving_g: number; per100: { kcal: number; p: number; c: number; f: number; fib: number }; by?: 'you' | null; unitOnly?: boolean };
+export function portionOf(desc: string, rec: CacheRec) {
+  if (isDish(desc)) return { g: rec.serving_g || 100, n: null as number | null };
+  const g = parseGrams(desc); if (g) return { g, n: null as number | null };
+  const it = parseItem(String(desc || '')), n = it.count != null && it.count > 0 ? it.count : null;
+  return { g: (n || 1) * (rec.serving_g || 100), n };
+}
+export function scaleEst(rec: CacheRec, grams: number, n: number | null) {
+  const m = grams / 100, p = rec.per100;
+  const label = n ? (rec.unitOnly ? rec.name + ' (' + trimNum(n) + ')' : rec.name + ' (' + trimNum(n) + ' × ' + trimNum(rec.serving_g || 100) + ' g)')
+    : rec.name + ' (' + trimNum(grams) + ' g)';
+  return { label, by: rec.by || null, kcal: Math.round(p.kcal * m), p: +(p.p * m).toFixed(1), c: +(p.c * m).toFixed(1), f: +(p.f * m).toFixed(1), fib: +(p.fib * m).toFixed(1) };
+}
+
+export function needsNumbers(r: Pick<FoodRow, 'src' | 'kcal' | 'p'> | null) {
+  if (!r) return false;
+  if (r.src === 'table' || r.src === 'you' || r.src === 'label' || r.src === 'pending') return false;
+  return r.src === 'none' || (!+r.kcal && !+r.p);
+}
+
+export const shortFoodLabel = (t: string) => String(t || '').replace(/\s*\(([^()]*?)\s+[—–-]\s+[^()]*\)/g, ' ($1)').replace(/\s{2,}/g, ' ').trim();
+export const foodName = (label: string) => String(label || '').replace(/\s*\(.*$/, '').trim();
+export function fqQty(label: string) {
+  const m = String(label || '').match(/\(([^()]*)\)\s*$/); if (!m) return '';
+  return m[1].split(/\s+[—–-]\s+/)[0].replace(/\s*·\s*assumed serving/, '').replace(/, from photo/, '').trim();
+}
+export const mealSig = (rows: Pick<FoodRow, 'label'>[]) => rows.map((r) => shortFoodLabel(r.label)).join(' + ');
+export const mealKcal = (rows: Pick<FoodRow, 'kcal'>[]) => Math.round(rows.reduce((t, r) => t + (+r.kcal || 0), 0));
+
+/** Consecutive rows sharing a meal number, skipping rows with no numbers and legacy unnumbered rows. */
+export function mealsOf<R extends FoodRow>(rows: R[]): { m: number; rows: R[] }[] {
+  const out: { m: number; rows: R[] }[] = []; let cur: { m: number; rows: R[] } | null = null;
+  rows.forEach((r) => {
+    if (!r || r.src === 'pending' || needsNumbers(r) || r.meal == null) return;
+    if (!cur || cur.m !== r.meal) { cur = { m: r.meal, rows: [] }; out.push(cur); }
+    cur.rows.push(r);
+  });
+  return out;
+}
+
+/** Meals over the given days (newest first), most repeated first. days: [dayKey, rows][] */
+export function recentMeals<R extends FoodRow>(days: [string, R[]][]) {
+  const map: Record<string, { sig: string; rows: R[]; n: number; last: string }> = {};
+  days.forEach(([k, rows]) => {
+    mealsOf(rows).forEach((m) => {
+      const sig = mealSig(m.rows);
+      const o = map[sig] || (map[sig] = { sig, rows: m.rows, n: 0, last: k });
+      o.n++;
+    });
+  });
+  return Object.values(map).sort((a, b) => b.n - a.n || (a.last < b.last ? 1 : -1));
+}
+
+export function foodTotals(rows: Pick<FoodRow, 'kcal' | 'p' | 'c' | 'f' | 'fib'>[]) {
+  const t = { kcal: 0, p: 0, c: 0, f: 0, fib: 0 };
+  rows.forEach((r) => { t.kcal += +r.kcal || 0; t.p += +r.p || 0; t.c += +r.c || 0; t.f += +r.f || 0; t.fib += +r.fib || 0; });
+  return t;
+}

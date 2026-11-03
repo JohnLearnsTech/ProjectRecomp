@@ -43,6 +43,29 @@ cd app && npx eas-cli@latest init && npx eas-cli@latest build -p android --profi
 
 Set up custom SMTP (e.g. Resend free tier) in Supabase Auth. The built-in sender allows only a few emails per hour project-wide, and free-tier projects can't edit email templates without it.
 
-## Next (build plan step 2)
+## Build step 2: Today and Food (done)
 
-Port the domain module (`plan(k)`, `normPlan`, default plans, `canonName`, food matching) from `recomp.html` into `app/src/domain/`, load the font and Multi palette, then Today and Food screens with `reference/seed/foods.json`.
+**Domain module** (`app/src/domain/`): a TypeScript port of r19's plan engine (`phaseBounds`, timelines, `makePlan`, `homeFirstPlan`, `normPlan`, `plan(k)`, `checkList`, floors, weight projection) and food pipeline (`splitItems`, `joinDish`, `parseItem`, `matchFood`, `fromEntry`, `canonName`, `portionOf`, `scaleEst`, meal grouping). The web app keeps these in globals; here `makeEngine(goal, profile, savedPlan)` takes them explicitly. Data tables (74 foods, programs, quotes, warm-ups) are extracted from `recomp.html` by `scripts/extract-r19-data.mjs`, because `reference/seed/foods.json` is the older r15 table and the app wins.
+
+**Parity test** (`npm test` in `app/`): runs the web app's own functions, pulled from `recomp.html`, beside the port on the same inputs. It covers 60 phase lengths, over 16,000 plan days across goal and profile combinations, plan validation on mangled input, and a corpus of about 185 food phrases. Deliberate mutations to the port make it fail.
+
+**Screens** (`docs/step2/` has screenshots):
+- Bottom bar (Today, Food, black +, Train, Progress) with the Multi palette and Jost. Me opens from the avatar.
+- Header with days to the goal, the day line and a swipeable week strip. Dots score workout and food; habits join in step 4.
+- Today: hero card (day and phase, session, Start session, kcal left, protein to go, steps of target), quote card with goal ring and "your own evidence" chips.
+- Quick-log sheet from +: weight, steps, sleep, waist on the waist weekday.
+- Food: text entry through the r19 pipeline, one-tap saved and recent meals, calorie and protein bars, macro line, the food table grouped by meal with subtotals, row editing, Save meal, and the calories-vs-target chart (calories, protein, carbs, fat, fiber over 1W, 1M, 3M or the goal).
+
+**Food without a key**: your foods and the built-in table fill in at once, then your earlier corrections (`food_cache_user`) and the shared cache. Anything else is saved with no numbers (`needs_estimate`) and shown as "no numbers". Editing a row's numbers marks it "yours" and remembers it per 100 g (or per piece with no weight), so the same food fills in next time.
+
+Train and Progress are placeholders until steps 3 and 4.
+
+## Known gaps
+
+- **No onboarding yet.** Without a goal row the app runs on r19's provisional goal (2,000 kcal, 120 g protein, 8,000 steps, 12 weeks from today), and Today says so. Setup (`calcTargets`, the wizard) is not in the build order but blocks real use by friends.
+- The food guides (Protein first, Eating out, ...) and the 7-day average line on the chart are not ported yet.
+- "Estimate with Claude" waits for the connector (step 6) or a pasted key (step 5).
+
+## Next (build plan step 3)
+
+Train and session mode: exercise list with set grids, swaps, progression hints, rest timer, using `set_entries`.

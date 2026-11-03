@@ -1,0 +1,27 @@
+// r19 quote rotation (05-business-logic §7.5): a shuffled deck that never repeats the current
+// quote, with the most recently shown ones pushed to the back.
+import quotesJson from './data/quotes.json';
+
+export type Quote = { q: string; by: string };
+export const QUOTES = quotesJson as Quote[];
+
+let current = Math.floor(Math.random() * QUOTES.length);
+const shown: number[] = [current];
+let deck: number[] = [];
+
+function refill() {
+  const rest = QUOTES.map((_, i) => i).filter((i) => i !== current);
+  for (let i = rest.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [rest[i], rest[j]] = [rest[j], rest[i]]; }
+  const recentN = Math.min(10, Math.floor(QUOTES.length / 4));
+  const recent = shown.slice(-recentN - 1, -1);
+  // Recent ones go to the front; the deck is drawn from the back, so they come last.
+  deck = recent.filter((i) => rest.includes(i)).concat(rest.filter((i) => !recent.includes(i)));
+}
+
+export const currentQuote = () => QUOTES[current];
+export function nextQuote() {
+  if (!deck.length) refill();
+  current = deck.pop()!;
+  shown.push(current); if (shown.length > 40) shown.shift();
+  return QUOTES[current];
+}

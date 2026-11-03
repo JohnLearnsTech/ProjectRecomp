@@ -1,3 +1,4 @@
+import { Jost_400Regular, Jost_500Medium, Jost_600SemiBold, Jost_700Bold, useFonts } from '@expo-google-fonts/jost';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
@@ -7,10 +8,11 @@ import { useTheme } from '../lib/theme';
 function RootStack() {
   const { session, loading } = useAuth();
   const { c } = useTheme();
-  if (loading) {
+  const [fontsLoaded, fontError] = useFonts({ Jost_400Regular, Jost_500Medium, Jost_600SemiBold, Jost_700Bold });
+  if (loading || (!fontsLoaded && !fontError)) {
     return (
       <View style={{ flex: 1, backgroundColor: c.paper, justifyContent: 'center' }}>
-        <ActivityIndicator color={c.accentInk} />
+        <ActivityIndicator color={c.cat.move.ink} />
       </View>
     );
   }

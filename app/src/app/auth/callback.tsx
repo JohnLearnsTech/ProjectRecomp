@@ -33,7 +33,7 @@ export default function AuthCallback() {
           </Pressable>
         </>
       ) : (
-        <ActivityIndicator color={c.accentInk} />
+        <ActivityIndicator color={c.cat.move.ink} />
       )}
     </View>
   );
