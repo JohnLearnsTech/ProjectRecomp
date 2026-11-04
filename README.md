@@ -78,7 +78,19 @@ With no active goal the app now uses the most recent goal, as r19's `activeGoal(
 
 Tested in the browser on a seeded account: grid edits and the load carry saved correctly, the phase-1 suggestion and last time matched r19, both new bests were detected, volume (1,625 kg, up 18% on 1,380 kg) matched a hand calculation, and Save and close wrote the train tick that Today then shows. Screenshots in `docs/step3/`.
 
+## Build step 4: habits, Consistency and Progress (done)
+
+**Domain** (`app/src/domain/days.ts`): r19's habit maths (streak, longest, strength, completion %, habits hit), the consistency engine (day state, session streaks, item states, day score, dot state, the missed-session nudge) and the weight series, 7-day average, projection, 28-day trend, stats and per-exercise load volume. All of it reads one `entries` map in r19's own day shape, built from the database for the goal window (`lib/days.ts`, one shared provider). The parity test runs r19's functions on random 12-week histories with gaps, varied habit types and eight "today" dates, plus boundary cases for the trend and the average; eight deliberate mutations all fail it.
+
+**Today**: the missed-session nudge (hide until tomorrow), habit cards (timer ring or %, keystone star, 7-day dots, status line), the running-timer hero (session time or time left, Pause, Stop & log), a walk's steps prompt after Stop, Pomodoro (focus and break lengths, target habit, logs finished blocks), the habit sheet (stepper in the habit's step, 5-minute notches for hour habits, steps for walk habits, reset, sessions with delete, 14-day bars, strength, goal, keystone, reorder, remove) and an add-habit form with r19's units. Then the four-week Consistency card, which opens the calendar on Progress. The week strip now scores every habit, and the quick-log sheet lists habit chips. Removing a habit archives it, so history keeps its name. Timers and Pomodoro stay on the device; stopped time goes to the timer's own day, with its sessions.
+
+**Progress**: weight vs plan (or waist) over 1W, 1M, 3M or the goal with the dashed projection and the landing range; the six stats (latest, 7-day average, change, on-plan target with the ahead/behind verdict, current-rate projection with ETA, days logged); "What you measured" for the browsed day; full Consistency (six stats, Overall or per-item filter, swipeable month calendar, legend, the selected day item by item, Open this day); load volume per exercise; the daily log for the last 14 days. Screenshots in `docs/step4/`.
+
 ## Known gaps
+
+- **Weekly review** waits for Claude (step 5); Progress shows where it will go. Its client-side scorecard comes with it.
+- Earlier weigh-ins (`weight_history`, r19's faded line before the start) have no editor yet, so the chart doesn't draw them.
+- Habit timers don't alert in the background; same notification gap as the rest timer.
 
 - **Rest alerts only while session mode is open.** r19 shows a toast when minimised; a phone app needs a local notification for that (and for a locked screen), which comes with reminders (expo-notifications).
 - No chime sound yet, only vibration. "Edit plan" and the Train guides (Your sessions, How to progress, ...) are not ported.
@@ -86,6 +98,6 @@ Tested in the browser on a seeded account: grid edits and the load carry saved c
 - The food guides (Protein first, Eating out, ...) and the 7-day average line on the chart are not ported yet.
 - "Estimate with Claude" waits for the connector (step 6) or a pasted key (step 5).
 
-## Next (build plan step 4)
+## Next (build plan step 5)
 
-Habits (cards, timers, Pomodoro, keystone), Consistency and Progress, then habit chips in the quick-log sheet and habit dots on the week strip.
+Settings, AI: bring your own key, and port the prompts from `docs/05-business-logic.md` (food estimates, label and plate photos, plan builder, weekly review).
