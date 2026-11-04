@@ -37,7 +37,7 @@ export function Pill({ label, on, onPress, dot, cat = 'move', small }: { label: 
 }
 
 /** r19 .rangetabs: a segmented control in a soft frame; the picked one takes the accent. */
-export function Segmented<T extends string | number>({ items, value, onChange, cat = 'move' }: { items: [T, string][]; value: T; onChange: (v: T) => void; cat?: Category }) {
+export function Segmented<T extends string | number>({ items, value, onChange, cat = 'move', dark }: { items: [T, string][]; value: T; onChange: (v: T) => void; cat?: Category; dark?: boolean }) {
   const { c } = useTheme();
   return (
     <View style={{ flexDirection: 'row', alignSelf: 'flex-start', gap: 2, padding: 3, borderRadius: 999, borderWidth: 1, borderColor: c.lineSoft, backgroundColor: c.surface2, flexWrap: 'wrap' }}>
@@ -45,8 +45,8 @@ export function Segmented<T extends string | number>({ items, value, onChange, c
         const on = v === value;
         return (
           <Pressable key={String(v)} onPress={() => onChange(v)} accessibilityRole="button" accessibilityState={{ selected: on }}
-            style={{ minHeight: 30, paddingHorizontal: 12, borderRadius: 999, justifyContent: 'center', backgroundColor: on ? c.cat[cat].fill : 'transparent' }}>
-            <Text style={{ fontFamily: font.bold, fontSize: 11.5, color: on ? c.cat[cat].on : c.muted }}>{l}</Text>
+            style={{ minHeight: 30, paddingHorizontal: 12, borderRadius: 999, justifyContent: 'center', backgroundColor: on ? (dark ? c.ink : c.cat[cat].fill) : 'transparent' }}>
+            <Text style={{ fontFamily: font.bold, fontSize: 11.5, color: on ? (dark ? c.paper : c.cat[cat].on) : c.muted }}>{l}</Text>
           </Pressable>
         );
       })}

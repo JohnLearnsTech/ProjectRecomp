@@ -11,6 +11,9 @@ import * as db from '../../../lib/db';
 import { useDays } from '../../../lib/days';
 import { useRecomp } from '../../../lib/recomp';
 import { font, useTheme, type Palette } from '../../../lib/theme';
+import { endPoint, frame, Halo, poly, valueLabels, xTicks, yGrid } from '../../../components/chart';
+import { Icon } from '../../../components/Icon';
+import { Segmented, Stats as Stats2 } from '../../../components/ui';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -40,110 +43,89 @@ export default function Progress() {
   );
 }
 
-function Segmented({ items, value, onChange, small, c }: { items: [string, string][]; value: string; onChange: (v: string) => void; small?: boolean; c: Palette }) {
-  return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-      {items.map(([id, label]) => {
-        const on = id === value;
-        return (
-          <Pressable key={id} onPress={() => onChange(id)} accessibilityState={{ selected: on }}
-            style={{ paddingHorizontal: 14, minHeight: small ? 36 : 40, justifyContent: 'center', borderRadius: 999, backgroundColor: on ? (small ? c.cat.body.soft : c.ink) : c.surface2 }}>
-            <Text style={{ fontFamily: font.medium, fontSize: 14, color: on ? (small ? c.cat.body.ink : c.paper) : c.ink2 }}>{label}</Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
-/** r19 renderChart: weight (with the dashed plan line) or waist, over a trailing range. */
+/** r19 renderChart: weight (with the dashed plan line and earlier weigh-ins) or waist. */
 function WeightChart() {
-  const { engine, maxDay } = useRecomp();
+  const { engine, maxDay, rev } = useRecomp();
   const { D } = useDays();
   const { c, s } = useTheme('body');
   const { width } = useWindowDimensions();
-  const [metric, setMetric] = useState<'weight' | 'waist'>('weight');
-  const [range, setRange] = useState(30);
+  const [metric, setMetric] = useState<'weight' | 'waist'>(() => { try { return localStorage.getItem('recomp:metric') === 'waist' ? 'waist' : 'weight'; } catch { return 'weight'; } });
+  const [range, setRange] = useState<number>(() => { try { const r = localStorage.getItem('recomp:range'); return r == null ? 30 : +r; } catch { return 30; } });
+  const [hist, setHist] = useState<db.WeighIn[]>([]);
+  useEffect(() => { db.listWeightHistory().then(setHist).catch(() => {}); }, [rev]);
   const { START, TOTAL, TARGET_KG } = engine.T;
   const isW = metric === 'weight';
   const tIdx = Math.max(0, Math.min(TOTAL - 1, diffDays(d(START), d(maxDay))));
+  const histPts = isW ? hist.filter((h) => h.date < START).map((h) => ({ i: diffDays(d(START), d(h.date)), w: +h.kg })) : [];
+  const lowB = histPts.length ? histPts[0].i : 0;
   let i0: number, i1: number;
-  if (range > 0) { i1 = tIdx; i0 = Math.max(0, tIdx - range + 1); if (i1 - i0 < 2) i1 = Math.min(TOTAL - 1, i0 + 2); } else { i0 = 0; i1 = TOTAL - 1; }
-  const span = Math.max(1, i1 - i0);
+  if (range > 0) { i1 = tIdx; i0 = Math.max(lowB, tIdx - range + 1); if (i1 - i0 < 2) i1 = Math.min(TOTAL - 1, i0 + 2); } else { i0 = lowB; i1 = TOTAL - 1; }
+  const showHist = isW && histPts.some((p) => p.i >= i0);
   const sr = D.series();
   const val: (number | null)[] = new Array(TOTAL).fill(null);
   if (isW) sr.forEach((x, i) => { val[i] = x.w; });
   else D.waistSeries().forEach((x) => { const idx = diffDays(d(START), d(x.k)); if (idx >= 0 && idx < TOTAL) val[idx] = x.v; });
-  const ys: number[] = [];
-  for (let i = i0; i <= i1; i++) { if (isW) ys.push(D.projFor(i)); if (val[i] != null) ys.push(val[i]!); }
-  if (ys.length < 2) { const m = ys.length ? ys[0] : isW ? engine.T.START_KG : 0; ys.splice(0, ys.length, m - 2, m + 2); }
-  const lo = Math.min(...ys), hi = Math.max(...ys), pad = Math.max(0.4, (hi - lo) * 0.16), yMin = lo - pad, yMax = hi + pad;
-  const W = width - 40 - 36, H = 230, mL = 38, mR = 12, mT = 12, mB = 26, iw = W - mL - mR, ih = H - mT - mB;
-  const X = (i: number) => mL + ((i - i0) / span) * iw, Y = (v: number) => mT + ih - ((v - yMin) / (yMax - yMin)) * ih;
-  const raw = (yMax - yMin) / 4, mag = Math.pow(10, Math.floor(Math.log10(raw)));
-  const stepY = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((x) => x >= raw) ?? mag * 10, dec = stepY < 1 ? 1 : 0;
-  const grid: number[] = []; for (let v = Math.ceil(yMin / stepY) * stepY; v <= yMax; v += stepY) grid.push(v);
-  const pts = []; for (let i = i0; i <= i1; i++) if (val[i] != null) pts.push({ i, v: val[i]! });
-  const last = pts[pts.length - 1];
+  let ys: number[] = [];
+  for (let i = i0; i <= i1; i++) { if (isW && i >= 0) ys.push(D.projFor(i)); if (i >= 0 && val[i] != null) ys.push(val[i]!); }
+  if (showHist) histPts.forEach((p) => { if (p.i >= i0) ys.push(p.w); });
+  if (ys.length < 2) { const m = ys.length ? ys[0] : isW ? engine.T.START_KG : 0; ys = [m - 2, m + 2]; }
+  const lo = Math.min(...ys), hi = Math.max(...ys), pad = Math.max(0.4, (hi - lo) * 0.16);
+  const f = frame(Math.min(width, 520) - 40 - 36, i0, i1, lo - pad, hi + pad);
+  const pts: { x: number; y: number; v: number; i: number }[] = [];
+  for (let i = Math.max(0, i0); i <= i1; i++) if (val[i] != null) pts.push({ x: f.X(i), y: f.Y(val[i]!), v: val[i]!, i });
+  const last = pts[pts.length - 1], prev = pts[pts.length - 2];
+  const col = c.cat.body.fill;
+  const hv = showHist ? histPts.filter((p) => p.i >= i0) : [];
+  const firstLive = pts[0] ?? (() => { for (let i = 0; i <= i1; i++) if (val[i] != null) return { x: f.X(i), y: f.Y(val[i]!) }; return null; })();
+  const endTy = last ? Math.max(f.mT + 11, Math.min(f.mT + f.ih - 3, last.y + (prev == null || last.v <= prev.v ? 19 : -13))) : 0;
+  const sw = (cl: string, l: string, op = 1) => (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}><View style={{ width: 16, height: 3, borderRadius: 2, backgroundColor: cl, opacity: op }} /><Text style={{ fontFamily: font.regular, fontSize: 11.5, color: c.ink2 }}>{l}</Text></View>
+  );
   return (
     <View style={s.card}>
       <Text style={s.cardTitle}>{isW ? 'Weight vs plan' : 'Waist'}</Text>
-      <Segmented c={c} items={[['weight', 'Weight'], ['waist', 'Waist']]} value={metric} onChange={(v) => setMetric(v as 'weight' | 'waist')} />
-      <Segmented c={c} small items={[['7', '1W'], ['30', '1M'], ['90', '3M'], ['0', 'Goal']]} value={String(range)} onChange={(v) => setRange(+v)} />
-      <View style={{ flexDirection: 'row', gap: 14 }}>
-        <Text style={s.label}><Text style={{ color: c.cat.body.fill }}>━ </Text>{isW ? 'Your weight' : 'Waist at the navel'}</Text>
-        {isW && <Text style={s.label}><Text style={{ color: c.muted }}>┅ </Text>Projection</Text>}
+      <Segmented dark items={[['weight', 'Weight'], ['waist', 'Waist']]} value={metric} onChange={(v) => { setMetric(v); try { localStorage.setItem('recomp:metric', v); } catch { /* ignore */ } }} />
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14 }}>
+        {isW ? <>{sw(col, 'Your weight')}{sw(c.muted, 'Projection', 0.65)}{showHist && sw(col, 'Before tracking', 0.4)}</> : sw(col, 'Waist at the navel')}
       </View>
-      <Svg width={W} height={H}>
-        {grid.map((v) => (
-          <G key={v}>
-            <Line x1={mL} x2={W - mR} y1={Y(v)} y2={Y(v)} stroke={c.lineSoft} strokeWidth={1} />
-            <SvgText x={mL - 6} y={Y(v) + 4} fontSize={10} fill={c.muted} textAnchor="end" fontFamily={font.regular}>{v.toFixed(dec)}</SvgText>
-          </G>
-        ))}
-        {[i0, i1].map((i, n) => (
-          <SvgText key={n} x={X(i)} y={H - 6} fontSize={10} fill={c.muted} textAnchor={n === 0 ? 'start' : 'end'} fontFamily={font.regular}>{shortDate(addDays(d(START), i))}</SvgText>
-        ))}
-        {isW && <Polyline points={Array.from({ length: i1 - i0 + 1 }, (_, j) => `${X(i0 + j)},${Y(D.projFor(i0 + j))}`).join(' ')} fill="none" stroke={c.muted} strokeWidth={2} strokeDasharray="5 5" opacity={0.6} />}
-        {isW && tIdx >= i0 && tIdx <= i1 && <Circle cx={X(tIdx)} cy={Y(D.projFor(tIdx))} r={4} fill={c.surface} stroke={c.muted} strokeWidth={2} />}
-        {pts.length > 1 && <Polyline points={pts.map((p) => `${X(p.i)},${Y(p.v)}`).join(' ')} fill="none" stroke={c.cat.body.fill} strokeWidth={2.5} strokeLinejoin="round" />}
-        {pts.map((p) => <Circle key={p.i} cx={X(p.i)} cy={Y(p.v)} r={3} fill={c.cat.body.fill} />)}
-        {last && <SvgText x={Math.min(X(last.i), W - mR - 2)} y={Y(last.v) - 9} fontSize={11} fontWeight="bold" fill={c.ink} textAnchor="end" fontFamily={font.bold}>{trimNum(last.v)}</SvgText>}
+      <Segmented cat="body" items={[[7, '1W'], [30, '1M'], [90, '3M'], [0, 'Goal']]} value={range} onChange={(r) => { setRange(r); try { localStorage.setItem('recomp:range', String(r)); } catch { /* ignore */ } }} />
+      <Svg width={f.W} height={f.H}>
+        {yGrid(f, c, (v, dec) => v.toFixed(dec))}
+        {xTicks(f, c, START)}
+        {isW && <Polyline points={poly(Array.from({ length: i1 - Math.max(i0, 0) + 1 }, (_, j) => { const i = Math.max(i0, 0) + j; return [f.X(i), f.Y(D.projFor(i))] as [number, number]; }))} fill="none" stroke={c.muted} strokeWidth={2} strokeDasharray="5 5" opacity={0.6} />}
+        {isW && tIdx >= i0 && tIdx <= i1 && <Circle cx={f.X(tIdx)} cy={f.Y(D.projFor(tIdx))} r={4} fill={c.surface} stroke={c.muted} strokeWidth={2} />}
+        {hv.length > 0 && <Polyline points={poly([...hv.map((p) => [f.X(p.i), f.Y(p.w)] as [number, number]), ...(firstLive ? [[firstLive.x, firstLive.y] as [number, number]] : [])])} fill="none" stroke={col} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" opacity={0.38} />}
+        {hv.map((p) => <Circle key={'h' + p.i} cx={f.X(p.i)} cy={f.Y(p.w)} r={2.6} fill={col} opacity={0.5} />)}
+        {pts.length > 1 && <Polyline points={poly(pts.map((p) => [p.x, p.y]))} fill="none" stroke={col} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />}
+        {pts.map((p) => <Circle key={p.i} cx={p.x} cy={p.y} r={3.2} fill={col} />)}
+        {valueLabels(pts.slice(0, -1), f, 30, (v) => v.toFixed(1), c, last)}
+        {last && endPoint(f, c, last, last.v.toFixed(1), col, c.cat.body.ink, endTy)}
+        {!pts.length && <SvgText x={f.mL + f.iw / 2} y={f.mT + f.ih / 2} textAnchor="middle" fill={c.muted} fontSize={13} fontFamily={font.regular}>
+          {isW ? 'Log a weight to start the line' : 'Log a waist reading on a ' + WEEKDAY_NAMES[waistWeekday(engine.PROFILE)]}</SvgText>}
       </Svg>
-      <Text style={s.body2}>
+      <Text style={[s.body2, { fontSize: 13.5, lineHeight: 20 }]}>
         {isW
           ? <>The dashed line is the plan: faster for the first fortnight (mostly water and glycogen), then steady{(engine.G.type || 'lose') === 'lose' ? ', with one flat maintenance week' : ''}. A landing between <Text style={{ fontFamily: font.bold, color: c.ink }}>{trimNum(TARGET_KG - 1.5)} and {trimNum(TARGET_KG + 3.5)} kg</Text> is the honest range.</>
-          : `Measured every ${WEEKDAY_NAMES[waistWeekday(engine.PROFILE)]} at the navel. ${D.waistSeries().length > 1 ? 'Waist often keeps moving on the weeks the scale sits still. That is the whole reason to track it.' : 'Once there are two readings this draws a line you can follow.'}`}
+          : `Measured every ${WEEKDAY_NAMES[waistWeekday(engine.PROFILE)]} at the navel. ${D.waistSeries().length > 1 ? 'Waist often keeps moving on the weeks the scale sits still — that is the whole reason to track it.' : 'Once there are two readings this draws a line you can follow.'}`}
       </Text>
     </View>
   );
 }
 
 function Stats() {
-  const { day } = useRecomp();
+  const { day, engine } = useRecomp();
   const { D, loaded } = useDays();
-  const { c, s } = useTheme('body');
-  const { engine } = useRecomp();
   if (!loaded) return null;
   const st = D.stats(day);
-  const cells: [string, string | null, string][] = [
-    ['Latest weight', st.latest != null ? `${st.latest.toFixed(1)} kg` : null, st.latestDay ? shortDate(d(st.latestDay)) : 'log it below'],
-    ['7-day average', st.avg != null ? `${st.avg.toFixed(1)} kg` : null, st.avg != null ? 'the only number that counts' : 'needs 2+ entries in 7 days'],
-    [`Change from ${trimNum(engine.T.START_KG)}`, st.delta != null ? `${st.delta > 0 ? '+' : ''}${st.delta.toFixed(1)} kg` : null, `since ${shortDate(d(engine.T.START))}`],
-    ['On-plan target today', `${st.proj.toFixed(1)} kg`, st.projNote],
-    ['At your current rate', st.rate.value, st.rate.note],
-    ['Days logged', String(st.loggedDays), `of ${st.total} days`],
-  ];
   return (
-    <View style={[s.card, { flexDirection: 'row', flexWrap: 'wrap', rowGap: 18 }]}>
-      {cells.map(([k, v, n]) => (
-        <View key={k} style={{ width: '50%', paddingRight: 10, gap: 2 }}>
-          <Text style={s.label}>{k}</Text>
-          <Text style={[s.stat, v == null && { color: c.muted }]}>{v ?? '—'}</Text>
-          <Text style={s.label}>{n}</Text>
-        </View>
-      ))}
-    </View>
+    <Stats2 cols={2} items={[
+      { k: 'Latest weight', v: st.latest != null ? `${st.latest.toFixed(1)} kg` : '—', n: st.latestDay ? shortDate(d(st.latestDay)) : 'log it below' },
+      { k: '7-day average', v: st.avg != null ? `${st.avg.toFixed(1)} kg` : '—', n: st.avg != null ? 'the only number that counts' : 'needs 2+ entries in 7 days' },
+      { k: `Change from ${trimNum(engine.T.START_KG)}`, v: st.delta != null ? `${st.delta > 0 ? '+' : ''}${st.delta.toFixed(1)} kg` : '—', n: `since ${shortDate(d(engine.T.START))}` },
+      { k: 'On-plan target today', v: `${st.proj.toFixed(1)} kg`, n: st.projNote },
+      { k: 'At your current rate', v: st.rate.value ?? '—', n: st.rate.note },
+      { k: 'Days logged', v: String(st.loggedDays), n: `of ${st.total} days` },
+    ]} />
   );
 }
 
@@ -338,51 +320,70 @@ function ConsistencyFull() {
   );
 }
 
-/** Load volume per exercise over the goal (r19 renderProg). */
+/** Load volume per exercise (r19 renderProg): one point per session, value labels, a picker. */
 function VolumeChart() {
-  const { engine } = useRecomp();
   const { D, loaded } = useDays();
   const { c, s } = useTheme('body');
   const { width } = useWindowDimensions();
   const list = useMemo(() => (loaded ? D.progExercises() : []), [D, loaded]);
   const [pick, setPick] = useState<string | null>(() => { try { return localStorage.getItem('goa:prog'); } catch { return null; } });
+  const [open, setOpen] = useState(false);
   if (!list.length) return null;
   const nm = pick && list.some((x) => x.nm === pick) ? pick : list[0].nm;
   const ser = D.exSeries(nm);
-  const W = width - 40 - 36, H = 200, mL = 44, mR = 12, mT = 14, mB = 24, iw = W - mL - mR, ih = H - mT - mB;
-  const { START, TOTAL } = engine.T;
-  const idx = (k: string) => diffDays(d(START), d(k));
-  const vmax = Math.max(...ser.map((p) => p.vol)) * 1.15, vmin = Math.min(...ser.map((p) => p.vol)) * 0.85;
-  const X = (k: string) => mL + (idx(k) / Math.max(1, TOTAL - 1)) * iw, Y = (v: number) => mT + ih - ((v - vmin) / Math.max(1, vmax - vmin)) * ih;
-  const first = ser[0], lastP = ser[ser.length - 1];
-  return (
-    <View style={s.card}>
-      <Text style={s.cardTitle}>Load volume</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-        {list.map((x) => (
-          <Pressable key={x.nm} onPress={() => { setPick(x.nm); try { localStorage.setItem('goa:prog', x.nm); } catch { /* ignore */ } }}
-            style={{ minHeight: 40, paddingHorizontal: 12, borderRadius: 999, justifyContent: 'center', backgroundColor: x.nm === nm ? c.cat.body.soft : c.surface2 }}>
-            <Text style={{ fontFamily: font.medium, color: x.nm === nm ? c.cat.body.ink : c.ink2 }}>{x.nm} · {x.n}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
-      {ser.length < 2 ? (
-        <Text style={s.body2}>{nm}: {Math.round(ser[0].vol).toLocaleString('en-IN')} kg on {shortDate(d(ser[0].k))}. One session so far, a line appears on the next.</Text>
-      ) : (
-        <>
-          <Svg width={W} height={H}>
-            {[vmin, (vmin + vmax) / 2, vmax].map((v) => (
-              <SvgText key={v} x={mL - 6} y={Y(v) + 4} fontSize={10} fill={c.muted} textAnchor="end" fontFamily={font.regular}>{Math.round(v).toLocaleString('en-IN')}</SvgText>
-            ))}
-            <Line x1={mL} x2={W - mR} y1={mT + ih} y2={mT + ih} stroke={c.line} />
-            <Polyline points={ser.map((p) => `${X(p.k)},${Y(p.vol)}`).join(' ')} fill="none" stroke={c.cat.train.fill} strokeWidth={2.5} strokeLinejoin="round" />
-            {ser.map((p) => <Circle key={p.k} cx={X(p.k)} cy={Y(p.vol)} r={3} fill={c.cat.train.fill} />)}
-            <SvgText x={mL} y={H - 6} fontSize={10} fill={c.muted} fontFamily={font.regular}>{shortDate(d(first.k))}</SvgText>
-            <SvgText x={W - mR} y={H - 6} fontSize={10} fill={c.muted} textAnchor="end" fontFamily={font.regular}>{shortDate(d(lastP.k))}</SvgText>
-          </Svg>
-          <Text style={s.body2}>{nm}: {Math.round(lastP.vol).toLocaleString('en-IN')} kg last time, {(() => { const p = Math.round(((lastP.vol - first.vol) / first.vol) * 100); return p > 0 ? `up ${p}%` : p < 0 ? `down ${-p}%` : 'level'; })()} on the first session ({Math.round(first.vol).toLocaleString('en-IN')} kg). Weight × reps; bodyweight and timed sets don't count.</Text>
-        </>
+  const W = Math.min(width, 520) - 40 - 36, H = 260, mL = W < 430 ? 44 : 52, mR = 18, mT = 16, mB = 28, iw = W - mL - mR, ih = H - mT - mB;
+  const picker = (
+    <View style={{ gap: 4 }}>
+      <Pressable onPress={() => setOpen((o) => !o)} accessibilityRole="button" accessibilityLabel="Exercise" accessibilityState={{ expanded: open }}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 36, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: c.line, backgroundColor: c.surface, alignSelf: 'flex-start' }}>
+        <Text style={{ fontFamily: font.regular, fontSize: 13, color: c.ink }} numberOfLines={1}>{nm} · {list.find((x) => x.nm === nm)?.n}</Text>
+        <Icon name="down" size={14} color={c.ink2} />
+      </Pressable>
+      {open && (
+        <View style={{ borderWidth: 1, borderColor: c.line, borderRadius: 10, backgroundColor: c.surface, overflow: 'hidden' }}>
+          {list.map((x) => (
+            <Pressable key={x.nm} onPress={() => { setPick(x.nm); setOpen(false); try { localStorage.setItem('goa:prog', x.nm); } catch { /* ignore */ } }} style={{ paddingHorizontal: 12, paddingVertical: 10, backgroundColor: x.nm === nm ? c.surface2 : c.surface }}>
+              <Text style={{ fontFamily: x.nm === nm ? font.semibold : font.regular, fontSize: 14, color: c.ink }}>{x.nm} · {x.n}</Text>
+            </Pressable>
+          ))}
+        </View>
       )}
+    </View>
+  );
+  const head = (
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+      <Text style={s.cardTitle}>Load volume</Text>{picker}
+    </View>
+  );
+  if (ser.length < 2) return (
+    <View style={s.card}>{head}
+      <Svg width={W} height={H}><SvgText x={mL + iw / 2} y={mT + ih / 2} textAnchor="middle" fill={c.muted} fontSize={13} fontFamily={font.regular}>{ser.length ? 'One session so far — a line appears on the next.' : 'No countable sets logged for this exercise yet.'}</SvgText></Svg>
+      {!!ser.length && <Text style={s.body2}>{nm}: {Math.round(ser[0].vol).toLocaleString('en-US')} kg on {shortDate(d(ser[0].k))}.</Text>}
+    </View>
+  );
+  const vols = ser.map((p) => p.vol), hi = Math.max(...vols), lo = Math.min(...vols), pad = Math.max(1, (hi - lo) * 0.15);
+  const yMin = Math.max(0, lo - pad), yMax = Math.max(hi + pad, yMin + 1), span = Math.max(1, ser.length - 1);
+  const X = (i: number) => mL + (i / span) * iw, Y = (v: number) => mT + ih - ((v - yMin) / (yMax - yMin)) * ih;
+  const f = { W, H, mL, mR, mT, mB, iw, ih, i0: 0, i1: span, yMin, yMax, X, Y };
+  const stepY = Math.max(1, Math.round((yMax - yMin) / 4));
+  const grid: number[] = []; for (let g = Math.ceil(yMin / stepY) * stepY; g <= yMax; g += stepY) grid.push(g);
+  const xi = ser.length <= 4 ? ser.map((_, i) => i) : [0, Math.round(span / 2), span];
+  const col = c.cat.body.fill, last = ser[ser.length - 1], first = ser[0].vol;
+  const lp = { x: X(span), y: Y(last.vol), v: last.vol };
+  const pct = first > 0 ? Math.round(((last.vol - first) / first) * 100) : 0;
+  return (
+    <View style={s.card}>{head}
+      <Svg width={W} height={H}>
+        {grid.flatMap((g) => [<Line key={'l' + g} x1={mL} y1={Y(g)} x2={W - mR} y2={Y(g)} stroke={c.lineSoft} strokeWidth={1} />,
+          <SvgText key={'t' + g} x={mL - 8} y={Y(g) + 4} textAnchor="end" fill={c.muted} fontSize={11} fontFamily={font.regular}>{g.toLocaleString('en-US')}</SvgText>])}
+        {xi.map((i) => <SvgText key={'x' + i} x={X(i)} y={H - 8} textAnchor={i === 0 ? 'start' : i === span ? 'end' : 'middle'} fill={c.muted} fontSize={11} fontFamily={font.regular}>{shortDate(d(ser[i].k))}</SvgText>)}
+        <Polyline points={poly(ser.map((p, i) => [X(i), Y(p.vol)]))} fill="none" stroke={col} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
+        {ser.map((p, i) => <Circle key={p.k} cx={X(i)} cy={Y(p.vol)} r={3.4} fill={col} />)}
+        {valueLabels(ser.map((p, i) => ({ x: X(i), y: Y(p.vol), v: p.vol })).slice(0, -1), f, 44, (v) => Math.round(v).toLocaleString('en-US'), c, lp)}
+        <Circle cx={lp.x} cy={lp.y} r={5} fill={col} stroke={c.surface} strokeWidth={2} />
+        <Halo x={lp.x - 9} y={lp.y - 9} anchor="end" fill={c.cat.body.ink} halo={c.surface} size={12} w={3.5} family={font.bold} text={Math.round(last.vol).toLocaleString('en-US')} />
+      </Svg>
+      <Text style={[s.body2, { fontSize: 13.5, lineHeight: 20 }]}>{nm}: <Text style={{ fontFamily: font.bold, color: c.ink }}>{Math.round(last.vol).toLocaleString('en-US')} kg</Text> latest, {Math.abs(pct) < 3 ? 'about level with your first logged session.' : `${pct > 0 ? 'up ' : 'down '}${Math.abs(pct)}% from ${Math.round(first).toLocaleString('en-US')} kg on ${shortDate(d(ser[0].k))}.`} Volume is load × reps summed across sets.</Text>
     </View>
   );
 }
