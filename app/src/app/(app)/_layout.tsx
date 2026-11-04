@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import { DaysProvider } from '../../lib/days';
 import { RecompProvider } from '../../lib/recomp';
 import { font, useTheme } from '../../lib/theme';
 
@@ -6,6 +7,7 @@ export default function AppStack() {
   const { c } = useTheme();
   return (
     <RecompProvider>
+      <DaysProvider>
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: c.paper },
@@ -21,6 +23,7 @@ export default function AppStack() {
         <Stack.Screen name="session" options={{ headerShown: false, presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="quick" options={{ presentation: 'formSheet', sheetAllowedDetents: 'fitToContents', headerShown: false, contentStyle: { backgroundColor: c.surface } }} />
       </Stack>
+      </DaysProvider>
     </RecompProvider>
   );
 }

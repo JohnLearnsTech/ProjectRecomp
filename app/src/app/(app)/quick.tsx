@@ -5,6 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { d, shortDate, WEEKDAY_NAMES } from '../../domain/dates';
 import { waistWeekday } from '../../domain/plan';
 import * as db from '../../lib/db';
+import { habitMet } from '../../domain/days';
+import { useDays } from '../../lib/days';
 import { useRecomp } from '../../lib/recomp';
 import { font, useTheme } from '../../lib/theme';
 
@@ -23,6 +25,7 @@ export default function Quick() {
   const { c, s } = useTheme('move');
   const insets = useSafeAreaInsets();
   const P = engine.plan(day);
+  const { D, habits } = useDays();
   const future = day > maxDay;
   const [vals, setVals] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -83,7 +86,18 @@ export default function Quick() {
           <Text style={s.outlineText}>Log sets</Text>
         </Pressable>
       </View>
-      <Text style={[s.label, { fontFamily: font.regular }]}>Habits join this sheet with the Habits build.</Text>
+      <Text style={[s.label, { fontFamily: font.semibold }]}>Habits</Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        {habits.length ? habits.map((h) => {
+          const v = D.habitVal(day, h.id), ok = v != null && habitMet(h, v);
+          return (
+            <Pressable key={h.id} onPress={() => { router.back(); router.navigate({ pathname: '/', params: { habit: h.id } }); }}
+              style={{ minHeight: 40, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center', backgroundColor: ok ? c.cat.habit.soft : c.surface2 }}>
+              <Text style={{ fontFamily: font.medium, color: ok ? c.cat.habit.ink : c.ink2 }}>{ok ? '✓ ' : ''}{h.name}</Text>
+            </Pressable>
+          );
+        }) : <Text style={s.label}>No habits yet. Add one on Today.</Text>}
+      </View>
     </View>
   );
 }

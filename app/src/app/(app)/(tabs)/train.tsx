@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Linking, Modal, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Nudge } from '../../../components/Consistency';
 import { DayStepper } from '../../../components/DayStepper';
 import { ScreenHeader } from '../../../components/ScreenHeader';
 import mobPostJson from '../../../domain/data/mobPost.json';
@@ -50,6 +51,7 @@ export default function Train() {
       <ScrollView contentContainerStyle={s.screen} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={false} onRefresh={() => T.reload()} />}>
         <ScreenHeader title="Train" strip={false} />
         <DayStepper />
+        <Nudge />
         {err && <Text style={s.error}>{err}</Text>}
 
         <View style={s.card}>

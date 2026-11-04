@@ -257,3 +257,31 @@ export const listSetsForNames = (names: string[]) =>
   names.length
     ? pageAll<SetEntry>((a, b) => supabase.from('set_entries').select('*').in('exercise_name', names).order('date').order('exercise_name').order('set_no').range(a, b))
     : Promise.resolve([] as SetEntry[]);
+
+// ── Step 4: habits and history ──
+export const listHabitsAll = async () => must(await supabase.from('habits').select('*').order('sort')) as Habit[];
+export const addHabit = async (h: { name: string; type: 'build' | 'limit'; unit: string; goal: number; step: number }) => {
+  const all = await listHabitsAll();
+  must(await supabase.from('habits').insert({ ...h, sort: all.length ? Math.max(...all.map((x) => x.sort)) + 1 : 0 }));
+};
+export const updateHabit = async (id: string, patch: Partial<Pick<Habit, 'name' | 'goal' | 'step' | 'sort' | 'archived_at'>>) => {
+  must(await supabase.from('habits').update(patch).eq('id', id));
+};
+export const setKeystone = async (id: string | null) => updateProfile({ keystone_habit_id: id });
+
+export type HabitSession = { id: string; habit_id: string; date: string; started_at: string; ended_at: string; source: 'timer' | 'pomodoro' };
+export const listHabitSessions = async (date: string) =>
+  must(await supabase.from('habit_sessions').select('id, habit_id, date, started_at, ended_at, source').eq('date', date).order('started_at')) as HabitSession[];
+export const addHabitSessions = async (rows: { habit_id: string; date: string; started_at: string; ended_at: string; source: 'timer' | 'pomodoro' }[]) => {
+  if (rows.length) must(await supabase.from('habit_sessions').insert(rows));
+};
+export const deleteHabitSession = async (id: string) => { must(await supabase.from('habit_sessions').delete().eq('id', id)); };
+export const deleteHabitSessionsFor = async (habit_id: string, date: string) => { must(await supabase.from('habit_sessions').delete().match({ habit_id, date })); };
+
+export const listHabitLogsRange = (from: string, to: string) =>
+  pageAll<{ habit_id: string; date: string; value: number }>((a, b) =>
+    supabase.from('habit_logs').select('habit_id, date, value').gte('date', from).lte('date', to).order('date').order('habit_id').range(a, b));
+export const listFoodDates = (from: string, to: string) =>
+  pageAll<{ date: string; id: string }>((a, b) => supabase.from('food_entries').select('date, id').gte('date', from).lte('date', to).order('date').order('id').range(a, b));
+export const listSetsRange = (from: string, to: string) =>
+  pageAll<SetEntry>((a, b) => supabase.from('set_entries').select('*').gte('date', from).lte('date', to).order('date').order('exercise_name').order('set_no').range(a, b));

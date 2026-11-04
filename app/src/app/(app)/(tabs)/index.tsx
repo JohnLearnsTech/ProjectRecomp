@@ -1,8 +1,10 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Bar } from '../../../components/Bar';
+import { ConsistencyCard, Nudge } from '../../../components/Consistency';
+import { Habits } from '../../../components/Habits';
 import { Ring } from '../../../components/Ring';
 import { ScreenHeader } from '../../../components/ScreenHeader';
 import floors from '../../../domain/data/floors.json';
@@ -19,6 +21,7 @@ export default function Today() {
   const { engine, day, maxDay, rev, reload, error } = useRecomp();
   const { c, s } = useTheme('move');
   const h = useHistory();
+  const { habit } = useLocalSearchParams<{ habit?: string }>();
   const [log, setLog] = useState<db.DayLog | null>(null);
   const [quote, setQuote] = useState(currentQuote());
 
@@ -50,6 +53,7 @@ export default function Today() {
       <ScrollView contentContainerStyle={s.screen} refreshControl={<RefreshControl refreshing={false} onRefresh={reload} />}>
         <ScreenHeader title="Today" />
         {error && <Text style={s.error}>{error}</Text>}
+        <Nudge />
 
         <View style={[s.card, { borderTopWidth: 4, borderTopColor: c.cat.move.fill }]}>
           {!P.inRange ? (
@@ -121,6 +125,9 @@ export default function Today() {
             ))}
           </View>
         </Pressable>
+
+        <Habits openId={habit} onOpened={() => router.setParams({ habit: undefined })} />
+        <ConsistencyCard />
 
         <Text style={[s.label, { marginTop: 8 }]}>
           Recomp is a training, nutrition and habits tool. Its targets come from standard formulas and your own logs; they are not medical advice.

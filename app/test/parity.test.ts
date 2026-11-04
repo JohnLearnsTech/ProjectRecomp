@@ -10,40 +10,18 @@ import * as P from '../src/domain/plan';
 import * as F from '../src/domain/food';
 import * as O from '../src/domain/onboarding';
 import * as TR from '../src/domain/training';
+import * as DY from '../src/domain/days';
 import type { Goal, Profile } from '../src/domain/types';
 
-const html = readFileSync(new URL('../../reference/app/recomp.html', import.meta.url), 'utf8');
-
-/** Source of `function name(...){...}` or `var name = ...;` by brace matching. */
-function src(name: string): string {
-  let at = html.search(new RegExp(`\\n\\s*function ${name}\\(`));
-  let isVar = false;
-  if (at < 0) { at = html.search(new RegExp(`\\n\\s*var ${name}\\s*=`)); isVar = true; }
-  if (at < 0) throw new Error('missing ' + name);
-  at = html.indexOf(isVar ? 'var' : 'function', at);
-  if (isVar && !/[[{]/.test(html.slice(html.indexOf('=', at) + 1).trimStart()[0])) return html.slice(at, html.indexOf(';\n', at) + 1);
-  let i = html.indexOf(isVar ? (html.slice(html.indexOf('=', at) + 1).trimStart()[0]) : '{', isVar ? html.indexOf('=', at) : at);
-  let depth = 0, str: string | null = null, re = false;
-  for (; i < html.length; i++) {
-    const c = html[i];
-    if (str) { if (c === '\\') i++; else if (c === str) str = null; continue; }
-    if (re) { if (c === '\\') i++; else if (c === '/') re = false; continue; }
-    if (c === '"' || c === "'") str = c;
-    else if (c === '/' && html[i + 1] === '/') i = html.indexOf('\n', i);
-    else if (c === '/' && /[(,=:!&|?{};]\s*$/.test(html.slice(Math.max(0, i - 3), i))) re = true;
-    else if (c === '{' || c === '[') depth++;
-    else if ((c === '}' || c === ']') && --depth === 0) break;
-  }
-  return html.slice(at, i + 1) + (isVar ? ';' : '');
-}
+import { src } from './r19';
 
 const names = ['d', 'key', 'addDays', 'diffDays', 'localKey', 'todayKey', 'trimNum', 'waistWeekday', 'provisionalGoal', 'activeGoal', 'phaseBounds', 'buildProj',
   'applyGoal', 'LIFTS_DEFAULT', 'NAMES_DEFAULT', 'LEGACY_KEYS', 'slotL', 'slotC', 'slotR', 'defaultPlan', 'makePlan', 'homeFirstPlan', 'normPlan', 'applyPlan',
   'plan', 'WHEN_RANK', 'whenRank', 'checkList', 'kcalFloor', 'proteinFloor',
   'normFood', 'foodRe', 'FOODS', 'buildFoodIndex', 'parseItem', 'MODIFIER', 'matchFood', 'fromEntry', 'DISH_RX', 'WITH_RX', 'isDish', 'joinDish', 'splitItems',
-  'parseGrams', 'canonName', 'calcTargets', 'setsFor', 'filled', 'setCount', 'BAND_RX', 'BODY_RX', 'loadKind', 'BAND_N', 'defaultBands', 'bandAt', 'bandName', 'bandKg', 'bandLabel', 'topReps', 'stepFor', 'setTxt', 'exDone', 'EXGROUP', 'ALTPOOL', 'ctxOf', 'poolFor', 'resolveLine', 'lastFor', 'repRange', 'woSuggest', 'bestBefore', 'bestToday', 'prText', 'volumeOf', 'lastSameSession', 'fmtDur', 'portionOf', 'scaleEst', 'needsNumbers', 'shortFoodLabel', 'foodName', 'fqQty'];
+  'parseGrams', 'canonName', 'calcTargets', 'setsFor', 'filled', 'setCount', 'BAND_RX', 'BODY_RX', 'loadKind', 'BAND_N', 'defaultBands', 'bandAt', 'bandName', 'bandKg', 'bandLabel', 'topReps', 'stepFor', 'setTxt', 'exDone', 'EXGROUP', 'ALTPOOL', 'ctxOf', 'poolFor', 'resolveLine', 'lastFor', 'repRange', 'woSuggest', 'bestBefore', 'bestToday', 'prText', 'volumeOf', 'lastSameSession', 'fmtDur', 'habitVal', 'habitMet', 'habitStreak', 'dayMet', 'habitLongest', 'habitStrength', 'habitPct', 'habitsHitPct', 'tracksSteps', 'habitById', 'isTimeUnit', 'unitMs', 'normUnit', 'trainedOn', 'dayState', 'streaks', 'itemState', 'calItems', 'dayScore', 'dotState', 'itemValTxt', 'dayActive', 'missStats', 'WALK_MIN', 'series', 'rolling', 'projFor', 'rateOfLoss', 'waistSeries', 'exVolume', 'progExercises', 'exSeries', 'portionOf', 'scaleEst', 'needsNumbers', 'shortFoodLabel', 'foodName', 'fqQty'];
 const code = names.map(src).join('\n') + `
-  var swaps={}, bands=null, TODAY=null, P=null;
+  var swaps={}, bands=null, TODAY=null, P=null, habits=[], MAXDAY=null;
   var PROFILE={}, goals=[], G=null, entries={}, PL=null, planSaved=null, LIFTS={}, NAMES={}, PHASES, userChecks=[], hiddenChecks={};
   var START, END, DEPART, TOTAL, WEEKS_N, START_KG, TARGET_KG, PROJ, PHASE_W, MAINT_W, LABS, TASKS, TSTART, TTOTAL, TWEEKS, TPHASE_W, TMAINT_W, FOODS_ALL=[];
   function setup(g, pf, saved, ents){ PROFILE=pf; goals=[g]; entries=ents||{}; planSaved=saved; applyGoal(); buildFoodIndex(); }
@@ -245,4 +223,92 @@ test('training rules match r19 on random set histories', () => {
   }
   for (const ms of [0, 999, 59000, 61000, 3599000, 3600000, 7322000]) assert.equal(TR.fmtDur(ms), ctx.fmtDur(ms));
   assert.ok(checks > 500, String(checks));
+});
+
+test('habits, consistency and weight stats match r19 on random histories', () => {
+  const rand = rng(7);
+  const habitsDef: DY.HabitDef[] = [
+    { id: 'walk', name: 'Walk', type: 'build', unit: 'min', goal: 20, step: 5 },
+    { id: 'gaming', name: 'Gaming / media', type: 'limit', unit: 'h', goal: 2, step: 0.5 },
+    { id: 'h1', name: 'Read', type: 'build', unit: 'pages', goal: 10, step: 5 },
+    { id: 'h2', name: 'No sugar', type: 'limit', unit: 'times', goal: 0, step: 1 },
+    { id: 'h3', name: 'Morning steps', type: 'build', unit: 'steps', goal: 8000, step: 500 },
+  ];
+  let checks = 0;
+  for (const [type, trainStart] of [['lose', null], ['muscle', '2026-09-08'], ['recomp', null]] as const) {
+    const g = goal({ type, start: '2026-09-01', due: '2026-11-23', trainStart, startKg: rand() < 0.5 ? 82 : null, targetKg: type === 'muscle' ? 86 : 76 });
+    const pf: Profile = { equip: 'gym', days: 3 };
+    const entries: DY.Entries = {};
+    let w = 82;
+    for (let i = 0; i < 84; i++) {
+      const k = new Date(Date.UTC(2026, 8, 1 + i)).toISOString().slice(0, 10);
+      if (rand() < 0.18) continue;                       // no entry at all
+      const e: DY.DayEntry = {};
+      w += (rand() - 0.6) * 0.4;
+      // weigh-ins dense in some stretches and sparse in others, so the 7-day average and the
+      // 28-day trend hit their minimum-count limits
+      if (rand() < (type === 'recomp' ? 0.12 : i % 30 < 15 ? 0.85 : 0.15)) e.w = Math.round(w * 10) / 10;
+      if (rand() < 0.6) e.steps = rand() < 0.3 ? [1999, 2000, 2001, 0][Math.floor(rand() * 4)] : Math.floor(rand() * 12000);
+      if (rand() < 0.3) e.waist = 90 - i * 0.05;
+      if (rand() < 0.5) { e.food = Array.from({ length: 1 + Math.floor(rand() * 4) }, () => ({})); e.kcal = 1500 + Math.floor(rand() * 800); e.protein = 80 + Math.floor(rand() * 60); }
+      if (rand() < 0.35) e.sets = { 'Leg press': [{ w: 60, r: 10 }, { w: 60, r: rand() < 0.2 ? null : 9 }], 'Lat pulldown': rand() < 0.3 ? [{ b: 2, r: 12 }] : [] };
+      if (rand() < 0.5) { e.habits = {}; habitsDef.forEach((h) => { if (rand() < 0.6) e.habits![h.id] = Math.round(rand() * h.goal * 2 * 2) / 2; }); }
+      if (rand() < 0.2) e.checks = { train: rand() < 0.7, water: true };
+      if (rand() < 0.05) Object.keys(e).forEach((f) => delete (e as any)[f]);   // an empty {} day
+      entries[k] = e;
+    }
+    for (const MAXDAY of ['2026-09-01', '2026-09-08', '2026-09-15', '2026-09-29', '2026-10-06', '2026-10-20', '2026-11-03', '2026-11-23']) {
+      const firstW = Object.keys(entries).filter((k) => k >= g.start && entries[k].w != null).sort().map((k) => entries[k].w!)[0] ?? null;
+      const engine = P.makeEngine(g, pf, null, firstW);
+      ctx.setup(clone(g), clone(pf), null, clone(entries));
+      ctx.habits = clone(habitsDef); ctx.MAXDAY = MAXDAY; ctx.bands = null;
+      const D = DY.makeDays({ entries, engine, MAXDAY, habits: habitsDef, bands: null });
+      for (const h of habitsDef) {
+        assert.equal(D.habitStreak(h), ctx.habitStreak(h), 'streak ' + h.id);
+        assert.equal(D.habitLongest(h), ctx.habitLongest(h), 'longest ' + h.id);
+        assert.equal(D.habitStrength(h), ctx.habitStrength(h), 'strength ' + h.id);
+        assert.equal(D.habitPct(h), ctx.habitPct(h), 'pct ' + h.id);
+        assert.equal(DY.tracksSteps(h), ctx.tracksSteps(h));
+      }
+      assert.equal(D.habitsHitPct(), ctx.habitsHitPct());
+      assert.deepEqual(D.streaks(), clone(ctx.streaks()), 'streaks ' + MAXDAY);
+      assert.deepEqual(D.missStats(), clone(ctx.missStats()), 'miss ' + MAXDAY);
+      for (let i = -3; i < 88; i++) {
+        const k = new Date(Date.UTC(2026, 8, 1 + i)).toISOString().slice(0, 10);
+        assert.equal(D.dayState(k), ctx.dayState(k), 'dayState ' + k);
+        assert.equal(D.dotState(k), ctx.dotState(k), 'dot ' + k);
+        assert.deepEqual(D.dayScore(k), clone(ctx.dayScore(k)), 'score ' + k);
+        assert.equal(D.dayActive(k), ctx.dayActive(k));
+        for (const it of D.calItems()) {
+          assert.equal(D.itemState(it.id, k), ctx.itemState(it.id, k), `item ${it.id} ${k}`);
+          assert.equal(D.itemValTxt(it.id, k), ctx.itemValTxt(it.id, k).replace(/\u00b7/g, '\u00b7'), `itemVal ${it.id} ${k}`);
+        }
+        checks++;
+      }
+      const sr = D.series();
+      assert.deepEqual(sr, clone(ctx.series()));
+      for (let i = 0; i < sr.length; i += 5) { assert.equal(D.rolling(sr, i), ctx.rolling(ctx.series(), i)); assert.ok(Math.abs(D.projFor(i) - ctx.projFor(i)) < 1e-9); }
+      assert.deepEqual(D.rateOfLoss(), clone(ctx.rateOfLoss()), 'rate ' + MAXDAY);
+      assert.deepEqual(D.waistSeries(), clone(ctx.waistSeries()));
+      assert.deepEqual(D.progExercises(), clone(ctx.progExercises()));
+      assert.deepEqual(D.exSeries('Leg press'), clone(ctx.exSeries('Leg press')));
+    }
+  }
+  for (const u of ['H', 'hrs', 'Minutes', 'mins', 'pages', '']) { assert.equal(DY.normUnit(u), ctx.normUnit(u)); assert.equal(DY.isTimeUnit(u), ctx.isTimeUnit(u)); assert.equal(DY.unitMs(u), ctx.unitMs(u)); }
+  assert.ok(checks > 1000, String(checks));
+});
+
+test('rate of loss and rolling average at their minimum-count limits', () => {
+  const g = goal({ start: '2026-09-01', due: '2026-11-23', startKg: 80, targetKg: 75 });
+  const engine = P.makeEngine(g, {}, null, null);
+  const MAXDAY = '2026-10-15';
+  for (const days of [[0], [0, 3], [0, 5, 10], [0, 4, 9], [0, 3, 6, 10], [0, 2, 4, 6], [0, 9, 18, 27, 28], [20, 27]]) {
+    const entries: DY.Entries = {};
+    days.forEach((n, i) => { entries[new Date(Date.UTC(2026, 9, 15 - 27 + n)).toISOString().slice(0, 10)] = { w: 80 - i * 0.4 }; });
+    ctx.setup(clone(g), {}, null, clone(entries)); ctx.MAXDAY = MAXDAY; ctx.habits = [];
+    const D = DY.makeDays({ entries, engine, MAXDAY, habits: [] });
+    assert.deepEqual(D.rateOfLoss(), clone(ctx.rateOfLoss()), JSON.stringify(days));
+    const sr = D.series();
+    for (let i = 0; i < sr.length; i++) assert.equal(D.rolling(sr, i), ctx.rolling(ctx.series(), i));
+  }
 });
