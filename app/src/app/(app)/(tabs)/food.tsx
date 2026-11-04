@@ -7,9 +7,10 @@ import { FoodChart } from '../../../components/FoodChart';
 import { PanelHead } from '../../../components/ui';
 import { toast } from '../../../lib/toast';
 import { Guides } from '../../../components/Guides';
+import { Icon } from '../../../components/Icon';
 import { PhotoButtons } from '../../../components/FoodAi';
 import { aiMessage } from '../../../domain/ai';
-import { estimateRows, hasKey } from '../../../lib/ai';
+import { estimateRows, hasKey, reEstimate } from '../../../lib/ai';
 import { handOffToClaude } from '../../../lib/connector';
 import { ScreenHeader } from '../../../components/ScreenHeader';
 import { addKey, d, shortDate } from '../../../domain/dates';
@@ -219,15 +220,15 @@ export default function Food() {
                     return (
                       <View key={gi}>
                         {g.rows.map((r, i) => (
-                          <Pressable key={r.id} onPress={() => setEdit(r)} accessibilityLabel={`Edit ${r.label}`}>
-                            <TRow
+                          <View key={r.id}>
+                            <TRow editing={edit?.id === r.id} onEdit={() => setEdit(r)} onDelete={() => run(async () => { if (edit?.id === r.id) setEdit(null); await db.deleteFood(r.id); })}
                               meal={i === 0 && g.meal != null ? `Meal ${g.meal}` : ''}
                               item={shortFoodLabel(r.label)}
                               tag={SRC[r.src ?? 'none']}
                               warn={r.needs_estimate}
                               cells={[n0(r.kcal), n1(r.p), n1(r.c), n1(r.f), n1(r.fib)]}
                             />
-                          </Pressable>
+                          </View>
                         ))}
                         {g.meal != null && (
                           <TRow subtotal item="Subtotal" fatFlag={st.f > 20}
@@ -243,6 +244,7 @@ export default function Food() {
             ) : (
               <Text style={s.body2}>Nothing logged for this day yet.</Text>
             )}
+            {edit && <EditRow key={edit.id} row={edit} keyed={keyed} cuisine={profileRow?.cuisine} onClose={() => setEdit(null)} onDone={() => { setEdit(null); touch(); load(); }} />}
           </View>
 
           <FoodChart />
@@ -250,7 +252,6 @@ export default function Food() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {edit && <EditRow row={edit} onClose={() => setEdit(null)} onDone={() => { setEdit(null); touch(); }} />}
       {saveFor && <SaveMeal rows={saveFor} onClose={() => setSaveFor(null)} onDone={() => { setSaveFor(null); touch(); setStatus('Meal saved. It now has a one-tap card.'); }} />}
     </SafeAreaView>
   );
@@ -269,17 +270,17 @@ function Totals({ label, value, frac, color }: { label: string; value: string; f
   );
 }
 
-const COLS = [62, 250, 56, 46, 46, 46, 46];
-function TRow({ head, subtotal, total, meal, item, tag, warn, cells, fatFlag, action }: {
+const COLS = [62, 250, 56, 46, 46, 46, 46, 76];
+function TRow({ head, subtotal, total, meal, item, tag, warn, cells, fatFlag, action, onEdit, onDelete, editing }: {
   head?: boolean; subtotal?: boolean; total?: boolean; meal?: string; item?: string; tag?: string; warn?: boolean; fatFlag?: boolean;
-  cells: string[]; action?: { label: string; onPress: () => void };
+  cells: string[]; action?: { label: string; onPress: () => void }; onEdit?: () => void; onDelete?: () => void; editing?: boolean;
 }) {
   const { c, s } = useTheme('food');
   const all = head ? cells : [meal ?? '', item ?? '', ...cells];
   const bold = head || total || subtotal;
   return (
     <View style={{ flexDirection: 'row', minHeight: 40, alignItems: 'center', borderTopWidth: head ? 0 : 1, borderTopColor: c.lineSoft,
-      backgroundColor: head || total ? c.surface2 : c.surface }}>
+      backgroundColor: editing ? c.cat.food.soft : head || total ? c.surface2 : c.surface }}>
       {all.map((v, i) => (
         <View key={i} style={{ width: COLS[i], paddingHorizontal: 8, paddingVertical: 6, alignItems: i >= 2 ? 'flex-end' : 'flex-start', flexDirection: i === 1 ? 'row' : 'column', gap: 6, ...(i === 1 ? { alignItems: 'center' } : null) }}>
           {i === 1 && action ? (
@@ -302,6 +303,12 @@ function TRow({ head, subtotal, total, meal, item, tag, warn, cells, fatFlag, ac
           )}
         </View>
       ))}
+      <View style={{ width: COLS[7], flexDirection: 'row', gap: 6, justifyContent: 'flex-end', paddingRight: 8 }}>
+        {onEdit && <Pressable onPress={onEdit} accessibilityLabel="Edit this row" hitSlop={4}
+          style={{ width: 30, height: 30, borderRadius: 15, borderWidth: 1, borderColor: c.line, alignItems: 'center', justifyContent: 'center' }}><Icon name="edit" size={14} color={c.ink2} /></Pressable>}
+        {onDelete && <Pressable onPress={onDelete} accessibilityLabel="Remove this row" hitSlop={4}
+          style={{ width: 30, height: 30, alignItems: 'center', justifyContent: 'center' }}><Icon name="trash" size={15} color={c.muted} /></Pressable>}
+      </View>
     </View>
   );
 }
@@ -324,50 +331,68 @@ function Sheet({ title, children, onClose }: { title: string; children: React.Re
 const FIELDS = [['kcal', 'kcal'], ['p', 'Protein g'], ['c', 'Carbs g'], ['f', 'Fat g'], ['fib', 'Fiber g']] as const;
 
 /** Row edit: unchanged numbers keep the source; changed ones become "yours" and are remembered. */
-function EditRow({ row, onClose, onDone }: { row: Row; onClose: () => void; onDone: () => void }) {
+/** r19 editPanel: inline under the table. "Ask Claude again" fills the boxes; nothing saves until Save row. */
+function EditRow({ row, keyed, cuisine, onClose, onDone }: { row: Row; keyed: boolean; cuisine?: string | null; onClose: () => void; onDone: () => void }) {
   const { c, s } = useTheme('food');
   const [label, setLabel] = useState(row.label);
   const [v, setV] = useState<Record<string, string>>(Object.fromEntries(FIELDS.map(([k]) => [k, row.src === 'none' && !row[k] ? '' : String(row[k])])));
-  const [err, setErr] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  const [asking, setAsking] = useState(false);
+  const [snap, setSnap] = useState<Record<string, string> | null>(null);
   const save = async () => {
     const num: Record<string, number> = {};
     for (const [k, l] of FIELDS) {
       const x = v[k].trim() === '' ? 0 : Number(v[k].replace(',', '.'));
-      if (!Number.isFinite(x) || x < 0 || x > (k === 'kcal' ? 5000 : 500)) return setErr(`${l} looks off.`);
+      if (!Number.isFinite(x) || x < 0 || x > (k === 'kcal' ? 5000 : 500)) return setNote(`${l} looks off.`);
       num[k] = x;
     }
-    if (row.src === 'none' && !num.kcal && !num.p) return setErr('Enter at least calories or protein.');
+    if (row.src === 'none' && !num.kcal && !num.p) return setNote('Enter at least calories or protein.');
     const changed = FIELDS.some(([k]) => num[k] !== +row[k]);
+    // Still exactly what Claude filled in: an estimate, not yours (r19 edClaudeSnap).
+    const fromClaude = !!snap && FIELDS.every(([k]) => v[k] === snap[k]);
     try {
       await db.updateFood(row.id, {
         label: label.trim() || row.label, kcal: num.kcal, protein_g: num.p, carbs_g: num.c, fat_g: num.f, fiber_g: num.fib,
-        source: changed || row.src === 'none' ? 'you' : (row.src as db.FoodSource),
+        source: fromClaude ? 'claude' : changed || row.src === 'none' ? 'you' : (row.src as db.FoodSource),
       });
-      if (changed) await rememberFood(row.raw ?? row.label, label.trim() || row.label, { kcal: num.kcal, p: num.p, c: num.c, f: num.f, fib: num.fib }, null);
+      if (changed && !fromClaude) await rememberFood(row.raw ?? row.label, label.trim() || row.label, { kcal: num.kcal, p: num.p, c: num.c, f: num.f, fib: num.fib }, null);
       onDone();
-    } catch (e) { setErr((e as Error).message); }
+    } catch (e) { setNote((e as Error).message); }
   };
-  const remove = async () => { try { await db.deleteFood(row.id); onDone(); } catch (e) { setErr((e as Error).message); } };
+  const ask = async () => {
+    setAsking(true); setNote('Asking Claude…');
+    try {
+      const e = await reEstimate(row.raw || label, cuisine);
+      if (!e) { setNote('Nothing came back that could be read. Try describing it more plainly.'); return; }
+      const nv = { kcal: String(Math.round(e.kcal)), p: String(e.p), c: String(e.c), f: String(e.f), fib: String(e.fib) };
+      setV(nv); setSnap(nv); setLabel(e.label || label); setNote('Filled in. Press Save row to keep it.');
+    } catch (e) { setNote(aiMessage(e)); } finally { setAsking(false); }
+  };
+  const box = (k: string, l: string) => (
+    <View key={k} style={{ width: '18%', flexGrow: 1, gap: 4 }}>
+      <Text style={{ fontFamily: font.bold, fontSize: 11, color: c.ink2 }}>{l}</Text>
+      <TextInput style={[s.input, { minHeight: 42, paddingHorizontal: 8 }]} keyboardType="decimal-pad" value={v[k]} onChangeText={(x) => setV((o) => ({ ...o, [k]: x }))} accessibilityLabel={l} />
+    </View>
+  );
   return (
-    <Sheet title="Edit item" onClose={onClose}>
-      <TextInput style={s.input} value={label} onChangeText={setLabel} placeholderTextColor={c.muted} />
-      {row.raw && row.raw !== row.label && <Text style={s.label}>You typed: {row.raw}</Text>}
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-        {FIELDS.map(([k, l]) => (
-          <View key={k} style={{ width: '30%', flexGrow: 1, gap: 4 }}>
-            <Text style={s.label}>{l}</Text>
-            <TextInput style={s.input} keyboardType="decimal-pad" value={v[k]} onChangeText={(x) => setV((o) => ({ ...o, [k]: x }))} />
-          </View>
-        ))}
+    <View style={{ gap: 10, padding: 12, borderRadius: 14, borderWidth: 1.5, borderColor: c.cat.food.fill, backgroundColor: c.cat.food.soft }}>
+      <Text style={{ fontFamily: font.bold, fontSize: 11, color: c.muted }}>Editing this row</Text>
+      <View style={{ gap: 4 }}>
+        <Text style={{ fontFamily: font.bold, fontSize: 11, color: c.ink2 }}>What it was</Text>
+        <TextInput style={s.input} value={label} onChangeText={setLabel} accessibilityLabel="What it was" />
       </View>
-      <Text style={s.label}>Numbers are for the whole portion. Changed numbers are remembered, so the same food fills in next time.</Text>
-      {err && <Text style={s.error}>{err}</Text>}
-      <Pressable style={s.primary} onPress={save}><Text style={s.primaryText}>Save row</Text></Pressable>
-      <View style={s.row}>
-        <Pressable style={[s.outline, { flex: 1 }]} onPress={onClose}><Text style={s.outlineText}>Cancel</Text></Pressable>
-        <Pressable style={[s.outline, { flex: 1 }]} onPress={remove}><Text style={[s.outlineText, { color: c.danger }]}>Delete</Text></Pressable>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>{box('kcal', 'kcal')}{box('p', 'protein')}{box('c', 'carbs')}{box('f', 'fat')}{box('fib', 'fiber')}</View>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+        <Pressable style={[s.primary, { minHeight: 42, paddingHorizontal: 18 }]} onPress={save}><Text style={s.primaryText}>Save row</Text></Pressable>
+        {keyed && <Pressable onPress={ask} disabled={asking} style={[s.outline, { minHeight: 40, borderRadius: 999, opacity: asking ? 0.5 : 1 }]}><Text style={s.outlineText}>Ask Claude again</Text></Pressable>}
+        <Pressable onPress={onClose} style={[s.outline, { minHeight: 40, borderRadius: 999 }]}><Text style={s.outlineText}>Cancel</Text></Pressable>
+        {note && <Text style={[s.label, { flexBasis: '100%' }]}>{note}</Text>}
       </View>
-    </Sheet>
+      <Text style={s.label}>
+        {keyed ? <><Text style={{ fontFamily: font.bold }}>Ask Claude again</Text> re-reads the description and fills the boxes; saved as it stands it is tagged estimate. </> : null}
+        Change any number and it becomes yours. Either way nothing saves until you press Save row.
+      </Text>
+    </View>
   );
 }
 

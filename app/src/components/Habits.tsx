@@ -76,49 +76,39 @@ export function Habits({ openId, onOpened }: { openId?: string | null; onOpened?
       {err && <Text style={s.error}>{err}</Text>}
 
       {(showPomo || pomo.phase !== 'idle') && (
+        // r19 renderPomo: tag and blocks, the clock, status, controls, then a Settings fold.
         <View style={{ backgroundColor: c.cat.move.soft, borderRadius: 16, padding: 14, gap: 10, borderWidth: 1.5, borderColor: c.cat.move.fill }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={[s.label, { fontFamily: font.bold, color: c.cat.move.ink, flex: 1 }]}>● Focus · Pomodoro{pomoBlocksToday() > 0 ? `  ·  ${pomoBlocksToday()} block${pomoBlocksToday() > 1 ? 's' : ''} today` : ''}</Text>
+            <Text style={[s.label, { fontFamily: font.bold, color: c.cat.move.ink, flex: 1 }]}>● Focus · Pomodoro</Text>
+            {pomoBlocksToday() > 0 && <Text style={[s.label, { marginRight: 8 }]}>{pomoBlocksToday()} block{pomoBlocksToday() > 1 ? 's' : ''} today</Text>}
             <Pressable onPress={() => setFocus('pomo')} accessibilityLabel="Full-screen focus" hitSlop={8}
               style={{ width: 34, height: 34, borderRadius: 10, borderWidth: 1, borderColor: c.line, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center' }}>
               <Icon name="expand" size={16} color={c.ink2} />
             </Pressable>
           </View>
-          <Text style={{ fontFamily: font.bold, fontSize: 44, color: pomo.phase === 'break' ? c.cat.move.ink : c.ink, fontVariant: ['tabular-nums'] }}>{fmtDur(pomoRemain(now))}</Text>
-          <Text style={s.label}>{pomo.phase === 'break' ? 'Break' : pomo.phase === 'work' ? 'Focus' : 'Focus timer'} · {pomo.running ? (pomo.phase === 'break' ? 'break running' : 'focus running') : pomo.phase === 'idle' ? 'ready' : 'paused'}{target ? ` · logs to ${target.name}` : ''}</Text>
+          <View>
+            <Text style={{ fontFamily: font.bold, fontSize: 48, color: pomo.phase === 'break' ? c.warn : c.ink, fontVariant: ['tabular-nums'], letterSpacing: -1 }}>{fmtDur(pomoRemain(now))}</Text>
+            <Text style={[s.label, { fontSize: 12 }]}>{pomo.phase === 'break' ? 'Break' : pomo.phase === 'work' ? 'Focus' : 'Focus timer'}</Text>
+          </View>
+          <Text style={s.label}>{[pomo.running ? (pomo.phase === 'break' ? 'break running' : 'focus running') : pomo.phase === 'idle' ? 'ready' : 'paused', target ? 'logs to ' + target.name : null].filter(Boolean).join(' · ')}</Text>
           <View style={s.row}>
             {pomo.phase === 'idle' ? (
               <Pressable style={[s.primary, { flex: 1, backgroundColor: c.cat.move.fill }]} onPress={pomoStart}><Icon name="play" size={14} color={c.cat.move.on} /><Text style={[s.primaryText, { color: c.cat.move.on }]}>Start focus</Text></Pressable>
             ) : (
               <>
-                <Pressable style={[s.outline, { flex: 1 }]} onPress={pomo.running ? pomoPause : pomoStart}><Text style={s.outlineText}>{pomo.running ? 'Pause' : 'Resume'}</Text></Pressable>
-                <Pressable style={[s.outline, { flex: 1 }]} onPress={() => { const m = pomoStop(); if (m && target) run(logFocus(target, m, (k) => valOn(k, target.id))); }}>
-                  <Text style={s.outlineText}>Stop & log</Text>
+                <Pressable style={[s.outline, { flex: 1, flexDirection: 'row', gap: 6, backgroundColor: c.surface }]} onPress={pomo.running ? pomoPause : pomoStart}>
+                  <Icon name={pomo.running ? 'pause' : 'play'} size={14} color={c.ink} /><Text style={s.outlineText}>{pomo.running ? 'Pause' : 'Resume'}</Text>
                 </Pressable>
-                <Pressable style={s.outline} onPress={pomoReset} accessibilityLabel="Reset without logging"><Text style={s.outlineText}>↺</Text></Pressable>
+                <Pressable style={[s.primary, { flex: 1, backgroundColor: c.cat.move.fill }]} onPress={() => { const m = pomoStop(); if (m && target) run(logFocus(target, m, (k) => valOn(k, target.id))); }}>
+                  <Icon name="stop" size={13} color={c.cat.move.on} /><Text style={[s.primaryText, { color: c.cat.move.on }]}>Stop & log</Text>
+                </Pressable>
+                <Pressable style={[s.outline, { width: 48, paddingHorizontal: 0, backgroundColor: c.surface }]} onPress={pomoReset} accessibilityLabel="Reset without logging"><Icon name="reset" size={16} color={c.ink} /></Pressable>
               </>
             )}
           </View>
-          {pomo.phase === 'idle' && (
-            <View style={{ gap: 8 }}>
-              <View style={s.row}>
-                <NumField label="Focus (min)" value={pomo.workMin} onChange={(v) => pomoSettings({ workMin: v })} />
-                <NumField label="Break (min)" value={pomo.breakMin} onChange={(v) => pomoSettings({ breakMin: v })} />
-              </View>
-              {habits.some((h) => h.type === 'build' && isTimeUnit(h.unit)) ? (
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                  <Text style={[s.label, { width: '100%' }]}>Logs to</Text>
-                  {habits.filter((h) => h.type === 'build' && isTimeUnit(h.unit)).map((h) => (
-                    <Chip key={h.id} label={h.name} on={target?.id === h.id} onPress={() => pomoSettings({ targetId: h.id })} />
-                  ))}
-                </View>
-              ) : (
-                <Pressable style={s.outline} onPress={() => run(db.addHabit({ name: 'Deep work', type: 'build', unit: 'min', goal: 60, step: 15 }))}>
-                  <Text style={s.outlineText}>Add a focus habit</Text>
-                </Pressable>
-              )}
-            </View>
-          )}
+          <PomoSettings open={pomo.phase === 'idle'} work={pomo.workMin} brk={pomo.breakMin} builds={habits.filter((h) => h.type === 'build' && isTimeUnit(h.unit))} target={target}
+            onWork={(v) => pomoSettings({ workMin: Math.max(1, Math.min(120, v)) })} onBreak={(v) => pomoSettings({ breakMin: Math.max(1, Math.min(60, v)) })}
+            onTarget={(id) => pomoSettings({ targetId: id })} onAddFocus={() => run(db.addHabit({ name: 'Deep work', type: 'build', unit: 'min', goal: 60, step: 15 }))} />
         </View>
       )}
 
@@ -184,6 +174,8 @@ export function Habits({ openId, onOpened }: { openId?: string | null; onOpened?
         );
       })}
 
+      {adding && <AddHabit onClose={() => setAdding(false)} onAdd={(h) => { setAdding(false); run(db.addHabit(h)); }} />}
+
       {sheetHabit && (
         <HabitSheet h={sheetHabit} day={day} future={future} onClose={() => setSheet(null)} isKey={keystone?.id === sheetHabit.id}
           index={habits.findIndex((x) => x.id === sheetHabit.id)} count={habits.length}
@@ -205,7 +197,6 @@ export function Habits({ openId, onOpened }: { openId?: string | null; onOpened?
           tint={c.cat.move} valOn={valOn} steps={entries[day]?.steps ?? null} strength={D.habitStrength(sheetHabit)} longest={D.habitLongest(sheetHabit)} pct={D.habitPct(sheetHabit)}
           todayI={D.todayI} START={D.series()[0]?.k} />
       )}
-      {adding && <AddHabit onClose={() => setAdding(false)} onAdd={(h) => { setAdding(false); run(db.addHabit(h)); }} />}
       {focus && (() => {
         if (focus === 'pomo') {
           const isBreak = pomo.phase === 'break', total = (isBreak ? pomo.breakMin : pomo.workMin) * 60000, rem = pomoRemain(now);
@@ -471,46 +462,67 @@ function TypeBox({ label, value, placeholder, parse, ok, onCommit }: { label: st
   );
 }
 
-function AddHabit({ onClose, onAdd }: { onClose: () => void; onAdd: (h: { name: string; type: 'build' | 'limit'; unit: string; goal: number; step: number }) => void }) {
+/** r19 renderHabitForm: an inline form under the list, dashed outline, with dropdowns. */
+function Drop<T extends string>({ value, options, onChange, label }: { value: T; options: [T, string][]; onChange: (v: T) => void; label: string }) {
   const { c, s } = useTheme('habit');
+  const [open, setOpen] = useState(false);
+  return (
+    <View style={{ gap: 4 }}>
+      <Pressable onPress={() => setOpen((o) => !o)} accessibilityLabel={label} accessibilityRole="button" accessibilityState={{ expanded: open }}
+        style={[s.input, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: c.surface, minHeight: 44 }]}>
+        <Text style={s.body} numberOfLines={1}>{options.find((o) => o[0] === value)?.[1]}</Text><Icon name="down" size={15} color={c.ink2} />
+      </Pressable>
+      {open && (
+        <View style={{ borderWidth: 1, borderColor: c.line, borderRadius: 12, backgroundColor: c.surface, overflow: 'hidden' }}>
+          {options.map(([v, l]) => (
+            <Pressable key={v} onPress={() => { onChange(v); setOpen(false); }} style={{ paddingHorizontal: 14, paddingVertical: 11, backgroundColor: v === value ? c.surface2 : c.surface }}>
+              <Text style={[s.body, v === value && { fontFamily: font.semibold }]}>{l}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+function AddHabit({ onClose, onAdd }: { onClose: () => void; onAdd: (h: { name: string; type: 'build' | 'limit'; unit: string; goal: number; step: number }) => void }) {
+  const { c, s } = useTheme('move');
   const [name, setName] = useState('');
   const [type, setType] = useState<'build' | 'limit'>('build');
   const [unit, setUnit] = useState('min');
   const [other, setOther] = useState('');
   const [goal, setGoal] = useState('20');
   const [touched, setTouched] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
+  const [bad, setBad] = useState(false);
   const add = () => {
-    if (!name.trim()) return setErr('Give it a name.');
+    if (!name.trim()) return setBad(true);
     let u = unit, step: number;
-    if (unit === '__other') { u = normUnit(other.trim().slice(0, 8)); if (!u) return setErr('Name the unit.'); step = u === 'h' ? 0.5 : u === 'min' ? 5 : 1; }
+    if (unit === '__other') { u = normUnit(other.trim().slice(0, 8)); step = u === 'h' ? 0.5 : u === 'min' ? 5 : 1; }
     else step = HABIT_UNITS.find((x) => x.v === unit)!.step;
     onAdd({ name: name.trim().slice(0, 40), type, unit: u, goal: Math.max(0, +goal.replace(',', '.') || 0), step });
   };
+  const L = ({ t }: { t: string }) => <Text style={{ fontFamily: font.regular, fontSize: 13, color: c.ink2 }}>{t}</Text>;
   return (
-    <Modal transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView behavior="padding" style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: '#0006' }}>
-        <Pressable style={{ flex: 1 }} onPress={onClose} accessibilityLabel="Close" />
-        <ScrollView style={{ maxHeight: '85%', backgroundColor: c.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22 }} contentContainerStyle={{ padding: 20, paddingBottom: 36, gap: 12 }} keyboardShouldPersistTaps="handled">
-          <Text style={s.cardTitle}>New habit</Text>
-          <TextInput style={s.input} value={name} onChangeText={setName} placeholder="Reading, No sugar, Steps" placeholderTextColor={c.muted} maxLength={40} accessibilityLabel="Name" />
-          <View style={s.row}>
-            <Chip label="Build: hit at least" on={type === 'build'} onPress={() => setType('build')} />
-            <Chip label="Limit: stay under" on={type === 'limit'} onPress={() => setType('limit')} />
-          </View>
-          <Text style={s.label}>Unit</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-            {HABIT_UNITS.map((u) => <Chip key={u.v} label={u.l} on={unit === u.v} onPress={() => { setUnit(u.v); if (!touched) setGoal(String(u.goal)); }} />)}
-            <Chip label="Other…" on={unit === '__other'} onPress={() => setUnit('__other')} />
-          </View>
-          {unit === '__other' && <TextInput style={s.input} value={other} onChangeText={setOther} placeholder="reps, sets" placeholderTextColor={c.muted} maxLength={8} accessibilityLabel="Your unit" />}
-          <Text style={s.label}>{type === 'limit' ? 'Cap' : 'Goal'}</Text>
-          <TextInput style={s.input} value={goal} onChangeText={(v) => { setGoal(v); setTouched(true); }} keyboardType="decimal-pad" accessibilityLabel="Goal" />
-          {err && <Text style={s.error}>{err}</Text>}
-          <Pressable style={s.primary} onPress={add}><Text style={s.primaryText}>Add habit</Text></Pressable>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </Modal>
+    <View style={{ borderWidth: 1, borderStyle: 'dashed', borderColor: c.line, borderRadius: 12, padding: 14, gap: 10 }}>
+      <View style={{ gap: 5 }}><L t="Name" />
+        <TextInput style={[s.input, { backgroundColor: c.surface }, bad && { borderColor: c.danger }]} value={name} onChangeText={(x) => { setName(x); setBad(false); }} maxLength={40}
+          placeholder="e.g. Reading, No sugar, Steps" placeholderTextColor={c.muted} accessibilityLabel="Name" autoFocus /></View>
+      <View style={{ gap: 5 }}><L t="Type" />
+        <Drop label="Type" value={type} onChange={setType} options={[['build', 'Build — hit at least the goal'], ['limit', 'Limit — stay at or under the goal']]} /></View>
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        <View style={{ flex: 1, gap: 5 }}><L t="Goal" />
+          <TextInput style={[s.input, { backgroundColor: c.surface, minHeight: 44 }]} value={goal} onChangeText={(v) => { setGoal(v); setTouched(true); }} keyboardType="decimal-pad" accessibilityLabel="Goal" /></View>
+        <View style={{ flex: 1.3, gap: 5 }}><L t="Unit" />
+          <Drop label="Unit" value={unit} onChange={(v) => { setUnit(v); const u = HABIT_UNITS.find((x) => x.v === v); if (u && !touched) setGoal(String(u.goal)); }}
+            options={[...HABIT_UNITS.map((u) => [u.v, u.l] as [string, string]), ['__other', 'Other…']]} /></View>
+      </View>
+      {unit === '__other' && <View style={{ gap: 5 }}><L t="Your unit" />
+        <TextInput style={[s.input, { backgroundColor: c.surface }]} value={other} onChangeText={setOther} placeholder="e.g. reps, sets" placeholderTextColor={c.muted} maxLength={8} accessibilityLabel="Your unit" /></View>}
+      <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+        <Pressable style={[s.primary, { paddingHorizontal: 20, minHeight: 44 }]} onPress={add}><Text style={s.primaryText}>Add habit</Text></Pressable>
+        <Pressable style={[s.outline, { minHeight: 44, borderRadius: 999 }]} onPress={onClose}><Text style={s.outlineText}>Cancel</Text></Pressable>
+      </View>
+    </View>
   );
 }
 
@@ -562,6 +574,61 @@ function Big({ glyph, label, onPress, small }: { glyph: string; label: string; o
     </Pressable>
   );
 }
+function MinBox({ label, value, onSet }: { label: string; value: number; onSet: (v: number) => void }) {
+  const { c, s } = useTheme('move');
+    const [t, setT] = useState(String(value));
+    useEffect(() => setT(String(value)), [value]);
+    return (
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <Text style={s.body}>{label}</Text>
+        <TextInput style={[s.input, { width: 56, minHeight: 38, paddingHorizontal: 8, textAlign: 'center', backgroundColor: c.surface }]} value={t} onChangeText={setT} keyboardType="number-pad"
+          onBlur={() => { const n = Math.round(+t); if (n > 0) onSet(n); else setT(String(value)); }} accessibilityLabel={label + ' minutes'} />
+        <Text style={s.label}>min</Text>
+      </View>
+    );
+  }
+
+/** r19 .pcard-cfg: Settings fold with focus and break minutes and the habit the blocks log to. */
+function PomoSettings(p: { open: boolean; work: number; brk: number; builds: HabitDef[]; target: HabitDef | null;
+  onWork: (v: number) => void; onBreak: (v: number) => void; onTarget: (id: string) => void; onAddFocus: () => void }) {
+  const { c, s } = useTheme('move');
+  const [open, setOpen] = useState(p.open);
+  const [pick, setPick] = useState(false);
+  useEffect(() => setOpen(p.open), [p.open]);
+  return (
+    <View style={{ borderTopWidth: 1, borderTopColor: c.line, paddingTop: 8, gap: 10 }}>
+      <Pressable onPress={() => setOpen((o) => !o)} style={{ flexDirection: 'row', justifyContent: 'space-between' }} accessibilityState={{ expanded: open }}>
+        <Text style={{ fontFamily: font.bold, fontSize: 12, color: c.ink2 }}>Settings</Text><Text style={{ color: c.muted }}>{open ? '–' : '+'}</Text>
+      </Pressable>
+      {open && (
+        <View style={{ gap: 10 }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14 }}><MinBox label="Focus" value={p.work} onSet={p.onWork} /><MinBox label="Break" value={p.brk} onSet={p.onBreak} /></View>
+          {p.builds.length > 0 && (
+            <View style={{ gap: 4 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={s.body}>Logs to</Text>
+                <Pressable onPress={() => setPick((x) => !x)} accessibilityLabel="Logs to" style={{ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 38, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: c.line, backgroundColor: c.surface }}>
+                  <Text style={s.body}>{p.target?.name ?? 'choose…'}</Text><Icon name="down" size={14} color={c.ink2} />
+                </Pressable>
+              </View>
+              {pick && (
+                <View style={{ borderWidth: 1, borderColor: c.line, borderRadius: 10, backgroundColor: c.surface, overflow: 'hidden', alignSelf: 'flex-start', minWidth: 180 }}>
+                  {p.builds.map((h) => (
+                    <Pressable key={h.id} onPress={() => { p.onTarget(h.id); setPick(false); }} style={{ paddingHorizontal: 12, paddingVertical: 10, backgroundColor: p.target?.id === h.id ? c.surface2 : c.surface }}>
+                      <Text style={s.body}>{h.name}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+            </View>
+          )}
+          {!p.target && <Pressable style={[s.outline, { alignSelf: 'flex-start', minHeight: 38, borderRadius: 999, backgroundColor: c.surface }]} onPress={p.onAddFocus}><Text style={s.outlineText}>Add a focus habit</Text></Pressable>}
+        </View>
+      )}
+    </View>
+  );
+}
+
 function NumField({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
   const { s } = useTheme('habit');
   const [t, setT] = useState(String(value));

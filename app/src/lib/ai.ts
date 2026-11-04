@@ -145,3 +145,11 @@ export async function proposePlan(req: string, engine: Engine, D: Days, PROFILE:
   return pr;
 }
 export const acceptProposal = (pr: Proposal) => db.savePlanVersion({ body: pr.plan, source: 'claude', note: pr.plan.note, kcal: pr.kcal, protein: pr.protein });
+
+/** r19 "Ask Claude again": a fresh estimate for one description, returned for the edit boxes, not saved. */
+export async function reEstimate(desc: string, cuisine: string | null | undefined) {
+  const recs = readEstimates(await askJson(foodEstimatePrompt([desc], cuisine), { effort: 'low', maxTokens: 4000, timeoutMs: 60000 }), [desc]);
+  const rec = recs[0]; if (!rec) return null;
+  const po = portionOf(desc, rec);
+  return scaleEst(rec, po.g, po.n);
+}
