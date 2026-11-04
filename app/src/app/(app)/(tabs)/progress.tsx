@@ -14,6 +14,7 @@ import { font, useTheme, type Palette } from '../../../lib/theme';
 import { endPoint, frame, Halo, poly, valueLabels, xTicks, yGrid } from '../../../components/chart';
 import { Icon } from '../../../components/Icon';
 import { Guides } from '../../../components/Guides';
+import { Badges } from '../../../components/Game';
 import { PanelHead, Segmented, Stats as Stats2 } from '../../../components/ui';
 
 // r19 PROG_LINKS: quick links that stay in reach while the page scrolls.
@@ -52,6 +53,7 @@ export default function Progress() {
         <View onLayout={mark('stats')}><Stats /></View>
         <View onLayout={mark('today')}><WeighIn /></View>
         <View onLayout={(e) => { mark('cal')(e); setCalY(e.nativeEvent.layout.y); }}><ConsistencyFull /></View>
+        <Badges />
         <View onLayout={mark('prog')}><VolumeChart /></View>
         <View onLayout={mark('review')}><ReviewCard /></View>
         <View onLayout={mark('log')}><DailyLog /></View>

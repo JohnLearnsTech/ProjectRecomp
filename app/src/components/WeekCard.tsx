@@ -1,7 +1,6 @@
 // Today: a short form of the weekly review. The last grade, headline and first commitment, and
 // this week's live numbers so far. Tap opens the full review on Progress.
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { reviewDue } from '../domain/ai';
 import { d, shortDate } from '../domain/dates';
@@ -10,13 +9,15 @@ import * as db from '../lib/db';
 import { useDays } from '../lib/days';
 import { useRecomp } from '../lib/recomp';
 import { font, useTheme } from '../lib/theme';
+import { useQuests } from '../lib/game';
+import { Icon } from './Icon';
 
 export function WeekCard() {
-  const { engine, maxDay, rev } = useRecomp();
+  const { engine, maxDay, touch } = useRecomp();
+  const q = useQuests();
   const { D, loaded } = useDays();
   const { c, s } = useTheme('body');
-  const [review, setReview] = useState<db.ReviewRow | null>(null);
-  useEffect(() => { db.getLatestReview().then(setReview).catch(() => {}); }, [rev]);
+  const review = q.review;
   if (!loaded) return null;
   const st = D.weekStats(maxDay, proteinFloor(engine.PROFILE, engine.G));
   const n = st.daysInWeek || 7;
@@ -54,10 +55,22 @@ export function WeekCard() {
           </View>
         ))}
       </View>
-      {!!o?.commitments?.[0] && (
-        <View style={{ borderRadius: 12, padding: 12, backgroundColor: c.cat.body.soft, gap: 2 }}>
-          <Text style={{ fontFamily: font.bold, fontSize: 11, color: c.cat.body.ink }}>Your non-negotiable</Text>
-          <Text style={[s.body, { fontFamily: font.semibold }]}>{o.commitments[0]}</Text>
+      {q.list.length > 0 && (
+        <View style={{ borderRadius: 12, padding: 12, backgroundColor: c.cat.body.soft, gap: 8 }}>
+          <Text style={{ fontFamily: font.bold, fontSize: 11, color: c.cat.body.ink }}>{q.live ? "This week's quests" : 'Last review’s non-negotiables'}</Text>
+          {q.list.map((t, i) => {
+            const done = q.done[i];
+            return (
+              <Pressable key={i} disabled={!q.live} onPress={() => db.setCheck(q.end!, 'quest:' + i, !done).then(() => { touch(); }).catch(() => {})}
+                accessibilityRole="checkbox" accessibilityState={{ checked: done }} style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
+                <View style={{ width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: done ? c.cat.body.fill : c.cat.body.ink, backgroundColor: done ? c.cat.body.fill : 'transparent', alignItems: 'center', justifyContent: 'center', marginTop: 1, opacity: q.live ? 1 : 0.5 }}>
+                  {done && <Icon name="check" size={13} stroke={3} color={c.cat.body.on} />}
+                </View>
+                <Text style={[s.body, { flex: 1, fontFamily: font.semibold }, done && { color: c.ink2, textDecorationLine: 'line-through' }]}>{t}</Text>
+              </Pressable>
+            );
+          })}
+          {q.live && q.done.every(Boolean) && <Text style={{ fontFamily: font.bold, fontSize: 12.5, color: c.cat.body.ink }}>All kept. That earns Promises kept.</Text>}
         </View>
       )}
       <Text style={[s.label, { color: c.cat.body.ink, fontFamily: font.semibold }]}>{due ? 'A new review is due. Open it on Progress ›' : 'Full review on Progress ›'}</Text>

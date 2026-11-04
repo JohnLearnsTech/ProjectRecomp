@@ -153,6 +153,17 @@ A side-by-side comparison with r19 (same demo backup, phone size) found 44 diffe
 - **Reminders** are phone notifications (expo-notifications) instead of Google Calendar events, with r19's rows, times and defaults.
 - Label and plate photo buttons show only with an API key, as in r19, so the manual "Enter a label" form is gone.
 
+## Updates after the parity pass
+
+- Time habits and Walk's steps use text boxes (h:mm or minutes); count habits keep the wheel.
+- Today has "This week": the last grade and headline, the last seven days counted live, and the review's non-negotiables as this week's quests.
+- **Game** (`src/domain/game.ts`, tested in `test/game.test.ts`), derived from the log so it works on history:
+  - a day is won when its floor is met (lift: two exercises; cardio: ten minutes of walking or 2,000 steps; rest: two of water, protein and a short walk);
+  - points reward effort, capped at 100 a day, double on the first day back after a miss, and are shown only when earned;
+  - levels by days won (Day One, Showing Up, Building, Consistent, Hardworking, Unstoppable) never go down;
+  - streaks forgive one missed day a week;
+  - badges on Progress; a short celebration on Today when a day is won, a level is reached or a badge is earned.
+
 ## Next
 
 Host the consent page (step 6) so the connector can sign people in; then a real-phone pass: camera photos for labels and plates, the keyboard on long forms, rest-timer vibration, and the Claude app handoff. After that: reminders with expo-notifications, and a JSON backup export from the app.

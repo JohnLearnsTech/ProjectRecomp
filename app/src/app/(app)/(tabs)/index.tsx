@@ -12,6 +12,7 @@ import { d, diffDays, shortDate } from '../../../domain/dates';
 import { currentQuote, nextQuote } from '../../../domain/quotes';
 import { Icon } from '../../../components/Icon';
 import { WeekCard } from '../../../components/WeekCard';
+import { Celebrate, GameBar } from '../../../components/Game';
 import * as db from '../../../lib/db';
 import { evidence, latestWeight, trainedOn, useHistory } from '../../../lib/history';
 import { useRecomp } from '../../../lib/recomp';
@@ -54,6 +55,7 @@ export default function Today() {
     <SafeAreaView style={{ flex: 1, backgroundColor: c.paper }} edges={['top']}>
       <ScrollView contentContainerStyle={s.screen} refreshControl={<RefreshControl refreshing={false} onRefresh={reload} />}>
         <ScreenHeader title="Today" />
+        <GameBar />
         {error && <Text style={s.error}>{error}</Text>}
         <Nudge />
 
@@ -140,6 +142,7 @@ export default function Today() {
           Recomp is a training, nutrition and habits tool. Its targets come from standard formulas and your own logs; they are not medical advice.
         </Text>
       </ScrollView>
+      <Celebrate />
     </SafeAreaView>
   );
 }
