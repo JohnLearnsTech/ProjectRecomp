@@ -7,6 +7,7 @@ import {
   aboutYouProblem, calcTargets, EQUIP, GOAL_TYPES, HABIT_OPTS, habitOptLabel, STEP_CHOICES, WEEKS, type Answers,
 } from '../../domain/onboarding';
 import * as db from '../../lib/db';
+import { BackupImport } from '../../components/BackupImport';
 import { buildOnboarding } from '../../lib/onboarding';
 import { useRecomp } from '../../lib/recomp';
 import { font, useTheme } from '../../lib/theme';
@@ -91,6 +92,12 @@ export default function Onboarding() {
               <Text style={[s.body2, { fontSize: 18, lineHeight: 27 }]}>
                 Recomp brings your training, food, habits and sleep into one plan that adapts as you go. Five quick questions and you have yours.
               </Text>
+              {!isAgain && (
+                <View style={{ marginTop: 12, gap: 8 }}>
+                  <Text style={s.label}>Used the Recomp web app? Restore its backup instead.</Text>
+                  <BackupImport compact />
+                </View>
+              )}
             </View>
           )}
 

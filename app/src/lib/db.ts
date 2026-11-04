@@ -311,3 +311,6 @@ export const listPendingProposals = async () =>
 export const decideProposal = async (id: string, status: 'applied' | 'dismissed') => {
   must(await supabase.from('plan_proposals').update({ status, decided_at: new Date().toISOString() }).eq('id', id));
 };
+
+// ── Step 7: r19 backup restore (replaces everything in this account, one transaction) ──
+export const importBackup = async (p: unknown) => must(await supabase.rpc('import_backup', { p })) as Record<string, any>;
