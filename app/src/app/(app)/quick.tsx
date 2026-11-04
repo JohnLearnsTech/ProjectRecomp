@@ -73,7 +73,7 @@ export default function Quick() {
       <View style={{ flexDirection: 'row', gap: 8 }}>
         {shown.map((f) => (
           <View key={f.key} style={{ flex: 1, gap: 5 }}>
-            <Text style={{ fontFamily: font.bold, fontSize: 11, color: c.ink2 }}>{f.label} ({f.unit === 'steps' ? '' : f.unit})</Text>
+            <Text style={{ fontFamily: font.bold, fontSize: 11, color: c.ink2 }}>{f.label}{f.unit === 'steps' ? '' : ` (${f.unit})`}</Text>
             <TextInput style={s.input} keyboardType={f.int ? 'number-pad' : 'decimal-pad'} value={vals[f.key] ?? ''} editable={!future} accessibilityLabel={f.label}
               placeholder={f.key === 'steps' ? '8000' : f.key === 'sleep_h' ? '7.5' : f.unit} placeholderTextColor={c.muted} onChangeText={(v) => setVals((o) => ({ ...o, [f.key]: v }))} />
           </View>

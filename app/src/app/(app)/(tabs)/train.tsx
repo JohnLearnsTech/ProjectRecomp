@@ -16,6 +16,7 @@ import {
   type Band, type Resolved,
 } from '../../../domain/training';
 import { useTraining } from '../../../lib/useTraining';
+import { useDays } from '../../../lib/days';
 import { loadWarm, loadWo, saveWarm } from '../../../lib/workout';
 import { font, useTheme } from '../../../lib/theme';
 
@@ -27,6 +28,7 @@ export default function Train() {
   const T = useTraining();
   const { engine, day, maxDay, P, list, today, entries, bands, log, trainTick } = T;
   const { c, s } = useTheme('train');
+  const { entries: dayEntries } = useDays();
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [extra, setExtra] = useState<Record<string, number>>({});
   const [swapFor, setSwapFor] = useState<Resolved | null>(null);
@@ -43,7 +45,7 @@ export default function Train() {
   const wo = loadWo();
   const live = !!wo && wo.day === day && wo.session === P.session && !wo.done;
   // r19 renderWoStart: anything logged that day, not only this session's exercises.
-  const anySets = Object.keys(entries[day]?.sets ?? {}).length > 0;
+  const anySets = Object.keys(dayEntries[day]?.sets ?? {}).length > 0;
   const vol = volumeOf(P, engine.PL, T.swaps, today, bands);
   const prev = P.session ? lastSameSession(engine.plan, P.session, engine.PL, T.swaps, entries, engine.T.START, engine.T.TOTAL, day, bands) : null;
   const usesBands = list.some((R) => loadKind(R.name) === 'band');
@@ -73,7 +75,7 @@ export default function Train() {
               <Pressable style={s.primary} onPress={() => router.push('/session')} accessibilityRole="button">
                 <Text style={s.primaryText}>▶  {live ? 'Resume session' : anySets ? 'Continue in session mode' : 'Start session'}</Text>
               </Pressable>
-              <Text style={s.label}>One exercise at a time, with a rest timer, last time’s numbers and a suggested load.{trainTick ? ' This session is saved.' : ''}</Text>
+              <Text style={s.label}>One exercise at a time, with a rest timer, last time’s numbers and a suggested load.</Text>
             </>
           )}
           {P.type === 'lift' && (
