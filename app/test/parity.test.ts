@@ -11,6 +11,7 @@ import * as F from '../src/domain/food';
 import * as O from '../src/domain/onboarding';
 import * as TR from '../src/domain/training';
 import * as DY from '../src/domain/days';
+import * as AI from '../src/domain/ai';
 import type { Goal, Profile } from '../src/domain/types';
 
 import { src } from './r19';
@@ -19,14 +20,18 @@ const names = ['d', 'key', 'addDays', 'diffDays', 'localKey', 'todayKey', 'trimN
   'applyGoal', 'LIFTS_DEFAULT', 'NAMES_DEFAULT', 'LEGACY_KEYS', 'slotL', 'slotC', 'slotR', 'defaultPlan', 'makePlan', 'homeFirstPlan', 'normPlan', 'applyPlan',
   'plan', 'WHEN_RANK', 'whenRank', 'checkList', 'kcalFloor', 'proteinFloor',
   'normFood', 'foodRe', 'FOODS', 'buildFoodIndex', 'parseItem', 'MODIFIER', 'matchFood', 'fromEntry', 'DISH_RX', 'WITH_RX', 'isDish', 'joinDish', 'splitItems',
-  'parseGrams', 'canonName', 'calcTargets', 'setsFor', 'filled', 'setCount', 'BAND_RX', 'BODY_RX', 'loadKind', 'BAND_N', 'defaultBands', 'bandAt', 'bandName', 'bandKg', 'bandLabel', 'topReps', 'stepFor', 'setTxt', 'exDone', 'EXGROUP', 'ALTPOOL', 'ctxOf', 'poolFor', 'resolveLine', 'lastFor', 'repRange', 'woSuggest', 'bestBefore', 'bestToday', 'prText', 'volumeOf', 'lastSameSession', 'fmtDur', 'habitVal', 'habitMet', 'habitStreak', 'dayMet', 'habitLongest', 'habitStrength', 'habitPct', 'habitsHitPct', 'tracksSteps', 'habitById', 'isTimeUnit', 'unitMs', 'normUnit', 'trainedOn', 'dayState', 'streaks', 'itemState', 'calItems', 'dayScore', 'dotState', 'itemValTxt', 'dayActive', 'missStats', 'WALK_MIN', 'series', 'rolling', 'projFor', 'rateOfLoss', 'waistSeries', 'exVolume', 'progExercises', 'exSeries', 'portionOf', 'scaleEst', 'needsNumbers', 'shortFoodLabel', 'foodName', 'fqQty'];
+  'parseGrams', 'canonName', 'calcTargets', 'setsFor', 'filled', 'setCount', 'BAND_RX', 'BODY_RX', 'loadKind', 'BAND_N', 'defaultBands', 'bandAt', 'bandName', 'bandKg', 'bandLabel', 'topReps', 'stepFor', 'setTxt', 'exDone', 'EXGROUP', 'ALTPOOL', 'ctxOf', 'poolFor', 'resolveLine', 'lastFor', 'repRange', 'woSuggest', 'bestBefore', 'bestToday', 'prText', 'volumeOf', 'lastSameSession', 'fmtDur', 'habitVal', 'habitMet', 'habitStreak', 'dayMet', 'habitLongest', 'habitStrength', 'habitPct', 'habitsHitPct', 'tracksSteps', 'habitById', 'isTimeUnit', 'unitMs', 'normUnit', 'trainedOn', 'dayState', 'streaks', 'itemState', 'calItems', 'dayScore', 'dotState', 'itemValTxt', 'dayActive', 'missStats', 'WALK_MIN', 'series', 'rolling', 'projFor', 'rateOfLoss', 'waistSeries', 'exVolume', 'progExercises', 'exSeries', 'askClaude', 'withTimeout', 'runScan', 'runPlate', 'exParts', 'planWeekdays', 'planRules', 'compactPlan', 'cueFor', 'askPlan', 'buildProposal', 'planDiff', 'avgOf', 'r1', 'weekStats', 'runReview', 'normReview', 'latestWeight', 'portionOf', 'scaleEst', 'needsNumbers', 'shortFoodLabel', 'foodName', 'fqQty'];
 const code = names.map(src).join('\n') + `
   var swaps={}, bands=null, TODAY=null, P=null, habits=[], MAXDAY=null;
+  var captured=null, sampler={ json:function(p){ captured=p; return new Promise(function(){}); } };
+  var scanBusy=false, plateBusy=false, planBusy=false, revBusy=false, planAskText='', planStatus='', revErr='', lastReview=null, proposal=null, currentView='me';
+  function $(){ return {innerHTML:'', disabled:false, classList:{add:function(){},remove:function(){}}, scrollIntoView:function(){}, focus:function(){}}; }
+  function claudeErr(){ return ''; } function dropFocus(){} function renderPlanAI(){} function renderReview(){} function scheduleShell(){}
   var PROFILE={}, goals=[], G=null, entries={}, PL=null, planSaved=null, LIFTS={}, NAMES={}, PHASES, userChecks=[], hiddenChecks={};
   var START, END, DEPART, TOTAL, WEEKS_N, START_KG, TARGET_KG, PROJ, PHASE_W, MAINT_W, LABS, TASKS, TSTART, TTOTAL, TWEEKS, TPHASE_W, TMAINT_W, FOODS_ALL=[];
   function setup(g, pf, saved, ents){ PROFILE=pf; goals=[g]; entries=ents||{}; planSaved=saved; applyGoal(); buildFoodIndex(); }
 `;
-const ctx: any = vm.createContext({ console });
+const ctx: any = vm.createContext({ console, setTimeout: () => 0, clearTimeout: () => {} });
 vm.runInContext(code, ctx);
 
 const goal = (o: Partial<Goal>): Goal => ({ id: 'g1', name: 'x', why: '', type: 'lose', start: '2026-11-03', due: '2027-01-25', event: null, trainStart: null,
@@ -310,5 +315,71 @@ test('rate of loss and rolling average at their minimum-count limits', () => {
     assert.deepEqual(D.rateOfLoss(), clone(ctx.rateOfLoss()), JSON.stringify(days));
     const sr = D.series();
     for (let i = 0; i < sr.length; i++) assert.equal(D.rolling(sr, i), ctx.rolling(ctx.series(), i));
+  }
+});
+
+test('Claude prompts are word for word r19, and their checks agree', () => {
+  const g = goal({ start: '2026-09-01', due: '2026-11-23', trainStart: '2026-09-01', type: 'lose', startKg: 84, targetKg: 78 });
+  for (const [pf, MAXDAY] of [[{ equip: 'gym', days: 3, sex: 'female', heightCm: 162, age: 30, jointFriendly: true, rules: 'No overhead pressing\n\n  Bad left knee  ', cuisine: 'South Indian', waterL: 2.5 }, '2026-10-20'],
+      [{ equip: 'home', days: 4, sex: 'male' }, '2026-09-04'], [{ equip: 'gym', days: 4 }, '2026-11-23']] as [any, string][]) {
+    const entries: DY.Entries = {};
+    const rand = rng(3);
+    for (let i = 0; i < 84; i++) {
+      const k = new Date(Date.UTC(2026, 8, 1 + i)).toISOString().slice(0, 10);
+      if (rand() < 0.2) continue;
+      entries[k] = { w: 84 - i * 0.06, steps: Math.floor(rand() * 11000), kcal: rand() < 0.7 ? 1500 + Math.floor(rand() * 700) : undefined, protein: 90 + Math.floor(rand() * 50), sleep: 6 + rand() * 2,
+        sets: rand() < 0.4 ? { 'Lat pulldown': [{ w: 30 + i * 0.1, r: 10 }, { w: 30, r: 9 }], 'Leg press': [{ w: 80, r: 12 }] } : undefined,
+        habits: { walk: rand() < 0.5 ? 25 : 5, gaming: rand() * 3 }, checks: rand() < 0.3 ? { train: true, water: true } : undefined };
+      Object.keys(entries[k]).forEach((f) => (entries[k] as any)[f] === undefined && delete (entries[k] as any)[f]);
+    }
+    const habitsDef: DY.HabitDef[] = [{ id: 'walk', name: 'Walk', type: 'build', unit: 'min', goal: 20, step: 5 }, { id: 'gaming', name: 'Gaming / media', type: 'limit', unit: 'h', goal: 2, step: 0.5 }];
+    const engine = P.makeEngine(g, pf, null, null);
+    ctx.setup(clone(g), clone(pf), null, clone(entries)); ctx.habits = clone(habitsDef); ctx.MAXDAY = MAXDAY; ctx.TODAY = MAXDAY; ctx.P = ctx.plan(MAXDAY); ctx.bands = null;
+    const D = DY.makeDays({ entries, engine, MAXDAY, habits: habitsDef });
+    const pfl = P.proteinFloor(pf, g);
+    for (const k of [MAXDAY, AI.minus(MAXDAY, 7), AI.minus(MAXDAY, 14)]) assert.deepEqual(D.weekStats(k, pfl), clone(ctx.weekStats(k)), 'weekStats ' + k);
+    // food estimate
+    const list = ['moms special curry', 'chicken salad with lettuce, capsicum, 20 g dressing', '2 "paneer" rolls'];
+    ctx.askClaude(list); assert.equal(AI.foodEstimatePrompt(list, pf.cuisine), ctx.captured);
+    // label and plate
+    ctx.runScan({}); assert.equal(AI.LABEL_PROMPT, ctx.captured);
+    ctx.plateBusy = false; ctx.runPlate({}); assert.equal(AI.platePrompt(pf.cuisine), ctx.captured);
+    // plan builder
+    const lw = D.series().filter((x) => x.w != null).pop()?.w ?? null;
+    assert.deepEqual(AI.planRules(engine, pf, lw), clone(ctx.planRules()));
+    const req = 'My "left" knee hurts on split squats. I can only train 3 days a week.';
+    ctx.planAskText = req; ctx.planBusy = false; ctx.askPlan();
+    const r = D.rateOfLoss();
+    const pctx = { today: MAXDAY, weekdayOfDay1: AI.planWeekdays(engine.T.TSTART)[0],
+      goal: { name: g.name, start: g.start, end: g.due, startKg: engine.T.START_KG, targetKg: engine.T.TARGET_KG, latestKg: lw, lossPerWeekKg: r && r.perDay < 0 ? AI.r1(-r.perDay * 7) : null, kcal: g.kcal, protein: g.protein },
+      now: { phase: engine.plan(MAXDAY).inRange ? engine.plan(MAXDAY).phase : null, week: engine.plan(MAXDAY).inRange ? engine.plan(MAXDAY).week : null, phaseWeeks: engine.T.TPHASE_W },
+      lastWeek: D.weekStats(MAXDAY, pfl), weekBefore: D.weekStats(AI.minus(MAXDAY, 7), pfl), plan: AI.compactPlan(engine.PL) };
+    assert.equal(AI.planPrompt(req, AI.planRules(engine, pf, lw), pctx), ctx.captured, 'plan prompt');
+    // weekly review
+    ctx.revBusy = false; ctx.runReview();
+    const pl = engine.plan(MAXDAY), cur = D.weekStats(MAXDAY, pfl), two = D.weekStats(AI.minus(MAXDAY, 14), pfl);
+    const data = { week: cur, weekBefore: D.weekStats(AI.minus(MAXDAY, 7), pfl), twoWeeksBefore: { weightAvg: two.weightAvg, weighIns: two.weighIns },
+      targets: { kcal: pl.kcal, protein: pl.protein, proteinFloor: pfl, kcalFloor: P.kcalFloor(pf), steps: pl.steps, sleepHours: 7 },
+      goal: { name: g.name, startKg: engine.T.START_KG, targetKg: engine.T.TARGET_KG, end: g.due, lossPerWeekKg: r && r.perDay < 0 ? AI.r1(-r.perDay * 7) : null },
+      phase: pl.inRange ? engine.PL.phases[pl.phase - 1].name : null, weekOfPlan: pl.week };
+    assert.equal(AI.reviewPrompt(g.type, g.type === 'muscle', P.kcalFloor(pf), data), ctx.captured, 'review prompt');
+    // review validation, including out-of-bounds suggestions
+    for (const o of [null, {}, { headline: 'x', grade: ' b+ ', truths: ['a', 'b', 'c', 'd', 'e', 'f'], wins: ['1', '2', '3'], suggestion: { what: 'w', change: { kcal: g.kcal - 150 } } },
+        { headline: 'y', suggestion: { change: { kcal: 900 } } }, { headline: 'k1', suggestion: { change: { kcal: g.kcal - 250 } } }, { headline: 'k2', suggestion: { change: { kcal: g.kcal - 280 } } }, { headline: 'k3', suggestion: { change: { kcal: g.kcal } } }, { headline: 'z', suggestion: { change: { steps: pl.steps + 1449 } } }, { headline: 'q', grade: 'Z', suggestion: { change: { steps: pl.steps + 9000 } } }]) {
+      assert.deepEqual(AI.normReview(clone(o), cur, pl, g, P.kcalFloor(pf)), clone(ctx.normReview(clone(o), cur, ctx.plan(MAXDAY))), JSON.stringify(o));
+    }
+    // proposals: a realistic edit, a dangerous one (below the floors), and junk
+    const edited = clone(AI.compactPlan(engine.PL)) as any;
+    const k0 = Object.keys(edited.programs)[0];
+    edited.programs[k0].ex[0] = 'Box squat|3 × 8';
+    edited.programs[k0].ex.push('Brand new move|2 x 12|Keep it slow');
+    edited.phases[1].steps = 11000; edited.phases[0].weeks[0][1] = { t: 'rest', c: '' }; edited.targets.fat = 70;
+    for (const res of [{ summary: 's', changes: ['a'], goal: { kcal: 1700, protein: 140 }, plan: edited }, { goal: { kcal: 500, protein: 20 }, plan: clone(edited) }, { goal: { kcal: 4500, protein: 320 }, plan: clone(edited), changes: Array.from({ length: 8 }, (_, i) => 'c' + i) }, { goal: { kcal: 4800, protein: 330 }, plan: clone(edited) }, { plan: { phases: [] } }, null]) {
+      const mine = AI.buildProposal(clone(res), req, engine, pf, P.makePlan(g, pf, engine.T.TMAINT_W), 1);
+      const theirs = clone(ctx.buildProposal(clone(res), req));
+      if (theirs && theirs.plan) theirs.plan.at = 1;
+      assert.deepEqual(mine, theirs, JSON.stringify(res)?.slice(0, 60));
+    }
+    for (const nm of ['Box squat', 'Goblet squat to box', 'Band pull-apart', 'Nope']) assert.equal(AI.cueFor(nm, engine.PL, P.makePlan(g, pf, engine.T.TMAINT_W)), ctx.cueFor(nm));
   }
 });

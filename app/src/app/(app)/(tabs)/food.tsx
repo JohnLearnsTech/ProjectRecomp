@@ -4,6 +4,9 @@ import { Alert, KeyboardAvoidingView, Modal, Pressable, RefreshControl, ScrollVi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Bar } from '../../../components/Bar';
 import { FoodChart } from '../../../components/FoodChart';
+import { PhotoButtons } from '../../../components/FoodAi';
+import { aiMessage } from '../../../domain/ai';
+import { estimateRows, hasKey } from '../../../lib/ai';
 import { ScreenHeader } from '../../../components/ScreenHeader';
 import { addKey, d, shortDate } from '../../../domain/dates';
 import { foodName, foodTotals, fqQty, mealKcal, mealSig, recentMeals, shortFoodLabel } from '../../../domain/food';
@@ -19,7 +22,7 @@ const n1 = (x: number) => (Math.round(x * 10) / 10).toString();
 const SRC: Record<string, string> = { table: 'table', claude: 'estimate', you: 'yours', label: 'label', none: 'no numbers', pending: 'no numbers' };
 
 export default function Food() {
-  const { engine, day, maxDay, rev, touch, foodIndex } = useRecomp();
+  const { engine, day, maxDay, rev, touch, foodIndex, profileRow } = useRecomp();
   const { c, s } = useTheme('food');
   const params = useLocalSearchParams<{ focus?: string }>();
   const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
@@ -31,6 +34,9 @@ export default function Food() {
   const [recent, setRecent] = useState<ReturnType<typeof recentMeals<Row>>>([]);
   const [edit, setEdit] = useState<Row | null>(null);
   const [saveFor, setSaveFor] = useState<Row[] | null>(null);
+  const [keyed, setKeyed] = useState(false);
+  const [aiBusy, setAiBusy] = useState<string | null>(null);
+  useEffect(() => { hasKey().then(setKeyed).catch(() => setKeyed(false)); }, [rev]);
 
   const P = engine.plan(day), targets = engine.PL.targets, future = day > maxDay;
   const { START } = engine.T;
@@ -59,9 +65,26 @@ export default function Food() {
     const bits = [];
     if (r.table) bits.push(`${r.table} from the built-in table`);
     if (r.cached) bits.push(`${r.cached} from your earlier estimates`);
-    if (r.pending) bits.push(`${r.pending} with no numbers yet. Tap ${r.pending > 1 ? 'those rows' : 'that row'} to fill ${r.pending > 1 ? 'them' : 'it'} in`);
+    if (r.pending && !keyed) bits.push(`${r.pending} with no numbers yet. Tap ${r.pending > 1 ? 'those rows' : 'that row'} to fill ${r.pending > 1 ? 'them' : 'it'} in`);
     setStatus(bits.length ? `Added ${bits.join(', ')}.` : null);
+    // With a key, r19's flow: anything the table could not place goes straight to Claude.
+    if (r.pending && keyed) await estimatePending(`Not in the table, so Claude is estimating ${r.pending} item${r.pending > 1 ? 's' : ''}…`);
   });
+
+  /** r19 bulkAsk: every row of the day that still needs numbers, in one Claude call. */
+  const estimatePending = async (msg?: string) => {
+    const rowsNow = (await db.listFood(day)).filter((e) => e.needs_estimate);
+    if (!rowsNow.length) return;
+    setAiBusy(msg ?? `Estimating ${rowsNow.length} item${rowsNow.length > 1 ? 's' : ''} with Claude…`);
+    try {
+      const got = await estimateRows(rowsNow, profileRow?.cuisine);
+      const left = rowsNow.length - got;
+      setStatus(got ? `${got} item${got > 1 ? 's' : ''} estimated by Claude, not looked up in a table. Tap any row to correct it.${left ? ` ${left} could not be read back.` : ''}`
+        : 'Nothing came back that could be read. Try describing those rows more plainly.');
+    } catch (e) {
+      setStatus(`${aiMessage(e)} Those rows are in the log with no numbers. Try again, or tap them to fill them in.`);
+    } finally { setAiBusy(null); await load(); touch(); }
+  };
 
   // One-tap cards: every saved meal, then up to 6 recent ones not already saved.
   const savedSigs = new Set(saved.map((m) => m.sig));
@@ -108,8 +131,10 @@ export default function Food() {
             <Pressable style={[s.primary, (busy || future || !text.trim()) && { opacity: 0.5 }]} disabled={busy || future || !text.trim()} onPress={add}>
               <Text style={s.primaryText}>{busy ? 'Adding…' : day === maxDay ? 'Add to today' : `Add to ${shortDate(d(day))}`}</Text>
             </Pressable>
+            <PhotoButtons day={day} disabled={busy || future || !!aiBusy} keyed={keyed} cuisine={profileRow?.cuisine}
+              onBusy={setAiBusy} onDone={(m) => { setStatus(m); load(); touch(); }} />
             {future && <Text style={s.label}>This day hasn't happened yet.</Text>}
-            {status && <Text style={s.body2}>{status}</Text>}
+            {aiBusy ? <Text style={[s.body2, { color: c.cat.food.ink }]}>{aiBusy}</Text> : status ? <Text style={s.body2}>{status}</Text> : null}
 
             {quick.length > 0 && (
               <>
@@ -149,10 +174,15 @@ export default function Food() {
             </Text>
 
             {pending > 0 && (
-              <View style={{ backgroundColor: c.warnSoft, borderRadius: 12, padding: 12 }}>
+              <View style={{ backgroundColor: c.warnSoft, borderRadius: 12, padding: 12, gap: 10 }}>
                 <Text style={[s.body, { color: c.ink }]}>
-                  {pending} item{pending > 1 ? 's need' : ' needs'} numbers. Tap a row to type them in. Estimating with Claude arrives with the Recomp connector.
+                  {pending} item{pending > 1 ? 's need' : ' needs'} numbers. {keyed ? 'Claude can estimate them, or tap a row to type them in.' : 'Tap a row to type them in, or add your Anthropic API key in Me, Settings, AI to have Claude estimate them.'}
                 </Text>
+                {keyed && (
+                  <Pressable style={[s.outline, { alignSelf: 'flex-start' }, !!aiBusy && { opacity: 0.5 }]} disabled={!!aiBusy} onPress={() => estimatePending()}>
+                    <Text style={s.outlineText}>{aiBusy ? 'Asking Claude…' : `Estimate ${pending > 1 ? `all ${pending}` : 'it'} with Claude`}</Text>
+                  </Pressable>
+                )}
               </View>
             )}
 

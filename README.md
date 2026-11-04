@@ -86,7 +86,22 @@ Tested in the browser on a seeded account: grid edits and the load carry saved c
 
 **Progress**: weight vs plan (or waist) over 1W, 1M, 3M or the goal with the dashed projection and the landing range; the six stats (latest, 7-day average, change, on-plan target with the ahead/behind verdict, current-rate projection with ETA, days logged); "What you measured" for the browsed day; full Consistency (six stats, Overall or per-item filter, swipeable month calendar, legend, the selected day item by item, Open this day); load volume per exercise; the daily log for the last 14 days. Screenshots in `docs/step4/`.
 
+## Build step 5: Settings, AI with your own key (done)
+
+**How Claude is called** (`app/src/lib/claude.ts`): the official Anthropic TypeScript SDK, straight from the phone with the person's own key from SecureStore, model `claude-opus-5-5`, with the server-side refusal fallback (`fallbacks: "default"`). The base URL is pinned to `api.anthropic.com`. Nothing goes through Supabase, so the owner pays for nobody's use. Saving a key checks it first against the Models API, which costs nothing.
+
+**What it does**, with r19's prompts word for word (`app/src/domain/ai.ts`):
+- **Food estimates.** With a key, anything your foods, the table and your earlier estimates can't place goes to Claude as soon as you add it; "Estimate with Claude" prices every row still without numbers in one call. Claude gives per-100 g values and a serving; the app scales by your portion, as r19 does. Each estimate is remembered (`food_cache_user`) and added to your own foods (`personal_foods`), so the same food is instant next time. Dishes with listed ingredients are priced whole and never cached.
+- **Label scan** reads a nutrition panel photo and **plate photo** lists what's on the plate with grams; you confirm or correct before anything is logged. Without a key, "Enter a label" takes the per-100 g numbers by hand.
+- **Weekly review** on Progress: r19's blunt coach (grade, hard truths, biggest leak, three commitments, wins) beside a scorecard the app counts itself. A suggested change is kept only inside r19's bounds (one change; calories within 250 kcal and never under the floor; steps up to +2,500) and is applied only when you tap Apply.
+- **Plan builder** in Me: "Ask Claude to change it" with r19's chips, your rules, joint-friendly setting and floors sent as hard rules; the proposal shows Claude's summary and the changes computed from the two plans; Use this plan or Discard; Restore previous plan (one level, as r19). Accepting and restoring move the plan and the goal's calorie and protein targets together (`save_plan`, `restore_previous_plan` in `supabase/migrations/0003_plan_versions.sql`).
+
+**Tested**: the parity test runs r19's own prompt builders with a stub and requires the same text for all five prompts, plus r19's `weekStats`, `buildProposal`, `planDiff`, `cueFor` and `normReview` on the same inputs (including out-of-bounds calorie and step suggestions); prompt and bound mutations all fail it. A mocked-network test checks the request (key as bearer token, model, effort, photo, fallback header) and how failures read (bad key, rate limit, rejected photo, refusal, unreadable reply). The features ran end to end against live Supabase with a fake Anthropic endpoint: estimates, remembering and instant reuse, labels, review storage and apply, an out-of-bounds cut dropped, and a plan accepted, changed and restored. **No call to the real Claude API was made**: there was no key to use here.
+
 ## Known gaps
+
+- **Not yet run with a real Anthropic key or on a phone.** The first real call is worth watching: reply times for the plan builder (it can take a minute) and photo sizes on a real camera.
+- "Ask Claude again" inside the row editor is not ported; Estimate with Claude covers rows without numbers.
 
 - **Weekly review** waits for Claude (step 5); Progress shows where it will go. Its client-side scorecard comes with it.
 - Earlier weigh-ins (`weight_history`, r19's faded line before the start) have no editor yet, so the chart doesn't draw them.
@@ -98,6 +113,6 @@ Tested in the browser on a seeded account: grid edits and the load carry saved c
 - The food guides (Protein first, Eating out, ...) and the 7-day average line on the chart are not ported yet.
 - "Estimate with Claude" waits for the connector (step 6) or a pasted key (step 5).
 
-## Next (build plan step 5)
+## Next (build plan step 6)
 
-Settings, AI: bring your own key, and port the prompts from `docs/05-business-logic.md` (food estimates, label and plate photos, plan builder, weekly review).
+The Recomp MCP connector (a Supabase Edge Function with Supabase Auth over OAuth) so friends use their own Claude subscription: `list_pending_foods`, `set_food_estimate`, `log_food`, `get_day`, `get_week_summary`, `log_weight` / `log_steps` / `log_sleep`, `get_plan`, `propose_plan_change`, `save_weekly_review`, with the same floors enforced in the function. Plus the "Estimate with Claude" handoff into the Claude app for people without a key.

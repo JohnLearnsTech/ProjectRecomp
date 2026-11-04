@@ -1,7 +1,10 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { PlanCard } from '../../components/PlanCard';
+import { aiMessage } from '../../domain/ai';
 import { clearApiKey, getApiKey, maskKey, saveApiKey } from '../../lib/apiKey';
+import { checkKey, MODEL } from '../../lib/claude';
 import { signOut, useAuth } from '../../lib/auth';
 import { getProfile, updateProfile, type Sex } from '../../lib/db';
 import { useRecomp } from '../../lib/recomp';
@@ -16,7 +19,8 @@ const SEXES: [Sex, string][] = [['female', 'Female'], ['male', 'Male'], ['unspec
 export default function Me() {
   const { c, s } = useTheme();
   const { session } = useAuth();
-  const { reload } = useRecomp();
+  const { reload, touch } = useRecomp();
+  const [checking, setChecking] = useState(false);
   const [f, setF] = useState({ name: '', age: '', height: '', cuisine: '', water: '', rules: '' });
   const [sex, setSex] = useState<Sex>('unspecified');
   const [joint, setJoint] = useState(false);
@@ -73,6 +77,7 @@ export default function Me() {
 
   return (
     <ScrollView contentContainerStyle={s.screen}>
+      <PlanCard keyed={!!storedKey} />
       <View style={s.card}>
         <Text style={s.cardTitle}>About you</Text>
         {input('name', 'First name')}
@@ -114,10 +119,11 @@ export default function Me() {
           Optional. Paste your own Anthropic API key to use Claude inside Recomp. It stays in this phone's secure
           storage and is sent only to Anthropic, never to Recomp's servers. Usage is billed to your Anthropic account.
         </Text>
+        <Text style={s.label}>Uses {MODEL}. Food estimates, label and plate photos, the plan builder and the weekly review all run with this key.</Text>
         {storedKey ? (
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: 44 }}>
             <Text style={[s.body, { fontVariant: ['tabular-nums'] }]}>{maskKey(storedKey)}</Text>
-            <Pressable onPress={() => attempt(async () => { await clearApiKey(); setStoredKey(null); }, 'Key removed.')} hitSlop={12}>
+            <Pressable onPress={() => attempt(async () => { await clearApiKey(); setStoredKey(null); touch(); }, 'Key removed.')} hitSlop={12}>
               <Text style={[s.body, { color: c.danger }]}>Remove</Text>
             </Pressable>
           </View>
@@ -134,10 +140,19 @@ export default function Me() {
               onChangeText={setKeyInput}
             />
             <Pressable
-              style={s.outline}
-              onPress={() => attempt(async () => { await saveApiKey(keyInput); setStoredKey(keyInput.trim()); setKeyInput(''); }, 'Key saved on this phone.')}
+              style={[s.outline, checking && { opacity: 0.5 }]}
+              disabled={checking}
+              onPress={() => attempt(async () => {
+                setChecking(true);
+                try {
+                  // Check it with Anthropic before keeping it, so a typo shows up now, not mid-meal.
+                  const bad = await checkKey(keyInput.trim());
+                  if (bad) throw new Error(aiMessage(bad));
+                  await saveApiKey(keyInput); setStoredKey(keyInput.trim()); setKeyInput(''); touch();
+                } finally { setChecking(false); }
+              }, 'Key checked with Anthropic and saved on this phone.')}
             >
-              <Text style={s.outlineText}>Save key</Text>
+              <Text style={s.outlineText}>{checking ? 'Checking…' : 'Check and save key'}</Text>
             </Pressable>
           </>
         )}

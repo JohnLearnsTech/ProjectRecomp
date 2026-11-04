@@ -38,6 +38,7 @@ export function toDomainProfile(p: db.Profile | null, foods: db.PersonalFood[]):
   return {
     name: p?.name, sex: p?.sex === 'unspecified' || !p ? '' : p.sex, equip: p?.equipment, days: p?.training_days,
     waistDay: p?.waist_weekday, waterL: p?.water_l, kcalFloor: p?.kcal_floor, proteinFloor: p?.protein_floor,
+    cuisine: p?.cuisine, heightCm: p?.height_cm, age: p?.age, jointFriendly: p?.joint_friendly, rules: p?.rules,
     myFoods: foods.map((f): FoodDef => ({ n: f.name, k: f.keywords, per: f.per, g: +f.grams, v: [+f.kcal, +f.protein_g, +f.carbs_g, +f.fat_g, +f.fiber_g] })),
   };
 }

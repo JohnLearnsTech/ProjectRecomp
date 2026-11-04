@@ -3,7 +3,7 @@
 // with the web app. lib/days.ts builds that map from the database for the goal window.
 import { addDays, d, diffDays, key, shortDate, trimNum } from './dates';
 import type { Engine } from './plan';
-import { bandKg, filled, loadKind, type Band, type Set_ } from './training';
+import { bandKg, filled, loadKind, setTxt, type Band, type Set_ } from './training';
 
 export type DayEntry = {
   w?: number; steps?: number; sleep?: number; waist?: number; note?: string;
@@ -281,8 +281,69 @@ export function makeDays({ entries, engine, MAXDAY, habits, bands }: DaysCtx) {
     return out;
   };
 
+  // ── week stats for Claude (r19 weekStats) ──
+  const avgOf = (a: number[]) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null);
+  const r1 = (x: number | null) => (x == null ? null : Math.round(x * 10) / 10);
+  const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  function weekStats(endK: string, proteinFloor: number) {
+    const w: number[] = [], kc: number[] = [], pr: number[] = [], st: number[] = [], sl: number[] = [];
+    let liftS = 0, liftD = 0, cardS = 0, cardD = 0, ct = 0, cd = 0, n = 0, from: string | null = null;
+    const dayRows: unknown[] = []; let prFloorDays = 0, kcOverDays = 0, stepsHitDays = 0;
+    const hab: Record<string, { name: string; type: string; goal: number; unit: string; met: number; of: number }> = {};
+    habits.forEach((h) => { hab[h.id] = { name: h.name, type: h.type, goal: h.goal, unit: h.unit || '', met: 0, of: 0 }; });
+    for (let i = 6; i >= 0; i--) {
+      const k = key(addDays(d(endK), -i)); if (k < START || k > END || k > MAXDAY) continue;
+      if (!from) from = k; n++;
+      const e = entries[k] || {}, pl = plan(k);
+      if (e.w != null && !Number.isNaN(+e.w)) w.push(+e.w);
+      if (+(e.kcal ?? 0) > 0) { kc.push(+e.kcal!); if (e.protein != null && !Number.isNaN(+e.protein)) pr.push(+e.protein); }
+      dayRows.push({ date: k, weekday: DOW[d(k).getUTCDay()], plan: pl.type, trained: pl.type === 'lift' ? trainedOn(k) : null,
+        kcal: +(e.kcal ?? 0) > 0 ? Math.round(+e.kcal!) : null, protein: +(e.kcal ?? 0) > 0 && e.protein != null ? Math.round(+e.protein) : null,
+        steps: +(e.steps ?? 0) > 0 ? +e.steps! : null, sleep: +(e.sleep ?? 0) > 0 ? +e.sleep! : null, weighed: e.w != null });
+      if (+(e.kcal ?? 0) > 0 && +(e.protein ?? 0) >= proteinFloor) prFloorDays++;
+      if (+(e.kcal ?? 0) > 0 && +e.kcal! > pl.kcal + 150) kcOverDays++;
+      if (+(e.steps ?? 0) >= pl.steps) stepsHitDays++;
+      if (+(e.steps ?? 0) > 0) st.push(+e.steps!);
+      if (+(e.sleep ?? 0) > 0) sl.push(+e.sleep!);
+      if (pl.type === 'lift') { liftS++; if (trainedOn(k)) liftD++; }
+      else if (pl.type === 'cardio') { cardS++; if ((+(e.steps ?? 0) || 0) >= pl.steps || (e.checks && e.checks.train)) cardD++; }
+      const cl = engine.checkList(pl); ct += cl.length; cl.forEach((c) => { if (e.checks && e.checks[c.id]) cd++; });
+      habits.forEach((h) => {
+        const v = habitVal(k, h.id);
+        if (h.type === 'limit' && v == null) return;
+        if (k === MAXDAY && v == null) return;
+        hab[h.id].of++; if (dayMet(h, v)) hab[h.id].met++;
+      });
+    }
+    const seen: Record<string, { k: string; txt: string }> = {}, lifts: unknown[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const k = key(addDays(d(endK), -i)), e2 = entries[k]; if (!e2 || !e2.sets || k < START) continue;
+      Object.keys(e2.sets).forEach((nm) => { const arr = filled(e2.sets![nm] || []); if (arr.length) seen[nm] = { k, txt: arr.map((x) => setTxt(x, false, bands)).join(', ') }; });
+    }
+    Object.keys(seen).slice(0, 10).forEach((nm) => {
+      let before: { date: string; sets: string } | null = null;
+      for (let j = 1; j <= 70; j++) {
+        const pk = key(addDays(d(seen[nm].k), -j)); if (pk < START) break;
+        const pa = entries[pk] ? filled(entries[pk].sets?.[nm] || []) : [];
+        if (pa.length) { before = { date: pk, sets: pa.map((x) => setTxt(x, false, bands)).join(', ') }; break; }
+      }
+      lifts.push({ exercise: nm, thisWeek: seen[nm].txt, lastTime: before });
+    });
+    return { from: from || endK, to: endK, daysInWeek: n,
+      weightAvg: r1(avgOf(w)), weighIns: w.length,
+      kcalAvg: kc.length ? Math.round(avgOf(kc)!) : null, foodDays: kc.length,
+      proteinAvg: pr.length ? Math.round(avgOf(pr)!) : null,
+      stepsAvg: st.length ? Math.round(avgOf(st)!) : null, stepsDays: st.length,
+      sleepAvg: r1(avgOf(sl)),
+      liftDone: liftD, liftScheduled: liftS, cardioDone: cardD, cardioScheduled: cardS,
+      checksPct: ct ? Math.round((cd / ct) * 100) : null,
+      habits: Object.keys(hab).map((id) => hab[id]),
+      proteinFloorDays: prFloorDays, kcalOverDays: kcOverDays, stepsHitDays, days: dayRows,
+      strength: lifts };
+  }
+
   return {
-    habitVal, habitStreak, habitLongest, habitStrength, habitPct, habitsHitPct, trainedOn, dayState, streaks, itemState, calItems, dayScore, dotState,
+    weekStats, habitVal, habitStreak, habitLongest, habitStrength, habitPct, habitsHitPct, trainedOn, dayState, streaks, itemState, calItems, dayScore, dotState,
     itemValTxt, dayActive, missStats, series, rolling, projFor, rateOfLoss, waistSeries, stats, exVolume, progExercises, exSeries, todayI,
   };
 }

@@ -14,6 +14,7 @@ export type Profile = {
   name?: string | null; sex?: 'female' | 'male' | ''; equip?: 'gym' | 'home' | 'body'; days?: number;
   waistDay?: number | null; waterL?: number | null; kcalFloor?: number | null; proteinFloor?: number | null;
   myFoods?: FoodDef[];
+  cuisine?: string | null; heightCm?: number | null; age?: number | null; jointFriendly?: boolean; rules?: string | null;
 };
 
 export type Slot = { t: 'lift'; s: string; c: string } | { t: 'cardio'; c: string } | { t: 'rest'; c: string };

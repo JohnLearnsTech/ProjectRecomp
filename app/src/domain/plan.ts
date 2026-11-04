@@ -151,6 +151,9 @@ export function homeFirstPlan(G: Goal, TMAINT_W: number): Plan {
 }
 
 /** Validator for anything loaded from storage or returned by Claude. null = refused. */
+/** r19 defaultPlan(): home-first goals get the home-first layout. */
+export const defaultPlanFor = (G: Goal, PROFILE: Profile, TMAINT_W: number) => (G.homeFirst ? homeFirstPlan(G, TMAINT_W) : makePlan(G, PROFILE, TMAINT_W));
+
 export function normPlan(x: unknown): Plan | null {
   const o = x as Record<string, any>;
   if (!o || typeof o !== 'object' || !o.programs || typeof o.programs !== 'object' || !Array.isArray(o.phases) || o.phases.length !== 4) return null;

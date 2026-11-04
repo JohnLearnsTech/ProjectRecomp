@@ -285,3 +285,20 @@ export const listFoodDates = (from: string, to: string) =>
   pageAll<{ date: string; id: string }>((a, b) => supabase.from('food_entries').select('date, id').gte('date', from).lte('date', to).order('date').order('id').range(a, b));
 export const listSetsRange = (from: string, to: string) =>
   pageAll<SetEntry>((a, b) => supabase.from('set_entries').select('*').gte('date', from).lte('date', to).order('date').order('exercise_name').order('set_no').range(a, b));
+
+// ── Step 5: Claude features ──
+export type ReviewRow = { end_date: string; start_date: string; stats: any; out: any; change_kcal: number | null; change_steps: number | null; applied_at: string | null; created_at: string };
+export const getLatestReview = async () =>
+  must(await supabase.from('reviews').select('*').order('end_date', { ascending: false }).limit(1).maybeSingle()) as ReviewRow | null;
+export const saveReview = async (r: Omit<ReviewRow, 'created_at' | 'applied_at'>) => {
+  must(await supabase.from('reviews').upsert({ ...r, applied_at: null }, { onConflict: 'user_id,end_date' }));
+};
+export const markReviewApplied = async (end_date: string) => { must(await supabase.from('reviews').update({ applied_at: new Date().toISOString() }).eq('end_date', end_date)); };
+/** New plan version plus goal targets, in one transaction (save_plan). */
+export const savePlanVersion = async (p: { body: unknown; source: 'claude' | 'you'; note: string; kcal?: number | null; protein?: number | null }) =>
+  must(await supabase.rpc('save_plan', { p })) as number;
+export const restorePreviousPlan = async () => must(await supabase.rpc('restore_previous_plan')) as number | null;
+export const updateGoalTargets = async (id: string, patch: Partial<Pick<Goal, 'kcal' | 'protein_g' | 'steps'>>) => {
+  must(await supabase.from('goals').update(patch).eq('id', id));
+};
+export const addPersonalFood = async (f: Omit<PersonalFood, 'id'>) => { must(await supabase.from('personal_foods').insert(f)); };

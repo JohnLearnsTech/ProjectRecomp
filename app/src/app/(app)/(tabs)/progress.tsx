@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import { PanResponder, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, G, Line, Polyline, Text as SvgText } from 'react-native-svg';
+import { ReviewCard } from '../../../components/Review';
 import { ScreenHeader } from '../../../components/ScreenHeader';
 import { addDays, d, diffDays, fmt, key, shortDate, trimNum, WEEKDAY_NAMES } from '../../../domain/dates';
 import { waistWeekday } from '../../../domain/plan';
@@ -31,10 +32,7 @@ export default function Progress() {
         <WeighIn />
         <View onLayout={(e) => setCalY(e.nativeEvent.layout.y)}><ConsistencyFull /></View>
         <VolumeChart />
-        <View style={s.card}>
-          <Text style={s.cardTitle}>Weekly review</Text>
-          <Text style={s.body2}>Claude reads the last seven days against the seven before and suggests one thing for next week. It arrives with your own API key (Me, Settings, AI) or the Recomp connector for Claude.</Text>
-        </View>
+        <ReviewCard />
         <DailyLog />
         <Text style={[s.label, { marginTop: 8 }]}>Recomp is a training, nutrition and habits tool. Its targets come from standard formulas and your own logs; they are not medical advice.</Text>
       </ScrollView>
