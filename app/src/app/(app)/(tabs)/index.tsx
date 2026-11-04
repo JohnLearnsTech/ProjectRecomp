@@ -12,6 +12,8 @@ import { d, diffDays, shortDate } from '../../../domain/dates';
 import { currentQuote, nextQuote } from '../../../domain/quotes';
 import { Icon } from '../../../components/Icon';
 import { WeekCard } from '../../../components/WeekCard';
+import { useQuests } from '../../../lib/game';
+import { reviewDue } from '../../../domain/ai';
 import { Celebrate, GameBar } from '../../../components/Game';
 import * as db from '../../../lib/db';
 import { evidence, latestWeight, trainedOn, useHistory } from '../../../lib/history';
@@ -34,6 +36,7 @@ export default function Today() {
 
   const { G, T, NAMES, LIFTS } = engine;
   const P = engine.plan(day);
+  const quests = useQuests();
   const future = day > maxDay, past = day < maxDay;
 
   // ── hero ──
@@ -85,6 +88,10 @@ export default function Today() {
                   action={steps >= P.steps || future ? undefined : { label: 'Log steps', onPress: () => router.push('/quick') }} />
               )}
               {P.type === 'rest' && <HeroRow title="Rest day" text={floors.rest} />}
+              {day === maxDay && reviewDue(T.START, maxDay, quests.review?.end_date ?? null) && (
+                <HeroRow title="Weekly review" text={quests.review ? 'A week since the last one' : 'Your first one is ready'}
+                  action={{ label: 'Run it', onPress: () => router.navigate({ pathname: '/progress', params: { at: 'review' } }) }} />
+              )}
               <View style={s.hairline} />
               <View style={[s.row, { gap: 14 }]}>
                 <Tile value={n(Math.abs(kLeft))} label={kLeft >= 0 ? 'kcal left' : 'kcal over'} frac={kc / (P.kcal || 1)} color={kLeft < 0 ? c.warn : c.cat.food.fill} onPress={() => router.navigate('/food')} />

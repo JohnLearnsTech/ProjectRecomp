@@ -4,6 +4,7 @@ import { addDays, d, key, shortDate } from '../domain/dates';
 import { useDays } from '../lib/days';
 import { useRecomp } from '../lib/recomp';
 import { font, mix, useTheme, type Palette } from '../lib/theme';
+import { useInfo } from './ui';
 
 export const DOT_NAME: Record<string, string> = { full: 'all done', most: 'most done', some: 'some done', none: 'missed', empty: 'nothing logged', pend: 'today, in progress', future: 'ahead', out: 'outside the plan' };
 /** Colours for r19's dot and calendar states. Lightness differs, not hue alone. */
@@ -75,12 +76,17 @@ export function Nudge() {
     <View style={{ backgroundColor: hard ? c.warnSoft : c.surface, borderRadius: 16, padding: 14, gap: 8, borderLeftWidth: 4, borderLeftColor: c.warn }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <Text style={{ fontFamily: font.bold, fontSize: 24, color: c.warn }}>{count}</Text>
-        <Text style={[s.body, { flex: 1 }]}>{lab}</Text>
+        <Text style={s.body}>{lab}</Text>
+        <View style={{ flex: 1 }}><NudgeTip text={msg} /></View>
         <Pressable onPress={() => { setDay(maxDay); router.push('/quick'); }} style={[s.outline, { minHeight: 40 }]}><Text style={s.outlineText}>Log a walk</Text></Pressable>
         <Pressable onPress={() => { nudgeOff = real; try { localStorage.setItem('goa:nudgeoff', real); } catch { /* ignore */ } setDay(maxDay); }}
           accessibilityLabel="Hide until tomorrow" hitSlop={8}><Text style={{ fontSize: 18, color: c.ink2 }}>×</Text></Pressable>
       </View>
-      <Text style={s.body2}>{msg}</Text>
     </View>
   );
+}
+
+function NudgeTip({ text }: { text: string }) {
+  const tip = useInfo(text, 'Why this matters');
+  return <View style={{ gap: 8 }}><View style={{ flexDirection: 'row' }}>{tip.button}</View>{tip.panel}</View>;
 }

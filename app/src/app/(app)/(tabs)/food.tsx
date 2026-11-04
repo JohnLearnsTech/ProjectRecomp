@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Bar } from '../../../components/Bar';
 import { FoodChart } from '../../../components/FoodChart';
 import { PanelHead } from '../../../components/ui';
+import { toast } from '../../../lib/toast';
 import { Guides } from '../../../components/Guides';
 import { PhotoButtons } from '../../../components/FoodAi';
 import { aiMessage } from '../../../domain/ai';
@@ -151,7 +152,12 @@ export default function Food() {
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
                   {quick.map((q) => (
                     <Pressable key={q.key} disabled={busy || future}
-                      onPress={() => run(async () => { await addMealRows(day, q.rows); setStatus(`Logged ${q.title}.`); })}
+                      onPress={() => run(async () => {
+                        const before = new Set((await db.listFood(day)).map((x) => x.id));
+                        await addMealRows(day, q.rows);
+                        const added = (await db.listFood(day)).filter((x) => !before.has(x.id)).map((x) => x.id);
+                        toast(`Logged ${q.title} · ${n0(mealKcal(q.rows))} kcal`, () => run(async () => { for (const id of added) await db.deleteFood(id); }));
+                      })}
                       onLongPress={() => q.saved && Alert.alert('Remove saved meal?', q.saved.name, [
                         { text: 'Cancel', style: 'cancel' },
                         { text: 'Remove', style: 'destructive', onPress: () => run(() => db.deleteSavedMeal(q.saved!.id)) },
@@ -159,7 +165,7 @@ export default function Food() {
                       style={{ width: 190, minHeight: 96, borderRadius: 14, borderWidth: q.saved ? 1.5 : 1, borderColor: q.saved ? c.cat.food.fill : c.lineSoft, backgroundColor: q.saved ? c.cat.food.soft : c.surface2, padding: 12, gap: 4 }}>
                       {q.saved && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                         <Text style={[s.body, { fontFamily: font.bold, flex: 1 }]} numberOfLines={1}>★ {q.title}</Text>
-                        {fqEdit && <Pressable onPress={() => run(() => db.deleteSavedMeal(q.saved!.id))} accessibilityLabel={`Remove ${q.title}`} hitSlop={8}
+                        {fqEdit && <Pressable onPress={() => { const sv = q.saved!; run(async () => { await db.deleteSavedMeal(sv.id); toast(`Removed “${sv.name}”`, () => run(() => db.saveMeal(sv.name, sv.sig, sv.rows))); }); }} accessibilityLabel={`Remove ${q.title}`} hitSlop={8}
                           style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: c.ink, alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: c.paper, fontSize: 13, lineHeight: 15 }}>×</Text></Pressable>}
                       </View>}
                       {q.rows.slice(0, 3).map((r, i) => (

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Modal, Pressable, ScrollView, Text, TextInput, Vibration, View } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
+import { Alert, KeyboardAvoidingView, Platform, Modal, Pressable, ScrollView, Text, TextInput, Vibration, View } from 'react-native';
+import { useKeepAwake } from 'expo-keep-awake';
+import Svg, { Circle, Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { addDays, d, key, shortDate, trimNum } from '../domain/dates';
 import { fmtHours, habitMet, HABIT_UNITS, isTimeUnit, normUnit, tracksSteps, unitMs, type HabitDef } from '../domain/days';
 import { fmtDur } from '../domain/training';
@@ -10,7 +11,8 @@ import {
   cancelTimer, pauseTimer, pomoBlocksToday, pomoPause, pomoRemain, pomoReset, pomoSettings, pomoStart, pomoStop, pomoTick, startTimer,
   timerMs, toggleClockMode, useNow, useTimerStore,
 } from '../lib/habitTimers';
-import { deleteSession, logFocus, pomoTarget, resetDay, setValue, stopAndLog } from '../lib/habits';
+import { deleteSession, logFocus, pomoTarget, resetDay, setValue, setValue as setValueH, stopAndLog } from '../lib/habits';
+import { toast } from '../lib/toast';
 import { useRecomp } from '../lib/recomp';
 import { font, useTheme, type Cat } from '../lib/theme';
 import { Icon } from './Icon';
@@ -28,6 +30,7 @@ export function Habits({ openId, onOpened }: { openId?: string | null; onOpened?
   const [sheet, setSheet] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [showPomo, setShowPomo] = useState(false);
+  const [focus, setFocus] = useState<{ id: string } | 'pomo' | null>(null);
   const [walkAsk, setWalkAsk] = useState<{ h: HabitDef; day: string; ms: number } | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const future = day > maxDay;
@@ -73,16 +76,19 @@ export function Habits({ openId, onOpened }: { openId?: string | null; onOpened?
       {err && <Text style={s.error}>{err}</Text>}
 
       {(showPomo || pomo.phase !== 'idle') && (
-        <View style={{ backgroundColor: c.surface2, borderRadius: 16, padding: 14, gap: 10 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text style={[s.label, { fontFamily: font.semibold }]}>Focus · Pomodoro</Text>
-            {pomoBlocksToday() > 0 && <Text style={s.label}>{pomoBlocksToday()} block{pomoBlocksToday() > 1 ? 's' : ''} today</Text>}
+        <View style={{ backgroundColor: c.cat.move.soft, borderRadius: 16, padding: 14, gap: 10, borderWidth: 1.5, borderColor: c.cat.move.fill }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={[s.label, { fontFamily: font.bold, color: c.cat.move.ink, flex: 1 }]}>● Focus · Pomodoro{pomoBlocksToday() > 0 ? `  ·  ${pomoBlocksToday()} block${pomoBlocksToday() > 1 ? 's' : ''} today` : ''}</Text>
+            <Pressable onPress={() => setFocus('pomo')} accessibilityLabel="Full-screen focus" hitSlop={8}
+              style={{ width: 34, height: 34, borderRadius: 10, borderWidth: 1, borderColor: c.line, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="expand" size={16} color={c.ink2} />
+            </Pressable>
           </View>
           <Text style={{ fontFamily: font.bold, fontSize: 44, color: pomo.phase === 'break' ? c.cat.move.ink : c.ink, fontVariant: ['tabular-nums'] }}>{fmtDur(pomoRemain(now))}</Text>
           <Text style={s.label}>{pomo.phase === 'break' ? 'Break' : pomo.phase === 'work' ? 'Focus' : 'Focus timer'} · {pomo.running ? (pomo.phase === 'break' ? 'break running' : 'focus running') : pomo.phase === 'idle' ? 'ready' : 'paused'}{target ? ` · logs to ${target.name}` : ''}</Text>
           <View style={s.row}>
             {pomo.phase === 'idle' ? (
-              <Pressable style={[s.primary, { flex: 1 }]} onPress={pomoStart}><Text style={s.primaryText}>▶  Start focus</Text></Pressable>
+              <Pressable style={[s.primary, { flex: 1, backgroundColor: c.cat.move.fill }]} onPress={pomoStart}><Icon name="play" size={14} color={c.cat.move.on} /><Text style={[s.primaryText, { color: c.cat.move.on }]}>Start focus</Text></Pressable>
             ) : (
               <>
                 <Pressable style={[s.outline, { flex: 1 }]} onPress={pomo.running ? pomoPause : pomoStart}><Text style={s.outlineText}>{pomo.running ? 'Pause' : 'Resume'}</Text></Pressable>
@@ -129,15 +135,21 @@ export function Habits({ openId, onOpened }: { openId?: string | null; onOpened?
         const down = clockMode[h.id] === 'down';
         if (h.id === running && t) {
           return (
-            <View key={h.id} style={{ backgroundColor: c.cat.habit.soft, borderRadius: 18, padding: 16, gap: 8 }}>
-              <Text style={[s.label, { color: c.cat.habit.ink, fontFamily: font.semibold }]}>● Running · {h.name}</Text>
+            <View key={h.id} style={{ backgroundColor: tc.soft, borderRadius: 18, padding: 16, gap: 8, borderWidth: 1.5, borderColor: tc.fill }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={[s.label, { flex: 1, color: tc.ink, fontFamily: font.bold }]}>● Running · {h.name}</Text>
+                <Pressable onPress={() => setFocus({ id: h.id })} accessibilityLabel="Full-screen focus" hitSlop={8}
+                  style={{ width: 34, height: 34, borderRadius: 10, borderWidth: 1, borderColor: c.line, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon name="expand" size={16} color={c.ink2} />
+                </Pressable>
+              </View>
               <Pressable onPress={() => toggleClockMode(h.id)} accessibilityLabel="Switch between session time and time left">
                 <Text style={{ fontFamily: font.bold, fontSize: 52, color: c.ink, fontVariant: ['tabular-nums'] }}>{down ? fmtDur(Math.abs(left)) : fmtDur(ms)}</Text>
                 <Text style={s.label}>{down ? (left >= 0 ? (h.type === 'limit' ? 'left under cap' : 'left to goal') : (h.type === 'limit' ? 'over the cap' : 'past the goal')) : 'this session'} · {fq(v0)}{isHr ? ' h' : ' ' + h.unit} logged · goal {trimNum(h.goal)}{isHr ? ' h' : ' ' + h.unit} · tap to switch</Text>
               </Pressable>
               <View style={s.row}>
-                <Pressable style={[s.outline, { flex: 1 }]} onPress={() => pauseTimer(h.id)}><Text style={s.outlineText}>Pause</Text></Pressable>
-                <Pressable style={[s.primary, { flex: 1, backgroundColor: c.cat.habit.fill }]} onPress={() => stop(h)}><Text style={[s.primaryText, { color: c.cat.habit.on }]}>Stop & log</Text></Pressable>
+                <Pressable style={[s.outline, { flex: 1, backgroundColor: c.surface, flexDirection: 'row', gap: 6 }]} onPress={() => pauseTimer(h.id)}><Icon name="pause" size={15} color={c.ink} /><Text style={s.outlineText}>Pause</Text></Pressable>
+                <Pressable style={[s.primary, { flex: 1, backgroundColor: tc.fill }]} onPress={() => stop(h)}><Icon name="stop" size={14} color={tc.on} /><Text style={[s.primaryText, { color: tc.on }]}>Stop & log</Text></Pressable>
               </View>
             </View>
           );
@@ -186,19 +198,86 @@ export function Habits({ openId, onOpened }: { openId?: string | null; onOpened?
             if (!a || !b) return;
             run(Promise.all([db.updateHabit(a.id, { sort: b.sort }), db.updateHabit(b.id, { sort: a.sort === b.sort ? b.sort + dir : a.sort })]));
           }}
-          onDelete={() => Alert.alert(`Remove ${sheetHabit.name}?`, 'Its history is kept, so past days still show it.', [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Remove', style: 'destructive', onPress: () => { setSheet(null); cancelTimer(sheetHabit.id); run(db.updateHabit(sheetHabit.id, { archived_at: new Date().toISOString() })); } },
-          ])}
+          onDelete={() => {
+            const gone = sheetHabit; setSheet(null); cancelTimer(gone.id);
+            run(db.updateHabit(gone.id, { archived_at: new Date().toISOString() }).then(() => toast(`Removed “${gone.name}”`, () => run(db.updateHabit(gone.id, { archived_at: null })))));
+          }}
           tint={c.cat.move} valOn={valOn} steps={entries[day]?.steps ?? null} strength={D.habitStrength(sheetHabit)} longest={D.habitLongest(sheetHabit)} pct={D.habitPct(sheetHabit)}
           todayI={D.todayI} START={D.series()[0]?.k} />
       )}
       {adding && <AddHabit onClose={() => setAdding(false)} onAdd={(h) => { setAdding(false); run(db.addHabit(h)); }} />}
+      {focus && (() => {
+        if (focus === 'pomo') {
+          const isBreak = pomo.phase === 'break', total = (isBreak ? pomo.breakMin : pomo.workMin) * 60000, rem = pomoRemain(now);
+          return <FocusView name={isBreak ? 'Break' : 'Focus'} clock={fmtDur(rem)} warn={isBreak}
+            mode={pomo.running ? (isBreak ? 'break — step away' : 'stay on task') : pomo.phase === 'idle' ? 'ready when you are' : 'paused'}
+            meta={`${target ? 'logs to ' + target.name : 'no habit linked'} · ${pomo.workMin}/${pomo.breakMin} min${pomoBlocksToday() ? ` · ${pomoBlocksToday()} block${pomoBlocksToday() > 1 ? 's' : ''} today` : ''} · screen stays awake`}
+            ratio={total > 0 ? Math.min(1, Math.max(0, total - rem) / total) : 0} running={pomo.running} playLabel={pomo.phase === 'idle' ? 'Start' : 'Resume'}
+            onPause={() => (pomo.running ? pomoPause() : pomoStart())} onStop={() => { const m = pomoStop(); if (m && target) run(logFocus(target, m, (k) => valOn(k, target.id))); setFocus(null); }}
+            onClose={() => setFocus(null)} />;
+        }
+        const h = habits.find((x) => x.id === focus.id), t = h ? timers[h.id] : null;
+        if (!h || !t) return null;
+        const ms = timerMs(h.id, now), v0 = valOn(t.day, h.id) ?? 0, um = unitMs(h.unit), down = clockMode[h.id] === 'down';
+        const left = h.goal * um - v0 * um - ms, isHr = um === 3600000;
+        const r0 = h.goal > 0 ? Math.min(1, (v0 * um + ms) / (h.goal * um)) : 0;
+        return <FocusView name={h.name} clock={down ? fmtDur(Math.abs(left)) : fmtDur(ms)}
+          mode={(down ? (left >= 0 ? (h.type === 'limit' ? 'left under cap' : 'left to goal') : (h.type === 'limit' ? 'over the cap' : 'past the goal')) : 'this session') + ' · tap to switch'}
+          meta={`${isHr ? fmtHours(v0) : Math.round(v0) + ' min'} logged today · goal ${trimNum(h.goal)}${h.unit ? ' ' + h.unit : ''} · screen stays awake`}
+          ratio={r0} warn={h.type === 'limit' && r0 >= 1} running={t.running} playLabel="Resume" onSwitch={() => toggleClockMode(h.id)}
+          onPause={() => (t.running ? pauseTimer(h.id) : startTimer(h.id, t.day))} onStop={() => { setFocus(null); stop(h); }} onClose={() => setFocus(null)} />;
+      })()}
       {walkAsk && (
         <WalkSteps ask={walkAsk} current={entries[walkAsk.day]?.steps ?? 0} onClose={() => setWalkAsk(null)}
           onAdd={(n) => { const a = walkAsk; setWalkAsk(null); run(db.saveDayFields(a.day, { steps: (entries[a.day]?.steps ?? 0) + n })); }} />
       )}
     </View>
+  );
+}
+
+/** r19 full-screen focus session: a dark screen, one big ring, the clock, Pause and Stop & log. */
+function FocusView(p: { name: string; clock: string; mode: string; meta: string; ratio: number; warn?: boolean; running: boolean; playLabel: string;
+  onPause: () => void; onStop: () => void; onClose: () => void; onSwitch?: () => void }) {
+  // The screen stays awake on the phone; browsers refuse the wake lock outside a user gesture.
+  if (Platform.OS !== 'web') useKeepAwake(); // eslint-disable-line react-hooks/rules-of-hooks
+  const { c } = useTheme('move');
+  const R = 126, CF = 2 * Math.PI * R;
+  return (
+    <Modal visible animationType="fade" onRequestClose={p.onClose} statusBarTranslucent>
+      <View style={{ flex: 1, backgroundColor: '#08090a' }}>
+        <Svg style={{ position: 'absolute', width: '100%', height: '100%' }}>
+          <Defs><RadialGradient id="fg" cx="50%" cy="30%" rx="95%" ry="70%"><Stop offset="0" stopColor="#1a2609" /><Stop offset="0.52" stopColor="#0c0e07" /><Stop offset="1" stopColor="#08090a" /></RadialGradient></Defs>
+          <Rect x="0" y="0" width="100%" height="100%" fill="url(#fg)" />
+        </Svg>
+        <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: 48, paddingBottom: 28, alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'stretch' }}>
+            <Pressable onPress={p.onClose} accessibilityLabel="Minimize" style={{ width: 40, height: 40, borderRadius: 12, borderWidth: 1, borderColor: '#2a2d30', backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="minimize" size={18} color="#AEB4AB" />
+            </Pressable>
+            <Text style={{ flex: 1, textAlign: 'center', fontFamily: font.bold, fontSize: 12, color: '#8A9188', letterSpacing: 0.6 }}>FOCUS SESSION</Text>
+            <View style={{ width: 40 }} />
+          </View>
+          <Pressable onPress={p.onSwitch} disabled={!p.onSwitch} accessibilityLabel="Switch between time this session and time left" style={{ width: '100%', maxWidth: 380, aspectRatio: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <Svg viewBox="0 0 260 260" style={{ position: 'absolute', width: '100%', height: '100%' }}>
+              <Circle cx={130} cy={130} r={R} fill="none" stroke="#2a2d30" strokeWidth={6} />
+              <Circle cx={130} cy={130} r={R} fill="none" stroke={p.warn ? c.warn : c.cat.move.fill} strokeWidth={6} strokeLinecap="round" strokeDasharray={`${CF} ${CF}`} strokeDashoffset={CF * (1 - p.ratio)} transform="rotate(-90 130 130)" />
+            </Svg>
+            <Text style={{ fontFamily: font.bold, fontSize: 26, color: '#F3F5F0', textAlign: 'center', paddingHorizontal: 30 }} numberOfLines={2}>{p.name}</Text>
+            <Text style={{ fontFamily: font.bold, fontSize: 64, color: p.warn ? c.warn : '#F3F5F0', fontVariant: ['tabular-nums'], letterSpacing: -1 }}>{p.clock}</Text>
+            <Text style={{ fontFamily: font.semibold, fontSize: 12, color: '#8A9188' }}>{p.mode}</Text>
+          </Pressable>
+          <Text style={{ fontFamily: font.regular, fontSize: 13, color: '#8A9188', textAlign: 'center', paddingHorizontal: 24 }}>{p.meta}</Text>
+          <View style={{ flexDirection: 'row', gap: 12, alignSelf: 'stretch' }}>
+            <Pressable onPress={p.onPause} style={{ flex: 1, minHeight: 54, borderRadius: 14, borderWidth: 1, borderColor: '#2a2d30', backgroundColor: 'rgba(255,255,255,0.07)', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <Icon name={p.running ? 'pause' : 'play'} size={15} color="#F3F5F0" /><Text style={{ fontFamily: font.bold, fontSize: 16, color: '#F3F5F0' }}>{p.running ? 'Pause' : p.playLabel}</Text>
+            </Pressable>
+            <Pressable onPress={p.onStop} style={{ flex: 1, minHeight: 54, borderRadius: 14, backgroundColor: c.cat.move.fill, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <Icon name="stop" size={14} color={c.cat.move.on} /><Text style={{ fontFamily: font.bold, fontSize: 16, color: c.cat.move.on }}>Stop & log</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -332,7 +411,13 @@ function HabitSheet(p: {
                 <View key={g.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 }}>
                   <Text style={[s.body, { flex: 1 }]}>{clock(g.started_at)} — {clock(g.ended_at)}{g.source === 'pomodoro' ? ' · focus' : ''}</Text>
                   <Text style={[s.body, s.num, { fontFamily: font.bold }]}>{fmtHours((new Date(g.ended_at).getTime() - new Date(g.started_at).getTime()) / 3600000)}</Text>
-                  <Pressable hitSlop={8} accessibilityLabel="Delete this session" onPress={() => deleteSession(h, g, cur).then(p.onChanged)}><Icon name="trash" size={16} color={c.muted} /></Pressable>
+                  <Pressable hitSlop={8} accessibilityLabel="Delete this session" onPress={() => { const before = cur; deleteSession(h, g, cur).then(() => {
+                    p.onChanged();
+                    toast(`Session removed (${fmtHours((new Date(g.ended_at).getTime() - new Date(g.started_at).getTime()) / 3600000)})`, async () => {
+                      await db.addHabitSessions([{ habit_id: g.habit_id, date: g.date, started_at: g.started_at, ended_at: g.ended_at, source: g.source }]);
+                      await setValueH(h, g.date, before); p.onChanged();
+                    });
+                  }); }}><Icon name="trash" size={16} color={c.muted} /></Pressable>
                 </View>
               ))}
               {byHand >= 60000 && <Text style={s.label}>Entered by hand +{fmtHours(byHand / 3600000)}</Text>}

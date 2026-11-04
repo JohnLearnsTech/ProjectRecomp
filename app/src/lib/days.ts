@@ -39,17 +39,18 @@ function useDaysState() {
   const [entries, setEntries] = useState<Entries>({});
   const [habitRows, setHabitRows] = useState<db.Habit[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
   const load = useCallback(async () => {
     const [E, hs] = await Promise.all([loadEntries(START, END), db.listHabits()]);
-    setEntries(E); setHabitRows(hs); setLoaded(true);
+    setEntries(E); setHabitRows(hs); setLoaded(true); setFailed(false);
   }, [START, END]);
-  useEffect(() => { load().catch(() => setLoaded(true)); }, [load, rev]);
+  useEffect(() => { load().catch(() => { setLoaded(true); setFailed(true); }); }, [load, rev]);
   const bands: Band[] = profileRow?.bands?.length === 5 ? profileRow.bands : defaultBands();
   const habits = useMemo(() => habitRows.map(toHabitDef), [habitRows]);
   const D = useMemo(() => makeDays({ entries, engine, MAXDAY: maxDay, habits, bands }), [entries, engine, maxDay, habits, bands]);
   // r19 getKeystone(): the chosen habit, else the first build habit, else the first habit.
   const keystone = habits.find((h) => h.id === profileRow?.keystone_habit_id) ?? habits.find((h) => h.type === 'build') ?? habits[0] ?? null;
-  return { D, entries, habits, habitRows, keystone, loaded, reload: load };
+  return { D, entries, habits, habitRows, keystone, loaded, failed, reload: load };
 }
 
 type DaysValue = ReturnType<typeof useDaysState>;

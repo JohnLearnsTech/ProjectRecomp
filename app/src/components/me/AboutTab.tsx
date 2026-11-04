@@ -9,6 +9,7 @@ import { useRecomp } from '../../lib/recomp';
 import { font, useTheme } from '../../lib/theme';
 import { Icon } from '../Icon';
 import { Cue, Label, Mini, PanelHead } from '../ui';
+import { toast as undoToast } from '../../lib/toast';
 
 const SEXES: [db.Sex, string][] = [['unspecified', 'Prefer not to say'], ['female', 'Female'], ['male', 'Male']];
 
@@ -141,7 +142,7 @@ function History({ toast }: { toast: (t: string) => void }) {
                 </View>
                 <Text style={{ width: 40, fontFamily: font.regular, fontSize: 13, color: dl > 0 ? c.cat.move.ink : c.warn }}>{i ? (dl > 0 ? '−' : '+') + trimNum(Math.abs(dl)) : ''}</Text>
                 <Text numberOfLines={1} style={{ flex: 1, fontFamily: font.regular, fontSize: 13, color: c.ink2 }}>{x.note || ''}</Text>
-                <Pressable onPress={() => db.deleteWeighIn(x.date).then(load)} accessibilityLabel={`Remove ${shortDate(d(x.date))}`} hitSlop={8}><Icon name="trash" size={16} color={c.muted} /></Pressable>
+                <Pressable onPress={() => db.deleteWeighIn(x.date).then(() => { load(); undoToast(`Removed ${shortDate(d(x.date))}`, () => db.upsertWeighIn(x).then(load)); })} accessibilityLabel={`Remove ${shortDate(d(x.date))}`} hitSlop={8}><Icon name="trash" size={16} color={c.muted} /></Pressable>
               </View>
             );
           })}
@@ -197,7 +198,10 @@ export function NotesTab({ toast }: { toast: (t: string) => void }) {
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <Pressable style={[s.primary, { paddingHorizontal: 24, minHeight: 44 }]} onPress={save}><Text style={s.primaryText}>Save</Text></Pressable>
         <Mini label="Cancel" onPress={() => setEdit(null)} />
-        {!edit.isNew && <Mini label="Delete" style={{ marginLeft: 'auto' }} onPress={async () => { const id = edit.id; setEdit(null); await db.deleteNote(id); await load(); toast('Note deleted'); }} />}
+        {!edit.isNew && <Mini label="Delete" style={{ marginLeft: 'auto' }} onPress={async () => {
+          const gone = notes.find((x) => x.id === edit.id); setEdit(null); await db.deleteNote(edit.id); await load();
+          if (gone) undoToast(`Deleted “${gone.title}”`, () => db.upsertNote(gone).then(load));
+        }} />}
       </View>
     </View>
   );

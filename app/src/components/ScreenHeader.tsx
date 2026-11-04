@@ -8,12 +8,12 @@ import { WeekStrip } from './WeekStrip';
 
 /** Title, days-to-goal count, Me avatar, the day line and (optionally) the week strip. */
 export function ScreenHeader({ title, strip = true, dayLine = true, onMe = false, cat = 'move' }: { title: string; strip?: boolean; dayLine?: boolean; onMe?: boolean; cat?: Category }) {
-  const { engine, day, maxDay, error } = useRecomp();
+  const { engine, day, maxDay, error, setDay } = useRecomp();
   const { c, s } = useTheme(cat);
   const { G, T } = engine;
   const left = diffDays(d(maxDay), d(T.DEPART));
   const p = engine.plan(day);
-  const state = day === maxDay ? 'Today' : day > maxDay ? 'Preview' : 'Past day';
+  const state = day === maxDay ? 'Today' : day > maxDay ? 'Preview' : 'Backfilling';
   const phaseName = engine.PL.phases[p.phase - 1]?.name.split('·').pop()?.trim();
   const dt = d(day);
   const weekday = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dt.getUTCDay()];
@@ -36,10 +36,16 @@ export function ScreenHeader({ title, strip = true, dayLine = true, onMe = false
           </Pressable>
         </View>
       </View>
-      {dayLine && <Text style={s.label}>
+      {dayLine && <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}><Text style={[s.label, { flexShrink: 1 }]}>
         <Text style={{ fontFamily: font.semibold, color: c.ink }}>{weekday}, {shortDate(dt)}</Text>
         {'   '}{[state, p.inRange ? `Week ${p.week}` : null, p.inRange ? phaseName : null].filter(Boolean).join(' · ')}
-      </Text>}
+      </Text>
+        {day !== maxDay && (
+          <Pressable onPress={() => setDay(maxDay)} accessibilityLabel="Back to today" style={{ minHeight: 28, paddingHorizontal: 12, borderRadius: 999, backgroundColor: c.ink, justifyContent: 'center' }}>
+            <Text style={{ fontFamily: font.bold, fontSize: 12, color: c.paper }}>Today</Text>
+          </Pressable>
+        )}
+      </View>}
       {strip && <WeekStrip />}
     </View>
   );

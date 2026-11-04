@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, Text, View } from 'react-native';
 import { d, shortDate } from '../domain/dates';
-import { floorFor } from '../domain/game';
+import { floorFor, LEVELS } from '../domain/game';
 import { proteinFloor } from '../domain/plan';
 import { useDays } from '../lib/days';
 import { useGame } from '../lib/game';
@@ -65,27 +65,24 @@ export function Celebrate() {
   const [msg, setMsg] = useState<{ title: string; line: string; pts?: number } | null>(null);
   const op = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    if (!g) return;
-    let m: typeof msg = null;
-    const lvl = String(g.level.i), lastLvl = seen('recomp:level');
-    const newBadge = g.badges.find((b) => b.at && !(seen('recomp:badges') ?? '').split(',').includes(b.id));
-    if (lastLvl != null && +lvl > +lastLvl) m = { title: `Level up: ${g.level.name}`, line: `${g.totalWon} days won. Keep stacking them.` };
-    else if (g.today?.won && seen('recomp:won') !== maxDay) m = g.today.comeback
-      ? { title: 'Back on it', line: 'You came back after a miss. That counts double today.', pts: g.today.pts }
-      : { title: 'Day won', line: g.streak > 1 ? `${g.streak} days in a row. That's how it's built.` : 'The floor is met. That is the whole job.', pts: g.today.pts };
-    else if (newBadge && seen('recomp:badges') != null) m = { title: `Badge: ${newBadge.name}`, line: newBadge.why };
-    // First run on a device: remember what's already earned instead of celebrating old history.
-    if (seen('recomp:badges') == null) mark('recomp:badges', g.badges.filter((b) => b.at).map((b) => b.id).join(','));
-    if (lastLvl == null) mark('recomp:level', lvl);
-    if (!m) return;
-    if (m.title.startsWith('Level')) mark('recomp:level', lvl);
-    else if (m.title.startsWith('Badge')) mark('recomp:badges', g.badges.filter((b) => b.at).map((b) => b.id).join(','));
-    else mark('recomp:won', maxDay);
-    setMsg(m);
+    if (!g || !g.today?.won) return;
+    // Only what today itself earned is celebrated, once each: never old history.
+    const key = 'recomp:cele:' + maxDay, shown = (seen(key) ?? '').split(',');
+    const lvlOf = (n: number) => LEVELS.filter(([t]) => n >= t).length - 1;
+    const queue: { id: string; title: string; line: string; pts?: number }[] = [];
+    queue.push(g.today.comeback
+      ? { id: 'won', title: 'Back on it', line: 'You came back after a miss. That counts double today.', pts: g.today.pts }
+      : { id: 'won', title: 'Day won', line: g.streak > 1 ? `${g.streak} days in a row. That's how it's built.` : 'The floor is met. That is the whole job.', pts: g.today.pts });
+    if (lvlOf(g.totalWon) > lvlOf(g.totalWon - 1)) queue.push({ id: 'lvl', title: `Level up: ${g.level.name}`, line: `${g.totalWon} days won. Keep stacking them.` });
+    g.badges.filter((b) => b.at === maxDay).forEach((b) => queue.push({ id: 'b:' + b.id, title: `Badge: ${b.name}`, line: b.why }));
+    const next = queue.find((q) => !shown.includes(q.id));
+    if (!next) return;
+    mark(key, [...shown.filter(Boolean), next.id].join(','));
+    setMsg(next);
     Animated.timing(op, { toValue: 1, duration: 220, useNativeDriver: true }).start();
     const t = setTimeout(() => Animated.timing(op, { toValue: 0, duration: 260, useNativeDriver: true }).start(() => setMsg(null)), 4200);
     return () => clearTimeout(t);
-  }, [g?.today?.won, g?.level.i, g?.badges.map((b) => b.at).join()]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [g?.today?.won, g?.level.i, g?.badges.map((b) => b.at).join(), msg == null]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!msg) return null;
   return (
     <Animated.View style={{ position: 'absolute', left: 16, right: 16, bottom: 104, opacity: op, transform: [{ translateY: op.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }] }}>

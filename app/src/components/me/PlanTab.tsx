@@ -12,6 +12,7 @@ import { useRecomp } from '../../lib/recomp';
 import { font, useTheme } from '../../lib/theme';
 import { Icon } from '../Icon';
 import { Cue, Fold, Mini, PanelHead, Pill, Segmented } from '../ui';
+import { toast as undoToast } from '../../lib/toast';
 
 const exParts = (line: string) => { const q = String(line).split('|'); return { n: (q[0] || '').trim(), s: (q[1] || '').trim(), c: (q[2] || '').trim() }; };
 const stable = (x: unknown) => JSON.stringify(x);
@@ -153,7 +154,7 @@ export function PlanTab({ keyed, toast }: { keyed: boolean; toast: (t: string) =
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {hasSaved && <Mini label="Restore previous plan" onPress={async () => { try { await db.restorePreviousPlan(); await after('Previous plan restored'); } catch (e) { toast((e as Error).message); } }} />}
           {PL.by !== 'default' && <Mini label="Back to the original" onPress={async () => {
-            try { await db.savePlanVersion({ body: null, source: 'you', note: 'Back to the original', kcal: G.kcal, protein: G.protein }); await after('Back to the original plan'); } catch (e) { toast((e as Error).message); }
+            try { await db.savePlanVersion({ body: null, source: 'you', note: 'Back to the original', kcal: G.kcal, protein: G.protein }); await reload(); touch(); undoToast('Back to the original plan', async () => { await db.restorePreviousPlan(); await reload(); touch(); }); } catch (e) { toast((e as Error).message); }
           }} />}
         </View>
         <AskClaude keyed={keyed} />
@@ -325,7 +326,7 @@ function AskClaude({ keyed }: { keyed: boolean }) {
           </View>
           <View style={s.row}>
             {proposal.diff.length > 0 && <Pressable style={[s.primary, { flex: 1, minHeight: 44 }]} onPress={async () => {
-              try { await acceptProposal(proposal); setProposal(null); setAsk(''); setStatus('New plan in use. Restore previous puts the old one back.'); await reload(); touch(); }
+              try { await acceptProposal(proposal); setProposal(null); setAsk(''); setStatus(null); await reload(); touch(); undoToast('New plan in use', async () => { await db.restorePreviousPlan(); await reload(); touch(); }); }
               catch (e) { setStatus((e as Error).message); }
             }}><Text style={s.primaryText}>Use this plan</Text></Pressable>}
             <Mini label="Discard" onPress={() => { setProposal(null); setStatus('Proposal discarded.'); }} />
