@@ -1,4 +1,5 @@
-import { useLocalSearchParams } from 'expo-router';
+import * as Linking from 'expo-linking';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,7 +9,8 @@ import { font, useTheme } from '../../lib/theme';
 
 // OAuth consent for the Recomp connector (Supabase Auth's OAuth 2.1 server redirects here with
 // ?authorization_id=...). Runs in the browser Claude opens: sign in with your Recomp email,
-// see what Claude asks for, then Allow or Deny. Served from the app's web build.
+// see what Claude asks for, then Allow or Deny. Served from the app's web build, and on Android
+// the same screen opens in the app when the consent link points at recomp://.
 const CAN = [
   'Read your days: food, weight, steps, sleep, sets and habits',
   'Log food, weight, steps and sleep for you',
@@ -28,7 +30,13 @@ export default function Consent() {
   const [code, setCode] = useState('');
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
-  const go = (url: string) => { if (Platform.OS === 'web') window.location.href = url; };
+  const [handedBack, setHandedBack] = useState(false);
+  // Back to Claude with the result. In the app, the callback opens in the Claude app or the browser.
+  const go = (url: string) => {
+    if (Platform.OS === 'web') { window.location.href = url; return; }
+    setHandedBack(true);
+    Linking.openURL(url).catch((e) => setErr(e.message));
+  };
 
   // Back from the sign-in email link with a PKCE code: finish signing in here.
   useEffect(() => {
@@ -57,7 +65,9 @@ export default function Consent() {
 
   const sendLink = async () => {
     setBusy(true); setErr(null);
-    const back = Platform.OS === 'web' ? `${window.location.origin}/oauth/consent?authorization_id=${encodeURIComponent(authId ?? '')}` : undefined;
+    const back = Platform.OS === 'web'
+      ? `${window.location.origin}/oauth/consent?authorization_id=${encodeURIComponent(authId ?? '')}`
+      : Linking.createURL('/oauth/consent', { queryParams: { authorization_id: authId ?? '' } });
     const { error } = await supabase.auth.signInWithOtp({ email: email.trim().toLowerCase(), options: { emailRedirectTo: back, shouldCreateUser: false } });
     setBusy(false);
     if (error) setErr(error.message.includes('Signups not allowed') ? 'No Recomp account uses that email. Sign up in the Recomp app first.' : error.message);
@@ -71,7 +81,13 @@ export default function Consent() {
           <View style={{ width: 18, height: 18, borderRadius: 5, backgroundColor: c.cat.move.fill, borderWidth: 1.5, borderColor: c.cat.move.ink }} />
           <Text style={{ fontFamily: font.bold, fontSize: 22, color: c.ink }}>Recomp</Text>
         </View>
-        {!authId ? (
+        {handedBack ? (
+          <View style={{ gap: 12 }}>
+            <Text style={s.title}>Done. Back to Claude.</Text>
+            <Text style={s.body2}>If Claude didn't open by itself, switch back to it: the Recomp connector should now show as connected.</Text>
+            <Pressable style={s.outline} onPress={() => router.replace('/')}><Text style={s.outlineText}>Open Recomp</Text></Pressable>
+          </View>
+        ) : !authId ? (
           <Text style={s.body2}>This page is where you allow Claude to use your Recomp log. Start from the Recomp connector in your Claude app.</Text>
         ) : loading ? null : !session ? (
           <View style={{ gap: 12 }}>
