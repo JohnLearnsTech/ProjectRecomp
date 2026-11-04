@@ -58,7 +58,7 @@ export default function Progress() {
         <View onLayout={mark('review')}><ReviewCard /></View>
         <View onLayout={mark('log')}><DailyLog /></View>
         <View onLayout={mark('rules')}><Guides kind="rules" /></View>
-        <Text style={[s.label, { marginTop: 8 }]}>Recomp is a training, nutrition and habits tool. Its targets come from standard formulas and your own logs; they are not medical advice.</Text>
+        <Text style={[s.label, { marginTop: 8 }]}>Project Recomp is a training, nutrition and habits tool. Its targets come from standard formulas and your own logs; they are not medical advice.</Text>
       </ScrollView>
     </SafeAreaView>
   );

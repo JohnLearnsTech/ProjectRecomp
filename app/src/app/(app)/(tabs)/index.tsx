@@ -146,7 +146,7 @@ export default function Today() {
         <ConsistencyCard />
 
         <Text style={[s.label, { marginTop: 8 }]}>
-          Recomp is a training, nutrition and habits tool. Its targets come from standard formulas and your own logs; they are not medical advice.
+          Project Recomp is a training, nutrition and habits tool. Its targets come from standard formulas and your own logs; they are not medical advice.
         </Text>
       </ScrollView>
       <Celebrate />

@@ -29,7 +29,7 @@ export default function SignIn() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.paper }}>
       <KeyboardAvoidingView behavior="padding" style={[ui.screen, { justifyContent: 'center' }]}>
-        <Text style={ui.title}>Recomp</Text>
+        <Text style={ui.title}>Project Recomp</Text>
         <Text style={ui.label}>Sign in with your email. No password.</Text>
 
         <TextInput

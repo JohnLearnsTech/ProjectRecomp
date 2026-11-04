@@ -79,13 +79,13 @@ export default function Consent() {
       <ScrollView contentContainerStyle={{ padding: 24, gap: 16, maxWidth: 520, width: '100%', alignSelf: 'center' }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <View style={{ width: 18, height: 18, borderRadius: 5, backgroundColor: c.cat.move.fill, borderWidth: 1.5, borderColor: c.cat.move.ink }} />
-          <Text style={{ fontFamily: font.bold, fontSize: 22, color: c.ink }}>Recomp</Text>
+          <Text style={{ fontFamily: font.bold, fontSize: 22, color: c.ink }}>Project Recomp</Text>
         </View>
         {handedBack ? (
           <View style={{ gap: 12 }}>
             <Text style={s.title}>Done. Back to Claude.</Text>
             <Text style={s.body2}>If Claude didn't open by itself, switch back to it: the Recomp connector should now show as connected.</Text>
-            <Pressable style={s.outline} onPress={() => router.replace('/')}><Text style={s.outlineText}>Open Recomp</Text></Pressable>
+            <Pressable style={s.outline} onPress={() => router.replace('/')}><Text style={s.outlineText}>Open Project Recomp</Text></Pressable>
           </View>
         ) : !authId ? (
           <Text style={s.body2}>This page is where you allow Claude to use your Recomp log. Start from the Recomp connector in your Claude app.</Text>

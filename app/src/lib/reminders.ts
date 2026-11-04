@@ -49,7 +49,7 @@ export async function scheduleReminders(engine: Engine, maxDay: string, rows: Re
     }
   }
   rows.filter((r) => r.k.startsWith('chk:') && it(r.k)?.on).forEach((r) => {
-    for (let k = maxDay; k <= end; k = key(addDays(d(k), 1))) out.push({ title: r.label, body: 'Recomp · daily check', when: at(k, it(r.k).time) });
+    for (let k = maxDay; k <= end; k = key(addDays(d(k), 1))) out.push({ title: r.label, body: 'Project Recomp · daily check', when: at(k, it(r.k).time) });
   });
   if (it('dates')?.on) (G.milestones || []).filter((m) => m.d >= maxDay && m.d <= end).forEach((m) => {
     const title = (m.k === 'lab' ? 'Bloods: ' : 'Milestone: ') + String(m.t).split(/[—.]/)[0].trim().slice(0, 70);
@@ -58,7 +58,7 @@ export async function scheduleReminders(engine: Engine, maxDay: string, rows: Re
   });
   if (it('review')?.on) {
     const wn = planWeekdays(T.TSTART), last = wn[6];
-    for (let k = maxDay; k <= end; k = key(addDays(d(k), 1))) if (['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d(k).getUTCDay()] === last) out.push({ title: 'Weekly review · Recomp', body: 'Open Progress and review your week.', when: at(k, it('review').time) });
+    for (let k = maxDay; k <= end; k = key(addDays(d(k), 1))) if (['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d(k).getUTCDay()] === last) out.push({ title: 'Weekly review · Project Recomp', body: 'Open Progress and review your week.', when: at(k, it('review').time) });
   }
   const due = out.filter((x) => x.when.getTime() > now + 60000).sort((a, b) => +a.when - +b.when).slice(0, 400);
   for (const x of due) {

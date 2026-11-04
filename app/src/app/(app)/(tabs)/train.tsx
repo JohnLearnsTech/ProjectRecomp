@@ -174,7 +174,7 @@ export default function Train() {
 
         {usesBands && <BandSetup bands={bands} onSave={(b) => run(T.saveBands(b))} />}
         <Guides kind="train" />
-        <Text style={[s.label, { marginTop: 8 }]}>Recomp is a training, nutrition and habits tool. Its targets come from standard formulas and your own logs; they are not medical advice.</Text>
+        <Text style={[s.label, { marginTop: 8 }]}>Project Recomp is a training, nutrition and habits tool. Its targets come from standard formulas and your own logs; they are not medical advice.</Text>
       </ScrollView>
 
       {swapFor && (

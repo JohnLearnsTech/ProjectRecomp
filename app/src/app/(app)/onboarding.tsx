@@ -69,7 +69,7 @@ export default function Onboarding() {
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 12, minHeight: 56 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View style={{ width: 18, height: 18, borderRadius: 5, backgroundColor: c.cat.move.fill, borderWidth: 1.5, borderColor: c.cat.move.ink }} />
-            <Text style={{ fontFamily: font.bold, fontSize: 22, color: c.ink }}>Recomp</Text>
+            <Text style={{ fontFamily: font.bold, fontSize: 22, color: c.ink }}>Project Recomp</Text>
           </View>
           {step > 0 && (
             <View style={{ flexDirection: 'row', gap: 6 }} accessibilityLabel={`Step ${step} of ${N}`}>

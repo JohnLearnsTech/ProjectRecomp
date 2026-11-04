@@ -43,7 +43,7 @@ export default function Me() {
         {tab === 'reminders' && <RemindersTab toast={toast} />}
         {tab === 'backup' && <BackupTab toast={toast} />}
         {tab === 'settings' && <SettingsTab storedKey={storedKey} setStoredKey={setStoredKey} toast={toast} />}
-        <Text style={[s.label, { fontSize: 12, lineHeight: 18, marginTop: 6 }]}>Recomp is a training, nutrition and habits tool. Its targets come from standard formulas and your own logs; they are not medical advice.</Text>
+        <Text style={[s.label, { fontSize: 12, lineHeight: 18, marginTop: 6 }]}>Project Recomp is a training, nutrition and habits tool. Its targets come from standard formulas and your own logs; they are not medical advice.</Text>
       </ScrollView>
       <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 20, right: 20, bottom: 28, opacity: fade, alignItems: 'center' }}>
         {toastText && <View style={{ backgroundColor: c.ink, borderRadius: 999, paddingHorizontal: 18, paddingVertical: 11 }}><Text style={{ color: c.paper, fontFamily: font.semibold, fontSize: 14 }}>{toastText}</Text></View>}

@@ -16,7 +16,7 @@ export function ConnectClaude() {
       </View>
       <Pressable style={s.outline} onPress={() => copyConnectorUrl().then(() => setCopied(true))}><Text style={s.outlineText}>{copied ? 'Copied' : 'Copy the connector address'}</Text></Pressable>
       <View style={{ gap: 4 }}>
-        {['In Claude, open Settings, then Connectors.', 'Add a custom connector and paste the address. Name it Recomp.', 'Sign in with your Recomp email when Claude asks, and tap Allow.', 'Then ask Claude things like "Estimate my pending Recomp foods" or "Review my week".'].map((x, i) => (
+        {['In Claude, open Settings, then Connectors.', 'Add a custom connector and paste the address. Name it Project Recomp.', 'Sign in with your Project Recomp email when Claude asks, and tap Allow.', 'Then ask Claude things like "Estimate my pending Recomp foods" or "Review my week".'].map((x, i) => (
           <Text key={i} style={s.body}>{i + 1}. {x}</Text>
         ))}
       </View>
