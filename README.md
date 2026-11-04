@@ -124,7 +124,7 @@ In the app: Me has "Use Recomp from Claude" (address, copy, steps). Food shows "
 
 Verified live: 21 connector checks (discovery, every tool, bounds, user isolation, forged token) and 10 OAuth checks (registration with Claude's callback, consent, PKCE exchange, refresh, already-allowed path, wrong verifier). Deploy the function with `supabase functions deploy mcp`.
 
-**Still to do:** host the web build (`npx eas-cli@latest deploy --prod` from `app/`), then point Supabase Auth's Site URL at that address and add `https://<host>/**` to the redirect list. Until then Claude's sign-in step lands on a page that isn't there.
+**Hosting (done):** the web build is on EAS Hosting at https://recomp.expo.app (`cd app && npx expo export --platform web && npx eas-cli@latest deploy --prod`). Supabase Auth's Site URL is that address, so the connector's approval page works from any browser, and the same address is a working web version of the app. Sign-in emails go through custom SMTP (Gmail) at up to 30 an hour and carry a 6-digit code for browsers.
 
 ## Build step 7: backup restore and the Android APK (done)
 
