@@ -350,7 +350,7 @@ function AskClaude({ keyed }: { keyed: boolean }) {
           <Pressable style={[s.primary, (busy || !keyed) && { backgroundColor: c.surface2 }]} disabled={busy || !keyed} onPress={go}>
             <Text style={[s.primaryText, (busy || !keyed) && { color: c.muted }]}>{busy ? 'Claude is working on it…' : 'Build a proposal'}</Text>
           </Pressable>
-          {!keyed && <Cue>Add your Anthropic API key in Settings, or ask Claude through the Recomp connector: its plan proposals show up here.</Cue>}
+          {!keyed && <Cue>Add your Anthropic API key in Settings, or ask Claude through the Project Recomp connector: its plan proposals show up here.</Cue>}
         </>
       )}
       {status && <Cue>{status}</Cue>}

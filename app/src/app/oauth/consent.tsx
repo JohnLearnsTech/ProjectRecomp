@@ -84,11 +84,11 @@ export default function Consent() {
         {handedBack ? (
           <View style={{ gap: 12 }}>
             <Text style={s.title}>Done. Back to Claude.</Text>
-            <Text style={s.body2}>If Claude didn't open by itself, switch back to it: the Recomp connector should now show as connected.</Text>
+            <Text style={s.body2}>If Claude didn't open by itself, switch back to it: the Project Recomp connector should now show as connected.</Text>
             <Pressable style={s.outline} onPress={() => router.replace('/')}><Text style={s.outlineText}>Open Project Recomp</Text></Pressable>
           </View>
         ) : !authId ? (
-          <Text style={s.body2}>This page is where you allow Claude to use your Recomp log. Start from the Recomp connector in your Claude app.</Text>
+          <Text style={s.body2}>This page is where you allow Claude to use your Project Recomp log. Start from the Project Recomp connector in your Claude app.</Text>
         ) : loading ? null : !session ? (
           <View style={{ gap: 12 }}>
             <Text style={s.title}>Sign in to connect Claude</Text>
@@ -113,7 +113,7 @@ export default function Consent() {
           <Text style={s.body2}>Checking the request…</Text>
         ) : (
           <View style={{ gap: 14 }}>
-            <Text style={s.title}>Allow {details.client} to use your Recomp log?</Text>
+            <Text style={s.title}>Allow {details.client} to use your Project Recomp log?</Text>
             <Text style={s.label}>Signed in as {details.email}</Text>
             <View style={[s.card, { gap: 8 }]}>
               <Text style={[s.body, { fontFamily: font.semibold }]}>{details.client} will be able to:</Text>

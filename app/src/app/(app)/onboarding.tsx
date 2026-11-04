@@ -8,6 +8,10 @@ import {
 } from '../../domain/onboarding';
 import * as db from '../../lib/db';
 import { BackupImport } from '../../components/BackupImport';
+import { ConnectClaude } from '../../components/ConnectClaude';
+import { aiMessage } from '../../domain/ai';
+import { getApiKey, saveApiKey } from '../../lib/apiKey';
+import { checkKey } from '../../lib/claude';
 import { buildOnboarding } from '../../lib/onboarding';
 import { useRecomp } from '../../lib/recomp';
 import { font, useTheme } from '../../lib/theme';
@@ -15,6 +19,7 @@ import { font, useTheme } from '../../lib/theme';
 // r19 setup wizard: a hero, five questions, then a goal, targets and the default plan.
 // Opens on its own when there is no goal; "Run setup again" in Me opens it at step 1.
 const N = 5;
+const AI = 6; // after Start: connect Claude or add a key
 
 export default function Onboarding() {
   const { again } = useLocalSearchParams<{ again?: string }>();
@@ -56,6 +61,8 @@ export default function Onboarding() {
     try {
       await db.finishOnboarding(buildOnboarding(A, todayKey()));
       await reload();
+      // First setup: one more screen to connect an AI, unless a key is already on this phone.
+      if (!isAgain && !(await getApiKey().catch(() => null))) { setBusy(false); setStep(AI); return; }
       router.replace('/');
     } catch (e) { setMsg((e as Error).message); setBusy(false); }
   };
@@ -71,10 +78,10 @@ export default function Onboarding() {
             <View style={{ width: 18, height: 18, borderRadius: 5, backgroundColor: c.cat.move.fill, borderWidth: 1.5, borderColor: c.cat.move.ink }} />
             <Text style={{ fontFamily: font.bold, fontSize: 22, color: c.ink }}>Project Recomp</Text>
           </View>
-          {step > 0 && (
-            <View style={{ flexDirection: 'row', gap: 6 }} accessibilityLabel={`Step ${step} of ${N}`}>
+          {step > 0 && step !== AI && (
+            <View style={{ flexDirection: 'row', gap: 4, flexShrink: 1, marginLeft: 12 }} accessibilityLabel={`Step ${step} of ${N}`}>
               {Array.from({ length: N }, (_, i) => (
-                <View key={i} style={{ width: 26, height: 5, borderRadius: 3, backgroundColor: i < step ? c.cat.move.fill : c.lineSoft }} />
+                <View key={i} style={{ width: 16, height: 5, borderRadius: 3, backgroundColor: i < step ? c.cat.move.fill : c.lineSoft }} />
               ))}
             </View>
           )}
@@ -154,6 +161,8 @@ export default function Onboarding() {
             </Q>
           )}
 
+          {step === AI && <AiStep onDone={() => router.replace('/')} />}
+
           {step === 5 && t && (
             <Q eyebrow="Your plan" title={`${A.name.trim() ? A.name.trim() + ', here' : 'Here'} is where you start`}>
               <View style={[s.card, { flexDirection: 'row', justifyContent: 'space-between' }]}>
@@ -175,7 +184,7 @@ export default function Onboarding() {
           )}
         </ScrollView>
 
-        <View style={{ padding: 20, paddingTop: 8, gap: 8 }}>
+        {step !== AI && <View style={{ padding: 20, paddingTop: 8, gap: 8 }}>
           {msg && <Text style={s.error}>{msg}</Text>}
           <View style={s.row}>
             {step > (isAgain ? 1 : 0) && (
@@ -187,7 +196,7 @@ export default function Onboarding() {
               <Text style={[s.primaryText, { fontSize: 18 }]}>{step === 0 ? 'Get started' : step === N ? (busy ? 'Setting up…' : 'Start') : 'Next'}</Text>
             </Pressable>
           </View>
-        </View>
+        </View>}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -246,6 +255,42 @@ function Chips(p: ChipProps) {
           </Pressable>
         );
       })}
+    </View>
+  );
+}
+
+/** Last setup screen: connect an AI. Claude through the connector (their own plan), or their own API key. */
+function AiStep({ onDone }: { onDone: () => void }) {
+  const { c, s } = useTheme('move');
+  const [key, setKey] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ t: string; ok?: boolean } | null>(null);
+  const saveKey = async () => {
+    setBusy(true); setMsg(null);
+    try {
+      const bad = await checkKey(key.trim()); if (bad) throw new Error(aiMessage(bad));
+      await saveApiKey(key); setKey(''); setMsg({ t: 'Key checked with Anthropic and saved on this phone.', ok: true });
+    } catch (e) { setMsg({ t: (e as Error).message }); } finally { setBusy(false); }
+  };
+  return (
+    <View style={{ gap: 14 }}>
+      <Text style={{ fontFamily: font.bold, fontSize: 30, lineHeight: 34, color: c.ink }}>One last thing: connect your AI</Text>
+      <Text style={[s.body2, { fontSize: 16, lineHeight: 24 }]}>
+        Project Recomp works on its own, but Claude makes it far easier to stick with. It fills in the calories for food you type in plain words, writes your weekly review and grade, and adjusts your plan when life gets in the way.
+      </Text>
+      <Text style={{ fontFamily: font.bold, fontSize: 13, color: c.cat.move.ink }}>RECOMMENDED · USES YOUR OWN CLAUDE PLAN</Text>
+      <ConnectClaude />
+      <View style={[s.card, { gap: 10 }]}>
+        <Text style={s.cardTitle}>Or use an API key</Text>
+        <Text style={s.body2}>If you have an Anthropic API key, paste it here. Claude then runs inside the app too, including label and plate photos. It stays on this phone and usage is billed to your Anthropic account.</Text>
+        <TextInput style={s.input} placeholder="sk-ant-…" placeholderTextColor={c.muted} autoCapitalize="none" autoCorrect={false} secureTextEntry value={key} onChangeText={setKey} accessibilityLabel="Anthropic API key" />
+        <Pressable style={[s.outline, (busy || !key.trim()) && { opacity: 0.5 }]} disabled={busy || !key.trim()} onPress={saveKey}>
+          <Text style={s.outlineText}>{busy ? 'Checking…' : 'Check and save key'}</Text>
+        </Pressable>
+        {msg && <Text style={msg.ok ? s.label : s.error}>{msg.t}</Text>}
+      </View>
+      <Pressable style={[s.primary, { minHeight: 56 }]} onPress={onDone}><Text style={[s.primaryText, { fontSize: 18 }]}>Go to Today</Text></Pressable>
+      <Text style={[s.label, { textAlign: 'center' }]}>Not now? Both options are in Me → Settings whenever you're ready.</Text>
     </View>
   );
 }

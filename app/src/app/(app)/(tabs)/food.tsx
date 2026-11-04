@@ -196,7 +196,7 @@ export default function Food() {
             {pending > 0 && (
               <View style={{ backgroundColor: c.warnSoft, borderRadius: 12, padding: 12, gap: 10 }}>
                 <Text style={[s.body, { color: c.ink }]}>
-                  {pending} item{pending > 1 ? 's need' : ' needs'} numbers. {keyed ? 'Claude can estimate them, or tap a row to type them in.' : 'Tap a row to type them in, or let Claude fill them through the Recomp connector (Me, Use Recomp from Claude).'}
+                  {pending} item{pending > 1 ? 's need' : ' needs'} numbers. {keyed ? 'Claude can estimate them, or tap a row to type them in.' : 'Tap a row to type them in, or let Claude fill them through the Project Recomp connector (Me, Settings).'}
                 </Text>
                 {!keyed && (
                   <Pressable style={[s.outline, { alignSelf: 'flex-start' }]} onPress={() => handOffToClaude()}>
