@@ -1,0 +1,211 @@
+{
+ "squat-h": {
+  "home": [
+   "Goblet squat to box|One DB at the chest, sit back to a chair edge, then stand. Chest stays up.|quads, glutes",
+   "Split squat, hand on chair|One foot forward, drop the back knee, drive the front heel. Hand on a chair.|quads, glutes",
+   "Reverse lunge to a chair|Step back, tap the back knee down, drive up. Hold a chair if you need it.|quads, glutes"
+  ]
+ },
+ "hrow-h": {
+  "home": [
+   "Bent-over DB row, hand on chair|Hinge with a flat back, one hand on a chair, row the DB to the hip.|upper back, lats",
+   "Band bent-over row|Stand on the band, hinge flat-backed, pull both handles to the ribs.|upper back",
+   "Single-arm band row|Anchor the band low, pull the elbow back past the ribs, one side at a time.|lats"
+  ]
+ },
+ "hpush-h": {
+  "home": [
+   "Wall push-up|Same movement against a wall, the easiest version. Step further out to make it harder.|chest, triceps",
+   "Band standing chest press|Band behind the back at chest height, press both hands forward and together.|chest",
+   "Knee push-up on a counter|Hands on the counter, from the knees, lower the chest and press away.|chest, triceps"
+  ]
+ },
+ "hinge-h": {
+  "home": [
+   "DB sumo deadlift|Wide stance, one DB between the feet, hinge and stand tall, hips through at the top.|hamstrings, glutes",
+   "Band pull-through|Band anchored low behind you, hinge, then drive the hips forward against it.|glutes, hamstrings",
+   "Single-leg RDL, hand on chair|One leg, hinge and reach the DB down with a flat back. Hand on a chair.|hamstrings, glutes"
+  ]
+ },
+ "reardelt-h": {
+  "home": [
+   "Band face pull|Band at face height, pull toward the forehead, elbows high and wide.|rear delts",
+   "Hinged reverse DB fly|Hinge with a flat back, raise light DBs out to the sides, lead with the elbows.|rear delts",
+   "Band W-pull|Band at chest height, pull apart and down into a W, squeezing the blades.|rear delts, upper back"
+  ]
+ },
+ "antirot-h": {
+  "home": [
+   "Suitcase hold|Hold one DB at the side, stand tall, do not lean. The empty side does the work.|core, obliques",
+   "Band chop|High anchor, pull the band down and across the body, hips still.|core, obliques",
+   "Half-kneeling band hold|Kneel side-on, hold the band out at the chest, resist the pull.|core"
+  ]
+ },
+ "lunge-h": {
+  "home": [
+   "Reverse lunge to a chair|Step back, tap the knee, drive up. Hold a chair for balance.|quads, glutes",
+   "Low-step step-up|Whole foot on a low step, push through that heel, step down slowly.|quads, glutes",
+   "Split squat, hand on chair|Front heel drives you up, torso upright, hand on a chair.|quads, glutes"
+  ]
+ },
+ "vpull-h": {
+  "home": [
+   "Band straight-arm pulldown|Arms straight, pull the band down to the thighs from overhead.|lats",
+   "Single-arm band pulldown|One arm at a time, drive the elbow down and back.|lats",
+   "Band bent-over row|Stand on the band, hinge, pull the handles to the ribs.|lats, upper back"
+  ]
+ },
+ "vpush-h": {
+  "home": [
+   "Standing DB press|Press the DBs overhead standing, brace the abs, ribs down.|shoulders",
+   "Band overhead press|Stand on the band, press the handles overhead.|shoulders",
+   "Seated Arnold press|Start palms-in, rotate to palms-forward as you press up.|shoulders"
+  ]
+ },
+ "biceps-h": {
+  "home": [
+   "DB curl|Palms up, curl without moving the elbows, slow lowering.|biceps",
+   "Band curl|Stand on the band, curl both handles, slow return.|biceps",
+   "Cross-body hammer curl|Palms in, curl each DB across to the opposite shoulder.|biceps, forearms"
+  ]
+ },
+ "triceps-h": {
+  "home": [
+   "Seated DB overhead extension|One DB overhead, lower behind the head, elbows still.|triceps",
+   "DB kickback, hand on chair|Hinge, upper arm still, straighten the arm back.|triceps",
+   "Close-grip push-up on a counter|Hands narrow on the counter, elbows brushing the ribs.|triceps, chest"
+  ]
+ },
+ "antilat-h": {
+  "home": [
+   "Standing Pallof press|Band at the chest, press out, resist the rotation.|core",
+   "Side plank on a bench|Forearm on a bench, body straight, hold. A higher surface is easier.|obliques",
+   "Standing band side-bend hold|Hold the band at one side, stand tall, resist the pull sideways.|obliques"
+  ]
+ },
+ "squat-g": {
+  "gym": [
+   "Hack squat|Shoulders under the pads, descend under control to about 90 degrees, push the heels.|quads",
+   "Goblet squat to box|One DB at the chest, sit back to a box, then stand.|quads, glutes",
+   "Leg press|Feet mid-platform, lower to about 90 degrees, drive through the whole foot.|quads, glutes",
+   "Smith machine squat|Bar on the back, controlled descent to about 90 degrees, drive the heels.|quads, glutes"
+  ]
+ },
+ "hpush-g": {
+  "gym": [
+   "Incline DB press|Bench at about 30 degrees, press up and slightly together, stretch at the bottom.|upper chest, triceps",
+   "Flat DB press|Press the DBs over the chest, elbows about 45 degrees, control the lowering.|chest, triceps",
+   "Cable chest press|Handles at chest height, press forward and together.|chest",
+   "Chest press machine|Handles at mid-chest, press without locking hard, control back.|chest, triceps"
+  ]
+ },
+ "hrow-g": {
+  "gym": [
+   "Chest-supported DB row|Chest on an incline bench, row the elbows past the ribs.|upper back",
+   "Machine row|Chest on the pad, drive the elbows back and squeeze.|upper back",
+   "Single-arm DB row|One hand and knee on a bench, row the DB to the hip.|lats, upper back",
+   "Seated cable row|Chest tall, pull to the belly, elbows past the ribs.|upper back, lats"
+  ]
+ },
+ "ham-g": {
+  "gym": [
+   "Lying leg curl|Hips into the pad, curl fully, lower slowly.|hamstrings",
+   "Cable pull-through|Rope between the legs, hinge and drive the hips forward.|hamstrings, glutes",
+   "DB Romanian deadlift|Hips back, flat back, stop at the hamstring stretch.|hamstrings, glutes",
+   "Seated leg curl|Curl fully, slow return, hips stay down on the seat.|hamstrings"
+  ]
+ },
+ "sidedelt-g": {
+  "gym": [
+   "Cable lateral raise|Low cable, one arm, raise to shoulder height, lead with the elbow.|side delts",
+   "Machine lateral raise|Pads on the forearms, raise smoothly to shoulder height.|side delts",
+   "DB lateral raise|Light DBs, raise to shoulder height, lead with the elbow.|side delts"
+  ]
+ },
+ "antiext-g": {
+  "gym": [
+   "Side plank on a bench|Forearm on a bench, body in one line, hold. A higher surface is easier.|obliques, core",
+   "Reverse plank on a bench|Hands on a bench behind you, hips up, body straight, hold.|core, glutes",
+   "Standing plank on the wall|Forearms on the wall, walk the feet back, brace and hold.|core"
+  ]
+ },
+ "vpull-g": {
+  "gym": [
+   "Assisted pull-up machine|Neutral or wide grip, pull the chest toward the bar.|lats",
+   "Close-grip pulldown|Neutral handle, pull to the chest, elbows driving down.|lats",
+   "Single-arm cable pulldown|One arm, drive the elbow down and back.|lats",
+   "Lat pulldown|Bar to the upper chest, elbows down to the ribs.|lats"
+  ]
+ },
+ "glute-g": {
+  "gym": [
+   "Glute bridge machine|Pad on the hips, drive up, squeeze, control down.|glutes",
+   "Forty-five degree back extension|Round only at the hips, squeeze the glutes at the top.|glutes, hamstrings",
+   "Cable pull-through|Hinge and drive the hips forward against the rope.|glutes, hamstrings",
+   "Hip thrust|Shoulders on a bench, drive the heels, squeeze hard at the top.|glutes"
+  ]
+ },
+ "triceps-g": {
+  "gym": [
+   "Overhead cable extension|Face away, elbows by the ears, straighten overhead.|triceps",
+   "DB overhead extension|One DB overhead, lower behind the head, elbows still.|triceps",
+   "Close-grip machine press|Narrow hands, press and control back.|triceps",
+   "Rope triceps pushdown|Elbows pinned, push down and apart at the bottom.|triceps"
+  ]
+ },
+ "antirot-g": {
+  "gym": [
+   "Cable chop|High anchor, pull the cable down and across, hips still.|core, obliques",
+   "Suitcase carry|One DB at the side, walk tall without leaning.|core, obliques",
+   "Standing Pallof press|Cable at the chest, press out, resist the rotation.|core"
+  ]
+ },
+ "quad-g": {
+  "gym": [
+   "Leg press|Lower to about 90 degrees, push through the whole foot.|quads, glutes",
+   "Goblet squat to box|DB at the chest, sit back to a box, then stand.|quads",
+   "Split squat|Front heel drives you up, torso upright.|quads, glutes",
+   "Leg extension|Straighten fully, pause, lower slowly. Stop if the knee pinches.|quads"
+  ]
+ },
+ "calf-g": {
+  "gym": [
+   "Seated calf raise|Targets the deeper calf muscle, so go slow.|calves",
+   "Leg-press calf press|Balls of the feet on the platform, press and stretch.|calves",
+   "Single-leg calf raise|One leg, full range, hold a rail for balance.|calves",
+   "Standing calf raise|Full stretch down, full squeeze up, no bounce.|calves"
+  ]
+ },
+ "vpush-g": {
+  "gym": [
+   "Seated DB shoulder press|Back supported, press the DBs overhead, no lower-back arch.|shoulders",
+   "Cable shoulder press|Press the handles overhead, brace the abs.|shoulders",
+   "Seated Arnold press|Rotate palms-in to out as you press up.|shoulders",
+   "Shoulder press machine|Handles at shoulder height, press overhead, ribs down.|shoulders"
+  ]
+ },
+ "biceps-g": {
+  "gym": [
+   "Cable curl|Constant tension, curl and control back.|biceps",
+   "Hammer curl|Palms facing in, elbows tucked, no swing.|biceps, forearms",
+   "Machine preacher curl|Arms on the pad, curl through the full range.|biceps",
+   "DB curl|Elbows still, palms up, slow lowering.|biceps"
+  ]
+ },
+ "lunge-g": {
+  "gym": [
+   "Split squat|Drop the back knee straight down, drive the front heel.|quads, glutes",
+   "Reverse lunge|Step back, tap the knee, drive up.|quads, glutes",
+   "Walking lunge|Step and lunge, alternate legs, torso tall.|quads, glutes",
+   "Low-box step-up with DBs|Whole foot on the box, push that heel, step down slowly.|quads, glutes"
+  ]
+ },
+ "reardelt-g": {
+  "gym": [
+   "Reverse pec-deck|Chest on the pad, open the arms back, squeeze the blades.|rear delts",
+   "Hinged reverse DB fly|Hinge with a flat back, raise light DBs out to the sides.|rear delts",
+   "Band pull-apart|Arms straight, pull the band apart to the chest.|rear delts, upper back",
+   "Face pull|Rope at face height, pull to the forehead, elbows high and wide.|rear delts"
+  ]
+ }
+}

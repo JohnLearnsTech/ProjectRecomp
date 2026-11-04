@@ -9,6 +9,7 @@ import { test } from 'node:test';
 import * as P from '../src/domain/plan';
 import * as F from '../src/domain/food';
 import * as O from '../src/domain/onboarding';
+import * as TR from '../src/domain/training';
 import type { Goal, Profile } from '../src/domain/types';
 
 const html = readFileSync(new URL('../../reference/app/recomp.html', import.meta.url), 'utf8');
@@ -40,8 +41,9 @@ const names = ['d', 'key', 'addDays', 'diffDays', 'localKey', 'todayKey', 'trimN
   'applyGoal', 'LIFTS_DEFAULT', 'NAMES_DEFAULT', 'LEGACY_KEYS', 'slotL', 'slotC', 'slotR', 'defaultPlan', 'makePlan', 'homeFirstPlan', 'normPlan', 'applyPlan',
   'plan', 'WHEN_RANK', 'whenRank', 'checkList', 'kcalFloor', 'proteinFloor',
   'normFood', 'foodRe', 'FOODS', 'buildFoodIndex', 'parseItem', 'MODIFIER', 'matchFood', 'fromEntry', 'DISH_RX', 'WITH_RX', 'isDish', 'joinDish', 'splitItems',
-  'parseGrams', 'canonName', 'calcTargets', 'portionOf', 'scaleEst', 'needsNumbers', 'shortFoodLabel', 'foodName', 'fqQty'];
+  'parseGrams', 'canonName', 'calcTargets', 'setsFor', 'filled', 'setCount', 'BAND_RX', 'BODY_RX', 'loadKind', 'BAND_N', 'defaultBands', 'bandAt', 'bandName', 'bandKg', 'bandLabel', 'topReps', 'stepFor', 'setTxt', 'exDone', 'EXGROUP', 'ALTPOOL', 'ctxOf', 'poolFor', 'resolveLine', 'lastFor', 'repRange', 'woSuggest', 'bestBefore', 'bestToday', 'prText', 'volumeOf', 'lastSameSession', 'fmtDur', 'portionOf', 'scaleEst', 'needsNumbers', 'shortFoodLabel', 'foodName', 'fqQty'];
 const code = names.map(src).join('\n') + `
+  var swaps={}, bands=null, TODAY=null, P=null;
   var PROFILE={}, goals=[], G=null, entries={}, PL=null, planSaved=null, LIFTS={}, NAMES={}, PHASES, userChecks=[], hiddenChecks={};
   var START, END, DEPART, TOTAL, WEEKS_N, START_KG, TARGET_KG, PROJ, PHASE_W, MAINT_W, LABS, TASKS, TSTART, TTOTAL, TWEEKS, TPHASE_W, TMAINT_W, FOODS_ALL=[];
   function setup(g, pf, saved, ents){ PROFILE=pf; goals=[g]; entries=ents||{}; planSaved=saved; applyGoal(); buildFoodIndex(); }
@@ -165,4 +167,82 @@ test('calcTargets matches across sexes, goals, sizes, steps and days', () => {
         n++;
       }
   assert.ok(n > 5000);
+});
+
+// Deterministic pseudo-random so failures reproduce.
+function rng(seed: number) { return () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }; }
+
+test('training rules match r19 on random set histories', () => {
+  const rand = rng(42);
+  let checks = 0;
+  for (const [equip, days, homeFirst] of [['gym', 4, false], ['gym', 3, false], ['home', 3, false], ['body', 2, false], ['gym', 3, true]] as const) {
+    const g = goal({ homeFirst, start: '2026-09-01', due: '2026-12-20', trainStart: '2026-09-01' });
+    const pf: Profile = { equip, days };
+    ctx.setup(clone(g), clone(pf), null, {});
+    const e = P.makeEngine(g, pf, null, null);
+    const bands = rand() < 0.5 ? null : [{ n: 'Yellow', kg: 5 }, { n: 'Red', kg: 9 }, { n: 'Green', kg: null }, { n: 'Blue', kg: 16 }, { n: 'Black', kg: 23 }];
+    // swaps: pick an alternate for some exercises that have a pool
+    const swaps: Record<string, string> = {};
+    for (const [key2, prog] of Object.entries(e.PL.programs)) for (const line of prog.ex) {
+      const pool = TR.poolFor(e.PL, key2, line.split('|')[0]);
+      if (pool.length && rand() < 0.4) swaps[key2 + '|' + line.split('|')[0]] = pool[Math.floor(rand() * pool.length)].split('|')[0];
+    }
+    if (rand() < 0.3) swaps['fullA|Not a real exercise'] = 'Whatever';
+    // random history over the goal
+    const entries: TR.SetHistory = {};
+    for (let i = 0; i < 110; i++) {
+      const k = new Date(Date.UTC(2026, 8, 1 + i)).toISOString().slice(0, 10);
+      const p = e.plan(k);
+      if (p.type !== 'lift' || rand() < 0.25) continue;
+      const day: Record<string, TR.Set_[]> = {};
+      TR.sessionList(e.PL, swaps, p.session).forEach((R) => {
+        if (rand() < 0.15) return;
+        const kind = TR.loadKind(R.name), n = TR.setCount(R.sch) + (rand() < 0.2 ? 1 : 0), hi = TR.repRange(R.sch).hi;
+        const arr: TR.Set_[] = [];
+        for (let j = 0; j < n; j++) {
+          if (rand() < 0.08) { arr.push({}); continue; }
+          const x: TR.Set_ = { r: rand() < 0.1 ? undefined : Math.max(1, hi - Math.floor(rand() * 3)) };
+          if (kind === 'weight' && rand() < 0.9) x.w = 10 + Math.floor(rand() * 12) * 2.5;
+          if (kind === 'band') x.b = 1 + Math.floor(rand() * 5);
+          if (x.r === undefined) delete x.r;
+          arr.push(x);
+        }
+        while (arr.length && !TR.filled([arr[arr.length - 1]]).length) arr.pop();
+        if (arr.length) day[R.name] = arr;
+      });
+      entries[k] = day;
+    }
+    const webEntries: any = {};
+    Object.entries(entries).forEach(([k, v]) => { webEntries[k] = { sets: clone(v) }; });
+    ctx.entries = webEntries; ctx.swaps = clone(swaps); ctx.bands = clone(bands);
+    for (const TODAY of ['2026-09-01', '2026-09-20', '2026-10-15', '2026-11-30', '2026-12-20']) {
+      const p = e.plan(TODAY);
+      ctx.TODAY = TODAY; ctx.P = ctx.plan(TODAY);
+      for (const [key2, prog] of Object.entries(e.PL.programs)) for (const line of prog.ex) {
+        const R = TR.resolveLine(e.PL, swaps, key2, line);
+        assert.deepEqual(R, clone(ctx.resolveLine(key2, line)), 'resolve ' + line);
+        const nm = R.name, sch = R.sch, kind = TR.loadKind(nm);
+        assert.equal(kind, ctx.loadKind(nm)); assert.equal(TR.stepFor(nm), ctx.stepFor(nm));
+        assert.equal(TR.topReps(sch), ctx.topReps(sch)); assert.deepEqual(TR.repRange(sch), clone(ctx.repRange(sch))); assert.equal(TR.setCount(sch), ctx.setCount(sch));
+        const lp = TR.lastFor(nm, entries, e.T.START, e.T.TOTAL, TODAY);
+        assert.deepEqual(lp, clone(ctx.lastFor(nm)), 'last ' + nm);
+        assert.deepEqual(TR.woSuggest(nm, sch, kind, lp, p.phase, bands), clone(ctx.woSuggest(nm, sch, kind, ctx.lastFor(nm))), 'suggest ' + nm);
+        assert.equal(TR.bestBefore(nm, kind, entries, TODAY), ctx.bestBefore(nm, kind));
+        assert.equal(TR.bestToday(nm, kind, entries[TODAY]?.[nm] ?? []), ctx.bestToday(nm, kind));
+        assert.equal(TR.exDone(entries[TODAY]?.[nm] ?? [], sch), ctx.exDone(nm, sch));
+        for (const x of (entries[TODAY]?.[nm] ?? []).concat(lp?.sets ?? [])) assert.equal(TR.setTxt(x, TR.isTimed(sch), bands), ctx.setTxt(x, TR.isTimed(sch)));
+        const b = TR.bestBefore(nm, kind, entries, TODAY);
+        if (b != null) assert.equal(TR.prText(nm, kind, b, bands), ctx.prText(nm, kind, b));
+        checks++;
+      }
+      for (let i = 0; i < 110; i += 3) {
+        const k = new Date(Date.UTC(2026, 8, 1 + i)).toISOString().slice(0, 10);
+        assert.deepEqual(TR.volumeOf(e.plan(k), e.PL, swaps, entries[k], bands), clone(ctx.volumeOf(k)), 'volume ' + k);
+      }
+      if (p.session) assert.deepEqual(TR.lastSameSession(e.plan, p.session, e.PL, swaps, entries, e.T.START, e.T.TOTAL, TODAY, bands), clone(ctx.lastSameSession()), 'lastSame ' + TODAY);
+    }
+    for (let i = 0; i <= 5; i++) assert.equal(TR.bandLabel(bands, i), ctx.bandLabel(i));
+  }
+  for (const ms of [0, 999, 59000, 61000, 3599000, 3600000, 7322000]) assert.equal(TR.fmtDur(ms), ctx.fmtDur(ms));
+  assert.ok(checks > 500, String(checks));
 });

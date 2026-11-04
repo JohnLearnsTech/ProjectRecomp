@@ -241,3 +241,19 @@ export const latestWeightIn = async (from: string, to: string) => {
   const r = must(await supabase.from('day_logs').select('weight_kg').gte('date', from).lte('date', to).not('weight_kg', 'is', null).order('date', { ascending: false }).limit(1)) as { weight_kg: number }[];
   return r[0]?.weight_kg ?? null;
 };
+
+// ── Training ──
+export const listSwaps = async () =>
+  must(await supabase.from('exercise_swaps').select('program_key, original_name, alternate_name')) as { program_key: string; original_name: string; alternate_name: string }[];
+/** alternate null = back to the default exercise. */
+export const setSwap = async (program_key: string, original_name: string, alternate_name: string | null) => {
+  if (!alternate_name) must(await supabase.from('exercise_swaps').delete().match({ program_key, original_name }));
+  else must(await supabase.from('exercise_swaps').upsert({ program_key, original_name, alternate_name }, { onConflict: 'user_id,program_key,original_name' }));
+};
+export const updateBands = async (bands: { n: string; kg: number | null }[]) => updateProfile({ bands });
+
+/** Every logged set for these exercise names, any date: history, last time, bests and volume. */
+export const listSetsForNames = (names: string[]) =>
+  names.length
+    ? pageAll<SetEntry>((a, b) => supabase.from('set_entries').select('*').in('exercise_name', names).order('date').order('exercise_name').order('set_no').range(a, b))
+    : Promise.resolve([] as SetEntry[]);

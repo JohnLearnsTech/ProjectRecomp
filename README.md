@@ -68,11 +68,24 @@ Finishing calls `finish_onboarding` (`supabase/migrations/0002_onboarding.sql`),
 
 With no active goal the app now uses the most recent goal, as r19's `activeGoal()` does, instead of the starter goal.
 
+## Build step 3: Train and session mode (done)
+
+**Domain** (`app/src/domain/training.ts`): r19's exercise swaps (`resolveLine` with the `EXGROUP`/`ALTPOOL` tables, extracted from `recomp.html`), load kinds, rep schemes, last time, the progression hint, session-mode suggestions (double progression), bests, load volume and the same-session comparison. The parity test runs these against r19 on random set histories across five equipment and day setups, swaps included. Deliberate mutations (kg step, phase rule, band volume, date boundary) all fail it.
+
+**Train**: session card with Start, Resume or Continue in session mode; warm-up and stretch blocks behind a remembered toggle; one line per exercise until tapped, then last time with the progression hint, the cue, swaps (same scheme, own history), the set grid (kg or band, then reps or seconds, + and − set) and a YouTube link. Reps entered on a set with no load copy the nearest earlier load, visibly, as r19 does. Then load volume against the last same session, session note, after-session cardio, steps, and band setup (names and kg, lightest first) when the session uses bands. A day stepper browses other days.
+
+**Session mode** (`/session`, full screen, keeps the screen awake): per-exercise progress bar, last time, the suggestion, how-to, set chips, steppers (kg step 5 for squat-pattern lifts, else 2.5), Log or Update set, new-best detection with a buzz, rest timer (60/90/120/180 s, +15 s, Skip; buzzes when it runs out), Back and Next. The summary shows time, sets, exercises, volume against the last same session and new bests; Save and close ticks the day as trained. Session state and rest length stay on the device (`goa:wo`, `goa:rest`), so minimising keeps the session.
+
+Tested in the browser on a seeded account: grid edits and the load carry saved correctly, the phase-1 suggestion and last time matched r19, both new bests were detected, volume (1,625 kg, up 18% on 1,380 kg) matched a hand calculation, and Save and close wrote the train tick that Today then shows. Screenshots in `docs/step3/`.
+
 ## Known gaps
+
+- **Rest alerts only while session mode is open.** r19 shows a toast when minimised; a phone app needs a local notification for that (and for a locked screen), which comes with reminders (expo-notifications).
+- No chime sound yet, only vibration. "Edit plan" and the Train guides (Your sessions, How to progress, ...) are not ported.
 
 - The food guides (Protein first, Eating out, ...) and the 7-day average line on the chart are not ported yet.
 - "Estimate with Claude" waits for the connector (step 6) or a pasted key (step 5).
 
-## Next (build plan step 3)
+## Next (build plan step 4)
 
-Train and session mode: exercise list with set grids, swaps, progression hints, rest timer, using `set_entries`.
+Habits (cards, timers, Pomodoro, keystone), Consistency and Progress, then habit chips in the quick-log sheet and habit dots on the week strip.

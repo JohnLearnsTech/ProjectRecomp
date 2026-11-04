@@ -68,7 +68,7 @@ export default function Today() {
               {P.type === 'lift' && (trained ? (
                 <HeroRow done title="Session" text={`${NAMES[P.session!]} logged`} />
               ) : !future ? (
-                <Pressable style={[s.primary, { backgroundColor: c.cat.train.fill }]} onPress={() => router.navigate('/train')} accessibilityRole="button">
+                <Pressable style={[s.primary, { backgroundColor: c.cat.train.fill }]} onPress={() => router.push('/session')} accessibilityRole="button">
                   <Text style={[s.primaryText, { color: c.cat.train.on }]}>▶  Start session</Text>
                 </Pressable>
               ) : null)}

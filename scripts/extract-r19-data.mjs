@@ -34,6 +34,8 @@ const out = {
   mobPre: literal('MOB_PRE'),
   mobPost: literal('MOB_POST'),
   floors: literal('FLOORS'),
+  exgroup: literal('EXGROUP'),
+  altpool: literal('ALTPOOL'),
 };
 const ver = (html.match(/20\d\d-\d\d-\d\d r\d+/) || ['unknown'])[0];
 for (const [k, v] of Object.entries(out)) {
