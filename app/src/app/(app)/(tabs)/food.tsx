@@ -270,7 +270,8 @@ function Totals({ label, value, frac, color }: { label: string; value: string; f
   );
 }
 
-const COLS = [62, 250, 56, 46, 46, 46, 46, 76];
+// Number columns fit a bold four-digit total ("1,779", "136.4") at large phone text sizes.
+const COLS = [62, 250, 66, 58, 58, 58, 54, 76];
 function TRow({ head, subtotal, total, meal, item, tag, warn, cells, fatFlag, action, onEdit, onDelete, editing }: {
   head?: boolean; subtotal?: boolean; total?: boolean; meal?: string; item?: string; tag?: string; warn?: boolean; fatFlag?: boolean;
   cells: string[]; action?: { label: string; onPress: () => void }; onEdit?: () => void; onDelete?: () => void; editing?: boolean;
@@ -292,7 +293,8 @@ function TRow({ head, subtotal, total, meal, item, tag, warn, cells, fatFlag, ac
             </View>
           ) : (
             <Text style={[i < 2 ? s.body : [s.body, s.num], bold && { fontFamily: font.semibold }, head && s.label, subtotal && i === 1 && s.label,
-              i === 0 && !head && { fontSize: 12, color: c.ink2, fontFamily: Platform.OS === 'web' ? 'ui-monospace, monospace' : 'monospace' }, i === 1 && !head && { flexShrink: 1, fontSize: 13.5 }, i >= 2 && !head && { fontSize: 13.5 }, fatFlag && i === 5 && { color: c.warn }]} numberOfLines={1}>
+              i === 0 && !head && { fontSize: 12, color: c.ink2, fontFamily: Platform.OS === 'web' ? 'ui-monospace, monospace' : 'monospace' }, i === 1 && !head && { flexShrink: 1, fontSize: 13.5 }, i >= 2 && !head && { fontSize: 13.5 }, fatFlag && i === 5 && { color: c.warn }]}
+              numberOfLines={1} adjustsFontSizeToFit={i >= 2} minimumFontScale={0.75} maxFontSizeMultiplier={i >= 2 ? 1.3 : undefined}>
               {v}
             </Text>
           )}
