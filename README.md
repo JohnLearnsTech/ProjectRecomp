@@ -142,6 +142,17 @@ cd app && npx eas-cli@latest build -p android --profile preview
 
 EAS prints a link and QR code; testers open it on their phone and install (they must allow installs from the browser once). The free EAS plan covers this with a monthly build allowance.
 
+## r19 screen parity pass (done)
+
+A side-by-side comparison with r19 (same demo backup, phone size) found 44 differences in layout and controls; all are fixed. The main ones:
+
+- **Me** is r19's eight tabs: Plan (phase chips, odd/even weeks, the day table, sessions with exercise editing, restore and back-to-original), Targets, Goal (goal card, bars, edit, dates that matter, finish and start the next), About you (with the calorie and protein floors and earlier weigh-ins), Notes, Reminders, Backup (full backup and the three CSVs) and Settings (Auto/Light/Dark, the six colour palettes, the AI key, the connector, sign out). Migration 0006 adds `finish_goal` and lets a plan version mean "the default protocol".
+- **Habits** use r19's spin wheels (hours and minutes, a value wheel, Walk's steps wheels), r19's per-habit colours and its sheet controls.
+- **Charts** use one engine ported from r19: the axis fit and steps, date ticks, value labels on the points, the endpoint label, the 7-day average on calories, earlier weigh-ins on weight, and the per-session load-volume chart.
+- **Everywhere:** r19's icons (tab bar, Me, controls), the countdown in each screen's colour, the (i) explainers with r19's text, and r19's guide panels on Food, Train and Progress. Progress has the sticky jump links.
+- **Reminders** are phone notifications (expo-notifications) instead of Google Calendar events, with r19's rows, times and defaults.
+- Label and plate photo buttons show only with an API key, as in r19, so the manual "Enter a label" form is gone.
+
 ## Next
 
 Host the consent page (step 6) so the connector can sign people in; then a real-phone pass: camera photos for labels and plates, the keyboard on long forms, rest-timer vibration, and the Claude app handoff. After that: reminders with expo-notifications, and a JSON backup export from the app.
