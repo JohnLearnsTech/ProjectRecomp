@@ -167,7 +167,7 @@ export const firstWeightFrom = async (start: string) => {
 };
 
 /** PostgREST caps a response at 1000 rows; page through long ranges. */
-async function pageAll<T>(q: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>, size = 1000) {
+export async function pageAll<T>(q: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>, size = 1000) {
   const out: T[] = [];
   for (let i = 0; ; i += size) {
     const page = must(await q(i, i + size - 1)) ?? [];
@@ -296,7 +296,7 @@ export const saveReview = async (r: Omit<ReviewRow, 'created_at' | 'applied_at'>
 };
 export const markReviewApplied = async (end_date: string) => { must(await supabase.from('reviews').update({ applied_at: new Date().toISOString() }).eq('end_date', end_date)); };
 /** New plan version plus goal targets, in one transaction (save_plan). */
-export const savePlanVersion = async (p: { body: unknown; source: 'claude' | 'you'; note: string; kcal?: number | null; protein?: number | null }) =>
+export const savePlanVersion = async (p: { body: unknown | null; source: 'claude' | 'you'; note: string; kcal?: number | null; protein?: number | null }) =>
   must(await supabase.rpc('save_plan', { p })) as number;
 export const restorePreviousPlan = async () => must(await supabase.rpc('restore_previous_plan')) as number | null;
 export const updateGoalTargets = async (id: string, patch: Partial<Pick<Goal, 'kcal' | 'protein_g' | 'steps'>>) => {
@@ -314,3 +314,31 @@ export const decideProposal = async (id: string, status: 'applied' | 'dismissed'
 
 // ── Step 7: r19 backup restore (replaces everything in this account, one transaction) ──
 export const importBackup = async (p: unknown) => must(await supabase.rpc('import_backup', { p })) as Record<string, any>;
+
+// ── Me tabs (Goal, Notes, About you, Reminders) ──
+export type GoalPatch = Partial<Pick<Goal, 'name' | 'why' | 'start_date' | 'due_date' | 'event_date' | 'train_start_date' | 'start_kg' | 'target_kg' | 'kcal' | 'protein_g' | 'steps' | 'home_first'>>;
+export const updateGoal = async (id: string, patch: GoalPatch) => { must(await supabase.from('goals').update(patch).eq('id', id)); };
+export const listGoals = async () => must(await supabase.from('goals').select('*').order('sort')) as Goal[];
+export const finishGoal = async (p: { end_kg: number | null; start: string; due: string; start_kg: number | null; target_kg: number | null }) =>
+  must(await supabase.rpc('finish_goal', { p })) as string;
+export type MilestoneFull = MilestoneRow & { id: string };
+export const listMilestonesFull = async (goalId: string) =>
+  must(await supabase.from('goal_milestones').select('id, goal_id, date, kind, text').eq('goal_id', goalId).order('date')) as MilestoneFull[];
+export const addMilestone = async (m: MilestoneRow) => { must(await supabase.from('goal_milestones').insert(m)); };
+export const deleteMilestone = async (id: string) => { must(await supabase.from('goal_milestones').delete().eq('id', id)); };
+/** Edits the current plan in place (r19 changes planSaved.phases[].steps when the goal's steps move). */
+export const updateCurrentPlanBody = async (body: unknown) => { must(await supabase.from('plans').update({ body }).eq('is_current', true)); };
+
+export type Note = { id: string; group_name: string; title: string; body: string; sort: number };
+export const listNotes = async () => must(await supabase.from('profile_notes').select('id, group_name, title, body, sort').order('sort')) as Note[];
+export const upsertNote = async (n: Note) => { must(await supabase.from('profile_notes').upsert(n, { onConflict: 'user_id,id' })); };
+export const deleteNote = async (id: string) => { must(await supabase.from('profile_notes').delete().eq('id', id)); };
+
+export type WeighIn = { date: string; kg: number; note: string | null };
+export const listWeightHistory = async () => must(await supabase.from('weight_history').select('date, kg, note').order('date')) as WeighIn[];
+export const upsertWeighIn = async (w: WeighIn) => { must(await supabase.from('weight_history').upsert(w, { onConflict: 'user_id,date' })); };
+export const deleteWeighIn = async (date: string) => { must(await supabase.from('weight_history').delete().eq('date', date)); };
+
+export type ReminderRow = { key: string; enabled: boolean; local_time: string };
+export const listReminders = async () => must(await supabase.from('reminders').select('key, enabled, local_time')) as ReminderRow[];
+export const setReminder = async (r: ReminderRow) => { must(await supabase.from('reminders').upsert(r, { onConflict: 'user_id,key' })); };

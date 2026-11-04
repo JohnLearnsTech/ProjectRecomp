@@ -36,7 +36,8 @@
             ]
           }
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "scheme": "recomp",
     "experiments": {

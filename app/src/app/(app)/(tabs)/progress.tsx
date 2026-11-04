@@ -26,7 +26,7 @@ export default function Progress() {
     <SafeAreaView style={{ flex: 1, backgroundColor: c.paper }} edges={['top']}>
       <ScrollView ref={scroll} contentContainerStyle={s.screen} keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={false} onRefresh={() => { reload(); reloadDays(); }} />}>
-        <ScreenHeader title="Progress" strip={false} />
+        <ScreenHeader title="Progress" strip={false} dayLine={false} cat="body" />
         <WeightChart />
         <Stats />
         <WeighIn />

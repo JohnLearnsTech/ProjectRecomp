@@ -115,7 +115,7 @@ export default function Food() {
     <SafeAreaView style={{ flex: 1, backgroundColor: c.paper }} edges={['top']}>
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={s.screen} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={false} onRefresh={() => load()} />}>
-          <ScreenHeader title="Food" />
+          <ScreenHeader title="Food" cat="food" />
 
           <View style={s.card}>
             <Text style={s.cardTitle}>Food log</Text>

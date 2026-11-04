@@ -49,7 +49,7 @@ export default function Train() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.paper }} edges={['top']}>
       <ScrollView contentContainerStyle={s.screen} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={false} onRefresh={() => T.reload()} />}>
-        <ScreenHeader title="Train" strip={false} />
+        <ScreenHeader title="Train" strip={false} dayLine={false} cat="train" />
         <DayStepper />
         <Nudge />
         {err && <Text style={s.error}>{err}</Text>}

@@ -1,183 +1,53 @@
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
-import { BackupImport } from '../../components/BackupImport';
-import { ConnectClaude } from '../../components/ConnectClaude';
-import { PlanCard } from '../../components/PlanCard';
-import { aiMessage } from '../../domain/ai';
-import { clearApiKey, getApiKey, maskKey, saveApiKey } from '../../lib/apiKey';
-import { checkKey, MODEL } from '../../lib/claude';
-import { signOut, useAuth } from '../../lib/auth';
-import { getProfile, updateProfile, type Sex } from '../../lib/db';
-import { useRecomp } from '../../lib/recomp';
-import { useTheme } from '../../lib/theme';
+import { useEffect, useRef, useState, type ComponentRef } from 'react';
+import { Animated, ScrollView, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenHeader } from '../../components/ScreenHeader';
+import { AboutTab, NotesTab } from '../../components/me/AboutTab';
+import { GoalTab } from '../../components/me/GoalTab';
+import { PlanTab, TargetsTab } from '../../components/me/PlanTab';
+import { BackupTab, RemindersTab, SettingsTab } from '../../components/me/SettingsTabs';
+import { SubTabs } from '../../components/ui';
+import { getApiKey } from '../../lib/apiKey';
+import { font, useTheme } from '../../lib/theme';
 
-// Me: About you and Settings > AI for now. Plan, Targets, Goal, Notes, Reminders
-// and Backup tabs come with later build steps.
-
-const num = (v: string) => (v.trim() === '' ? null : Number(v.replace(',', '.')));
-const SEXES: [Sex, string][] = [['female', 'Female'], ['male', 'Male'], ['unspecified', 'Prefer not to say']];
+// Me: one page per topic (r19 ME_TABS), remembered between visits like goa:metab.
+type Tab = 'plan' | 'targets' | 'goal' | 'you' | 'notes' | 'reminders' | 'backup' | 'settings';
+const TABS: [Tab, string][] = [['plan', 'Plan'], ['targets', 'Targets'], ['goal', 'Goal'], ['you', 'About you'], ['notes', 'Notes'], ['reminders', 'Reminders'], ['backup', 'Backup'], ['settings', 'Settings']];
+const readTab = (): Tab => { try { const t = localStorage.getItem('recomp:metab'); if (t && TABS.some((x) => x[0] === t)) return t as Tab; } catch { /* ignore */ } return 'plan'; };
 
 export default function Me() {
   const { c, s } = useTheme();
-  const { session } = useAuth();
-  const { reload, touch } = useRecomp();
-  const [checking, setChecking] = useState(false);
-  const [f, setF] = useState({ name: '', age: '', height: '', cuisine: '', water: '', rules: '' });
-  const [sex, setSex] = useState<Sex>('unspecified');
-  const [joint, setJoint] = useState(false);
+  const [tab, setTabRaw] = useState<Tab>(readTab);
   const [storedKey, setStoredKey] = useState<string | null>(null);
-  const [keyInput, setKeyInput] = useState('');
-  const [msg, setMsg] = useState<{ t: string; err?: boolean } | null>(null);
-
-  useEffect(() => {
-    getProfile().then((p) => {
-      if (!p) return;
-      setF({
-        name: p.name ?? '', age: p.age?.toString() ?? '', height: p.height_cm?.toString() ?? '',
-        cuisine: p.cuisine ?? '', water: p.water_l?.toString() ?? '', rules: p.rules ?? '',
-      });
-      setSex(p.sex);
-      setJoint(p.joint_friendly);
-    }).catch((e) => setMsg({ t: e.message, err: true }));
-    getApiKey().then(setStoredKey);
-  }, []);
-
-  const attempt = async (fn: () => Promise<void>, ok: string) => {
-    try { await fn(); setMsg({ t: ok }); } catch (e) { setMsg({ t: (e as Error).message, err: true }); }
+  const [toastText, setToastText] = useState<string | null>(null);
+  const fade = useRef(new Animated.Value(0)).current;
+  const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
+  useEffect(() => { getApiKey().then(setStoredKey).catch(() => {}); }, []);
+  const setTab = (t: Tab) => { setTabRaw(t); try { localStorage.setItem('recomp:metab', t); } catch { /* ignore */ } scroll.current?.scrollTo({ y: 0, animated: false }); };
+  const toast = (t: string) => {
+    setToastText(t);
+    Animated.sequence([Animated.timing(fade, { toValue: 1, duration: 160, useNativeDriver: true }), Animated.delay(2200), Animated.timing(fade, { toValue: 0, duration: 220, useNativeDriver: true })]).start();
   };
-
-  const saveAbout = () => {
-    const age = num(f.age), height = num(f.height), water = num(f.water);
-    // Same ranges as r19's About form: out of range becomes null rather than an error.
-    const inRange = (v: number | null, lo: number, hi: number) => (v != null && v >= lo && v <= hi ? v : null);
-    return attempt(() => updateProfile({
-      name: f.name.trim().slice(0, 30) || null,
-      sex,
-      age: age == null ? null : inRange(Math.round(age), 13, 100),
-      height_cm: inRange(height, 120, 230),
-      cuisine: f.cuisine.trim().slice(0, 40) || null,
-      water_l: inRange(water, 1, 6),
-      joint_friendly: joint,
-      rules: f.rules.trim().slice(0, 1200) || null,
-    }).then(reload), 'Saved.');
-  };
-
-  const input = (k: keyof typeof f, label: string, numeric = false, multiline = false) => (
-    <View style={{ gap: 6, flex: multiline ? undefined : 1 }}>
-      <Text style={s.label}>{label}</Text>
-      <TextInput
-        style={[s.input, multiline && { minHeight: 96, textAlignVertical: 'top', paddingTop: 12 }]}
-        value={f[k]}
-        onChangeText={(v) => setF((o) => ({ ...o, [k]: v }))}
-        keyboardType={numeric ? 'decimal-pad' : 'default'}
-        multiline={multiline}
-        placeholderTextColor={c.muted}
-      />
-    </View>
-  );
-
   return (
-    <ScrollView contentContainerStyle={s.screen}>
-      <PlanCard keyed={!!storedKey} />
-      <View style={s.card}>
-        <Text style={s.cardTitle}>About you</Text>
-        {input('name', 'First name')}
-        <View style={{ gap: 6 }}>
-          <Text style={s.label}>Sex (sets calorie floor)</Text>
-          <View style={[s.row, { flexWrap: 'wrap' }]}>
-            {SEXES.map(([v, l]) => (
-              <Pressable
-                key={v}
-                onPress={() => setSex(v)}
-                style={[s.outline, { paddingHorizontal: 14, minHeight: 44 }, sex === v && { backgroundColor: c.lineSoft, borderColor: c.ink2 }]}
-              >
-                <Text style={s.outlineText}>{l}</Text>
-              </Pressable>
-            ))}
-          </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: c.paper }} edges={['top']}>
+      <ScrollView ref={scroll} contentContainerStyle={[s.screen, { paddingBottom: 60 }]} keyboardShouldPersistTaps="handled" stickyHeaderIndices={[1]}>
+        <ScreenHeader title="Me" strip={false} dayLine={false} onMe />
+        <View style={{ backgroundColor: c.paper, paddingVertical: 6, marginHorizontal: -20, paddingHorizontal: 20 }}>
+          <SubTabs tabs={TABS} value={tab} onChange={setTab} />
         </View>
-        <View style={s.row}>
-          {input('age', 'Age', true)}
-          {input('height', 'Height (cm)', true)}
-        </View>
-        <View style={s.row}>
-          {input('cuisine', 'Usual cuisine')}
-          {input('water', 'Water (L/day)', true)}
-        </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={s.body}>Joint-friendly exercises</Text>
-          <Switch value={joint} onValueChange={setJoint} trackColor={{ true: c.cat.move.fill }} />
-        </View>
-        {input('rules', 'Your rules for Claude (one per line)', false, true)}
-        <Pressable style={s.primary} onPress={saveAbout}>
-          <Text style={s.primaryText}>Save</Text>
-        </Pressable>
-      </View>
-
-      <ConnectClaude />
-
-      <BackupImport />
-
-      <View style={s.card}>
-        <Text style={s.cardTitle}>AI</Text>
-        <Text style={s.body2}>
-          Optional. Paste your own Anthropic API key to use Claude inside Recomp. It stays in this phone's secure
-          storage and is sent only to Anthropic, never to Recomp's servers. Usage is billed to your Anthropic account.
-        </Text>
-        <Text style={s.label}>Uses {MODEL}. Food estimates, label and plate photos, the plan builder and the weekly review all run with this key.</Text>
-        {storedKey ? (
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: 44 }}>
-            <Text style={[s.body, { fontVariant: ['tabular-nums'] }]}>{maskKey(storedKey)}</Text>
-            <Pressable onPress={() => attempt(async () => { await clearApiKey(); setStoredKey(null); touch(); }, 'Key removed.')} hitSlop={12}>
-              <Text style={[s.body, { color: c.danger }]}>Remove</Text>
-            </Pressable>
-          </View>
-        ) : (
-          <>
-            <TextInput
-              style={s.input}
-              placeholder="sk-ant-…"
-              placeholderTextColor={c.muted}
-              autoCapitalize="none"
-              autoCorrect={false}
-              secureTextEntry
-              value={keyInput}
-              onChangeText={setKeyInput}
-            />
-            <Pressable
-              style={[s.outline, checking && { opacity: 0.5 }]}
-              disabled={checking}
-              onPress={() => attempt(async () => {
-                setChecking(true);
-                try {
-                  // Check it with Anthropic before keeping it, so a typo shows up now, not mid-meal.
-                  const bad = await checkKey(keyInput.trim());
-                  if (bad) throw new Error(aiMessage(bad));
-                  await saveApiKey(keyInput); setStoredKey(keyInput.trim()); setKeyInput(''); touch();
-                } finally { setChecking(false); }
-              }, 'Key checked with Anthropic and saved on this phone.')}
-            >
-              <Text style={s.outlineText}>{checking ? 'Checking…' : 'Check and save key'}</Text>
-            </Pressable>
-          </>
-        )}
-      </View>
-
-      {msg && <Text style={msg.err ? s.error : s.label}>{msg.t}</Text>}
-
-      <View style={s.card}>
-        <Text style={s.cardTitle}>Setup</Text>
-        <Text style={s.body2}>Answer the setup questions again to start a new goal with fresh targets and the default plan for your answers.</Text>
-        <Pressable style={s.outline} onPress={() => router.push({ pathname: '/onboarding', params: { again: '1' } })}>
-          <Text style={s.outlineText}>Run setup again</Text>
-        </Pressable>
-      </View>
-
-      <Text style={[s.label, { textAlign: 'center' }]}>Signed in as {session?.user.email}</Text>
-      <Pressable style={s.outline} onPress={signOut}>
-        <Text style={[s.outlineText, { color: c.danger }]}>Sign out</Text>
-      </Pressable>
-    </ScrollView>
+        {tab === 'plan' && <PlanTab keyed={!!storedKey} toast={toast} />}
+        {tab === 'targets' && <TargetsTab toast={toast} />}
+        {tab === 'goal' && <GoalTab toast={toast} />}
+        {tab === 'you' && <AboutTab toast={toast} />}
+        {tab === 'notes' && <NotesTab toast={toast} />}
+        {tab === 'reminders' && <RemindersTab toast={toast} />}
+        {tab === 'backup' && <BackupTab toast={toast} />}
+        {tab === 'settings' && <SettingsTab storedKey={storedKey} setStoredKey={setStoredKey} toast={toast} />}
+        <Text style={[s.label, { fontSize: 12, lineHeight: 18, marginTop: 6 }]}>Recomp is a training, nutrition and habits tool. Its targets come from standard formulas and your own logs; they are not medical advice.</Text>
+      </ScrollView>
+      <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 20, right: 20, bottom: 28, opacity: fade, alignItems: 'center' }}>
+        {toastText && <View style={{ backgroundColor: c.ink, borderRadius: 999, paddingHorizontal: 18, paddingVertical: 11 }}><Text style={{ color: c.paper, fontFamily: font.semibold, fontSize: 14 }}>{toastText}</Text></View>}
+      </Animated.View>
+    </SafeAreaView>
   );
 }

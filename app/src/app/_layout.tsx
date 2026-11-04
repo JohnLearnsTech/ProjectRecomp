@@ -33,10 +33,15 @@ function RootStack() {
   );
 }
 
+function ThemedStatusBar() {
+  const { dark } = useTheme();
+  return <StatusBar style={dark ? 'light' : 'dark'} />;
+}
+
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <StatusBar style="auto" />
+      <ThemedStatusBar />
       <RootStack />
     </AuthProvider>
   );

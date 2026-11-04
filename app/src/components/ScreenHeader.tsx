@@ -1,14 +1,15 @@
-import { Link } from 'expo-router';
+import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import { d, diffDays, shortDate } from '../domain/dates';
 import { useRecomp } from '../lib/recomp';
-import { font, useTheme } from '../lib/theme';
+import { font, useTheme, type Category } from '../lib/theme';
+import { Icon } from './Icon';
 import { WeekStrip } from './WeekStrip';
 
 /** Title, days-to-goal count, Me avatar, the day line and (optionally) the week strip. */
-export function ScreenHeader({ title, strip = true }: { title: string; strip?: boolean }) {
-  const { engine, day, maxDay, profileRow } = useRecomp();
-  const { c, s } = useTheme();
+export function ScreenHeader({ title, strip = true, dayLine = true, onMe = false, cat = 'move' }: { title: string; strip?: boolean; dayLine?: boolean; onMe?: boolean; cat?: Category }) {
+  const { engine, day, maxDay, error } = useRecomp();
+  const { c, s } = useTheme(cat);
   const { G, T } = engine;
   const left = diffDays(d(maxDay), d(T.DEPART));
   const p = engine.plan(day);
@@ -23,21 +24,22 @@ export function ScreenHeader({ title, strip = true }: { title: string; strip?: b
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           {left > 0 && (
             <View style={{ alignItems: 'flex-end' }}>
-              <Text style={[s.stat, { color: c.cat.move.ink, lineHeight: 26 }]}>{left}</Text>
-              <Text style={[s.label, { fontSize: 11 }]}>days to {G.name || 'the goal'}</Text>
+              <Text style={{ fontFamily: font.bold, fontSize: 21, letterSpacing: -0.8, color: c.cat[cat].ink, lineHeight: 23, fontVariant: ['tabular-nums'] }}>{left}</Text>
+              <Text style={{ fontFamily: font.bold, fontSize: 9.5, color: c.muted, marginTop: 3 }}>days to {G.name || 'the goal'}</Text>
             </View>
           )}
-          <Link href="/me" asChild>
-            <Pressable accessibilityLabel="Me" style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: c.surface, borderWidth: 1, borderColor: c.lineSoft, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontFamily: font.semibold, fontSize: 17, color: c.ink }}>{(profileRow?.name?.[0] ?? '·').toUpperCase()}</Text>
-            </Pressable>
-          </Link>
+          {/* r19 sync dot: accent once the account is reachable, orange when it is not. */}
+          <View accessibilityLabel={error ? 'Not connected' : 'Synced'} style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: error ? c.warn : c.cat[cat].fill }} />
+          <Pressable accessibilityLabel="Me: goal, history and settings" onPress={() => (onMe ? (router.canGoBack() ? router.back() : router.replace('/')) : router.push('/me'))}
+            style={{ width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: onMe ? c.cat.move.fill : c.line, backgroundColor: onMe ? c.cat.move.fill : c.surface, alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name="me" size={18} color={onMe ? c.cat.move.on : c.ink2} />
+          </Pressable>
         </View>
       </View>
-      <Text style={s.label}>
+      {dayLine && <Text style={s.label}>
         <Text style={{ fontFamily: font.semibold, color: c.ink }}>{weekday}, {shortDate(dt)}</Text>
         {'   '}{[state, p.inRange ? `Week ${p.week}` : null, p.inRange ? phaseName : null].filter(Boolean).join(' · ')}
-      </Text>
+      </Text>}
       {strip && <WeekStrip />}
     </View>
   );
