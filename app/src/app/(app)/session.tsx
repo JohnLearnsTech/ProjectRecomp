@@ -11,6 +11,7 @@ import {
 import { useTraining } from '../../lib/useTraining';
 import { loadRestLen, loadWo, saveRestLen, saveWo, type Wo } from '../../lib/workout';
 import { font, useTheme } from '../../lib/theme';
+import { Icon } from '../../components/Icon';
 
 // r19 session mode (05-business-logic §8): one exercise at a time with a rest timer, last
 // time's numbers and a suggested load. State lives on the device; minimising keeps it.
@@ -119,7 +120,7 @@ export default function Session() {
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingTop: 8 }}>
         <Pressable onPress={() => router.back()} accessibilityLabel="Minimise, the session keeps running" hitSlop={6}
           style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: 18, color: c.ink }}>⌄</Text>
+          <Icon name="minimize" size={18} color={c.ink} />
         </Pressable>
         <View style={{ flex: 1 }}>
           <Text style={[s.section, { fontFamily: font.bold }]}>{name}</Text>
@@ -150,7 +151,7 @@ export default function Session() {
               <Text style={{ color: c.danger }}>▶</Text><Text style={s.outlineText}>Watch how on YouTube</Text>
             </Pressable>
             {lp && <Text style={s.body2}>Last time ({shortDate(d(lp.k))}): <Text style={{ fontFamily: font.semibold, color: c.ink }}>{lp.sets.map((x) => setTxt(x, timed, bands)).join(', ')}</Text></Text>}
-            <View style={{ backgroundColor: c.cat.move.soft, borderRadius: 14, padding: 14 }}><Text style={s.body}>{sug.msg}</Text></View>
+            <View style={{ backgroundColor: c.cat.train.soft, borderRadius: 14, padding: 14 }}><Text style={s.body}>{sug.msg}</Text></View>
             {R.cue ? (
               <Pressable onPress={() => setCueOpen(!cueOpen)} accessibilityState={{ expanded: cueOpen }}>
                 <Text style={[s.body, { fontFamily: font.semibold, color: c.ink2 }]}>{cueOpen ? '▾' : '▸'} How to do it</Text>

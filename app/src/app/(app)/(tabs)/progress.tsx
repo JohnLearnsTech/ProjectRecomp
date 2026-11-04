@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
-import { PanResponder, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { type LayoutChangeEvent, PanResponder, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, G, Line, Polyline, Text as SvgText } from 'react-native-svg';
 import { ReviewCard } from '../../../components/Review';
@@ -16,6 +16,8 @@ import { Icon } from '../../../components/Icon';
 import { Guides } from '../../../components/Guides';
 import { PanelHead, Segmented, Stats as Stats2 } from '../../../components/ui';
 
+// r19 PROG_LINKS: quick links that stay in reach while the page scrolls.
+const LINKS: [string, string][] = [['chart', 'Weight'], ['stats', 'Numbers'], ['today', 'Log today'], ['cal', 'Consistency'], ['prog', 'Strength'], ['review', 'Weekly review'], ['log', 'Daily log'], ['rules', 'Guides']];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 export default function Progress() {
@@ -25,20 +27,34 @@ export default function Progress() {
   const { reload: reloadDays } = useDays();
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
   const [calY, setCalY] = useState<number | null>(null);
+  const ys = useRef<Record<string, number>>({});
+  const [cur, setCur] = useState('chart');
+  const mark = (k: string) => (e: LayoutChangeEvent) => { ys.current[k] = e.nativeEvent.layout.y; };
   useEffect(() => { if (at === 'cal' && calY != null) { scroll.current?.scrollTo({ y: calY - 12, animated: true }); router.setParams({ at: undefined }); } }, [at, calY]);
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.paper }} edges={['top']}>
-      <ScrollView ref={scroll} contentContainerStyle={s.screen} keyboardShouldPersistTaps="handled"
+      <ScrollView ref={scroll} contentContainerStyle={s.screen} keyboardShouldPersistTaps="handled" stickyHeaderIndices={[1]} scrollEventThrottle={64}
+        onScroll={(e) => { const y = e.nativeEvent.contentOffset.y + 70; let k = LINKS[0][0]; LINKS.forEach(([id]) => { if ((ys.current[id] ?? 1e9) <= y) k = id; }); if (k !== cur) setCur(k); }}
         refreshControl={<RefreshControl refreshing={false} onRefresh={() => { reload(); reloadDays(); }} />}>
         <ScreenHeader title="Progress" strip={false} dayLine={false} cat="body" />
-        <WeightChart />
-        <Stats />
-        <WeighIn />
-        <View onLayout={(e) => setCalY(e.nativeEvent.layout.y)}><ConsistencyFull /></View>
-        <VolumeChart />
-        <ReviewCard />
-        <DailyLog />
-        <Guides kind="rules" />
+        <View style={{ backgroundColor: c.paper, marginHorizontal: -20, paddingHorizontal: 20, paddingVertical: 6 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+            {LINKS.map(([k, l]) => (
+              <Pressable key={k} onPress={() => { const y = ys.current[k]; if (y != null) scroll.current?.scrollTo({ y: y - 56, animated: true }); setCur(k); }}
+                style={{ minHeight: 36, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center', borderWidth: 1, borderColor: cur === k ? c.ink : c.line, backgroundColor: cur === k ? c.ink : c.surface }}>
+                <Text style={{ fontFamily: font.medium, fontSize: 14, color: cur === k ? c.paper : c.ink2 }}>{l}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+        <View onLayout={mark('chart')}><WeightChart /></View>
+        <View onLayout={mark('stats')}><Stats /></View>
+        <View onLayout={mark('today')}><WeighIn /></View>
+        <View onLayout={(e) => { mark('cal')(e); setCalY(e.nativeEvent.layout.y); }}><ConsistencyFull /></View>
+        <View onLayout={mark('prog')}><VolumeChart /></View>
+        <View onLayout={mark('review')}><ReviewCard /></View>
+        <View onLayout={mark('log')}><DailyLog /></View>
+        <View onLayout={mark('rules')}><Guides kind="rules" /></View>
         <Text style={[s.label, { marginTop: 8 }]}>Recomp is a training, nutrition and habits tool. Its targets come from standard formulas and your own logs; they are not medical advice.</Text>
       </ScrollView>
     </SafeAreaView>
@@ -310,9 +326,13 @@ function ConsistencyFull() {
           const [glyph, col] = st === 'rest' ? ['–', c.muted] : MK[st];
           return (
             <View key={it.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 32 }}>
-              <Text style={{ width: 20, textAlign: 'center', color: col, fontFamily: font.bold }}>{glyph}</Text>
+              {/* r19 .dstat: a filled round tick when met, outlined circles for the rest. */}
+              <View style={{ width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: st === 'met' ? c.cat.move.fill : 'transparent',
+                borderWidth: st === 'met' ? 0 : 1.5, borderColor: st === 'rest' ? c.line : col }}>
+                {st === 'met' ? <Icon name="check" size={12} stroke={3} color={c.cat.move.on} /> : <Text style={{ fontSize: 10, lineHeight: 12, color: col, fontFamily: font.bold }}>{st === 'pend' ? '···' : glyph}</Text>}
+              </View>
               <Text style={[s.body, { flex: 1 }]}>{it.name}</Text>
-              <Text style={s.label}>{st === 'rest' ? 'rest day' : D.itemValTxt(it.id, selDay)}</Text>
+              <Text style={[s.label, { fontFamily: font.semibold, color: c.ink2 }]}>{st === 'rest' ? 'rest day' : D.itemValTxt(it.id, selDay)}</Text>
             </View>
           );
         })}

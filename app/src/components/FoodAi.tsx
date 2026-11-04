@@ -5,12 +5,13 @@ import { trimNum } from '../domain/dates';
 import { addMealRows } from '../lib/foodlog';
 import { logLabelFood, pickPhoto, scanLabel, scanPlate } from '../lib/ai';
 import { font, useTheme } from '../lib/theme';
+import { Icon } from './Icon';
 
 type Done = (msg: string) => void;
 
 /** Label and plate buttons under the food box (r19 scanRow / plateRow). */
 export function PhotoButtons({ day, disabled, keyed, cuisine, onDone, onBusy }: { day: string; disabled: boolean; keyed: boolean; cuisine?: string | null; onDone: Done; onBusy: (b: string | null) => void }) {
-  const { s } = useTheme('food');
+  const { c } = useTheme('food');
   const [label, setLabel] = useState<{ name: string; grams: number; per: Per100; manual?: boolean } | null>(null);
   const [plate, setPlate] = useState<NonNullable<Awaited<ReturnType<typeof scanPlate>>> | null>(null);
   const choose = (then: (camera: boolean) => void) =>
@@ -31,17 +32,19 @@ export function PhotoButtons({ day, disabled, keyed, cuisine, onDone, onBusy }: 
   };
   return (
     <>
-      <View style={s.row}>
-        <Pressable style={[s.outline, { flex: 1 }, disabled && { opacity: 0.5 }]} disabled={disabled}
-          onPress={() => (keyed ? choose((cam) => run(cam, 'label')) : setLabel({ name: '', grams: 100, per: { kcal: 0, p: 0, c: 0, f: 0, fib: 0 }, manual: true }))}>
-          <Text style={s.outlineText}>{keyed ? 'Scan a label' : 'Enter a label'}</Text>
-        </Pressable>
-        {keyed && (
-          <Pressable style={[s.outline, { flex: 1 }, disabled && { opacity: 0.5 }]} disabled={disabled} onPress={() => choose((cam) => run(cam, 'plate'))}>
-            <Text style={s.outlineText}>Photo of a plate</Text>
+      {/* r19 #scanRow / #plateRow: round icon buttons beside Add, shown when Claude can read photos. */}
+      {keyed && (
+        <>
+          <Pressable onPress={() => choose((cam) => run(cam, 'label'))} disabled={disabled} accessibilityLabel="Scan a nutrition label"
+            style={{ width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: c.line, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center', opacity: disabled ? 0.5 : 1 }}>
+            <Icon name="camera" size={18} color={c.ink} />
           </Pressable>
-        )}
-      </View>
+          <Pressable onPress={() => choose((cam) => run(cam, 'plate'))} disabled={disabled} accessibilityLabel="Photo of your plate"
+            style={{ width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: c.line, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center', opacity: disabled ? 0.5 : 1 }}>
+            <Icon name="plate" size={18} color={c.ink} />
+          </Pressable>
+        </>
+      )}
       {label && <LabelSheet init={label} onClose={() => setLabel(null)} onAdd={async (n, per, g) => { setLabel(null); try { await logLabelFood(day, n, per, g); onDone('Added from the label.'); } catch (e) { onDone((e as Error).message); } }} />}
       {plate && <PlateSheet r={plate} onClose={() => setPlate(null)} onAdd={async (rows) => { setPlate(null); try { await addMealRows(day, rows); onDone('Added the meal from your photo.'); } catch (e) { onDone((e as Error).message); } }} />}
     </>

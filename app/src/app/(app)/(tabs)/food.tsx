@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
-import { Alert, KeyboardAvoidingView, Modal, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Platform, KeyboardAvoidingView, Modal, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Bar } from '../../../components/Bar';
 import { FoodChart } from '../../../components/FoodChart';
@@ -34,6 +34,7 @@ export default function Food() {
   const [busy, setBusy] = useState(false);
   const [rows, setRows] = useState<Row[]>([]);
   const [saved, setSaved] = useState<db.SavedMeal[]>([]);
+  const [fqEdit, setFqEdit] = useState(false);
   const [recent, setRecent] = useState<ReturnType<typeof recentMeals<Row>>>([]);
   const [edit, setEdit] = useState<Row | null>(null);
   const [saveFor, setSaveFor] = useState<Row[] | null>(null);
@@ -131,17 +132,22 @@ export default function Food() {
               onChangeText={setText}
               editable={!future}
             />
-            <Pressable style={[s.primary, (busy || future || !text.trim()) && { opacity: 0.5 }]} disabled={busy || future || !text.trim()} onPress={add}>
-              <Text style={s.primaryText}>{busy ? 'Adding…' : day === maxDay ? 'Add to today' : `Add to ${shortDate(d(day))}`}</Text>
-            </Pressable>
-            <PhotoButtons day={day} disabled={busy || future || !!aiBusy} keyed={keyed} cuisine={profileRow?.cuisine}
-              onBusy={setAiBusy} onDone={(m) => { setStatus(m); load(); touch(); }} />
+            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+              <Pressable style={[s.primary, { flex: 1, minHeight: 46 }, (busy || future || !text.trim()) && { opacity: 0.5 }]} disabled={busy || future || !text.trim()} onPress={add}>
+                <Text style={s.primaryText}>{busy ? 'Adding…' : day === maxDay ? 'Add to today' : `Add to ${shortDate(d(day))}`}</Text>
+              </Pressable>
+              <PhotoButtons day={day} disabled={busy || future || !!aiBusy} keyed={keyed} cuisine={profileRow?.cuisine}
+                onBusy={setAiBusy} onDone={(m) => { setStatus(m); load(); touch(); }} />
+            </View>
             {future && <Text style={s.label}>This day hasn't happened yet.</Text>}
             {aiBusy ? <Text style={[s.body2, { color: c.cat.food.ink }]}>{aiBusy}</Text> : status ? <Text style={s.body2}>{status}</Text> : null}
 
             {quick.length > 0 && (
               <>
-                <Text style={s.label}>One tap to log</Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ fontFamily: font.bold, fontSize: 11, color: c.muted }}>One tap to log</Text>
+                  {saved.length > 0 && <Pressable onPress={() => setFqEdit((x) => !x)} hitSlop={8}><Text style={{ fontFamily: font.bold, fontSize: 12, color: c.cat.food.ink }}>{fqEdit ? 'Done' : 'Edit saved'}</Text></Pressable>}
+                </View>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
                   {quick.map((q) => (
                     <Pressable key={q.key} disabled={busy || future}
@@ -150,8 +156,12 @@ export default function Food() {
                         { text: 'Cancel', style: 'cancel' },
                         { text: 'Remove', style: 'destructive', onPress: () => run(() => db.deleteSavedMeal(q.saved!.id)) },
                       ])}
-                      style={{ width: 190, minHeight: 96, borderRadius: 14, borderWidth: 1, borderColor: c.lineSoft, backgroundColor: c.surface2, padding: 12, gap: 4 }}>
-                      {q.saved && <Text style={[s.body, { fontFamily: font.semibold }]} numberOfLines={1}>{q.title}</Text>}
+                      style={{ width: 190, minHeight: 96, borderRadius: 14, borderWidth: q.saved ? 1.5 : 1, borderColor: q.saved ? c.cat.food.fill : c.lineSoft, backgroundColor: q.saved ? c.cat.food.soft : c.surface2, padding: 12, gap: 4 }}>
+                      {q.saved && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text style={[s.body, { fontFamily: font.bold, flex: 1 }]} numberOfLines={1}>★ {q.title}</Text>
+                        {fqEdit && <Pressable onPress={() => run(() => db.deleteSavedMeal(q.saved!.id))} accessibilityLabel={`Remove ${q.title}`} hitSlop={8}
+                          style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: c.ink, alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: c.paper, fontSize: 13, lineHeight: 15 }}>×</Text></Pressable>}
+                      </View>}
                       {q.rows.slice(0, 3).map((r, i) => (
                         <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 6 }}>
                           <Text style={[s.body, { flex: 1, fontFamily: q.saved ? font.regular : font.semibold }]} numberOfLines={1}>{foodName(r.label)}</Text>
@@ -253,7 +263,7 @@ function Totals({ label, value, frac, color }: { label: string; value: string; f
   );
 }
 
-const COLS = [58, 168, 66, 50, 50, 50, 50];
+const COLS = [62, 250, 56, 46, 46, 46, 46];
 function TRow({ head, subtotal, total, meal, item, tag, warn, cells, fatFlag, action }: {
   head?: boolean; subtotal?: boolean; total?: boolean; meal?: string; item?: string; tag?: string; warn?: boolean; fatFlag?: boolean;
   cells: string[]; action?: { label: string; onPress: () => void };
@@ -262,10 +272,10 @@ function TRow({ head, subtotal, total, meal, item, tag, warn, cells, fatFlag, ac
   const all = head ? cells : [meal ?? '', item ?? '', ...cells];
   const bold = head || total || subtotal;
   return (
-    <View style={{ flexDirection: 'row', minHeight: 52, alignItems: 'center', borderTopWidth: head ? 0 : 1, borderTopColor: c.lineSoft,
+    <View style={{ flexDirection: 'row', minHeight: 40, alignItems: 'center', borderTopWidth: head ? 0 : 1, borderTopColor: c.lineSoft,
       backgroundColor: head || total ? c.surface2 : c.surface }}>
       {all.map((v, i) => (
-        <View key={i} style={{ width: COLS[i], paddingHorizontal: 8, paddingVertical: 8, alignItems: i >= 2 ? 'flex-end' : 'flex-start', gap: 4 }}>
+        <View key={i} style={{ width: COLS[i], paddingHorizontal: 8, paddingVertical: 6, alignItems: i >= 2 ? 'flex-end' : 'flex-start', flexDirection: i === 1 ? 'row' : 'column', gap: 6, ...(i === 1 ? { alignItems: 'center' } : null) }}>
           {i === 1 && action ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Text style={s.label}>{v}</Text>
@@ -275,13 +285,13 @@ function TRow({ head, subtotal, total, meal, item, tag, warn, cells, fatFlag, ac
             </View>
           ) : (
             <Text style={[i < 2 ? s.body : [s.body, s.num], bold && { fontFamily: font.semibold }, head && s.label, subtotal && i === 1 && s.label,
-              i === 0 && !head && { fontSize: 13, color: c.ink2 }, fatFlag && i === 5 && { color: c.warn }]} numberOfLines={i === 1 ? 3 : 1}>
+              i === 0 && !head && { fontSize: 12, color: c.ink2, fontFamily: Platform.OS === 'web' ? 'ui-monospace, monospace' : 'monospace' }, i === 1 && !head && { flexShrink: 1, fontSize: 13.5 }, i >= 2 && !head && { fontSize: 13.5 }, fatFlag && i === 5 && { color: c.warn }]} numberOfLines={1}>
               {v}
             </Text>
           )}
           {i === 1 && tag && (
-            <View style={{ alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 1, backgroundColor: warn ? c.warnSoft : c.cat.move.soft }}>
-              <Text style={{ fontSize: 11, fontFamily: font.semibold, color: warn ? c.warn : c.cat.move.ink }}>{tag}</Text>
+            <View style={{ borderRadius: 999, paddingHorizontal: 7, paddingVertical: 1, backgroundColor: warn ? c.warnSoft : c.cat.food.soft }}>
+              <Text style={{ fontSize: 10, fontFamily: font.bold, color: warn ? c.warn : c.cat.food.ink }}>{tag}</Text>
             </View>
           )}
         </View>
