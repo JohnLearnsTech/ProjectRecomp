@@ -111,8 +111,21 @@ Tested in the browser on a seeded account: grid edits and the load carry saved c
 - No chime sound yet, only vibration. "Edit plan" and the Train guides (Your sessions, How to progress, ...) are not ported.
 
 - The food guides (Protein first, Eating out, ...) and the 7-day average line on the chart are not ported yet.
-- "Estimate with Claude" waits for the connector (step 6) or a pasted key (step 5).
+- "Estimate with Claude" handoff and the connector are untested from the real Claude app; the OAuth flow was tested with a scripted client using Claude's callback.
+- The consent sign-in link must be opened in the same browser that started it (it carries the PKCE verifier); the 6-digit code works anywhere. Supabase's built-in email sender is rate limited, so set up custom SMTP before inviting friends.
 
-## Next (build plan step 6)
+## Build step 6: the Recomp connector for Claude (done, hosting pending)
 
-The Recomp MCP connector (a Supabase Edge Function with Supabase Auth over OAuth) so friends use their own Claude subscription: `list_pending_foods`, `set_food_estimate`, `log_food`, `get_day`, `get_week_summary`, `log_weight` / `log_steps` / `log_sleep`, `get_plan`, `propose_plan_change`, `save_weekly_review`, with the same floors enforced in the function. Plus the "Estimate with Claude" handoff into the Claude app for people without a key.
+Friends use their own Claude plan, no API key. The connector is a Supabase Edge Function (`supabase/functions/mcp`) speaking MCP over Streamable HTTP, protected by Supabase Auth's OAuth 2.1 server (dynamic client registration, PKCE). Address: `https://qykmzaftzklqsttdezre.supabase.co/functions/v1/mcp`.
+
+Tools: `get_day`, `get_week_summary`, `list_pending_foods`, `set_food_estimates`, `log_food`, `log_weight`, `log_steps`, `log_sleep`, `get_plan`, `propose_plan_change`, `save_weekly_review`. The domain rules run inside the function (`supabase/functions/_shared/domain` is generated from `app/src/domain` by `node scripts/sync-domain.mjs`), so Claude gets the same prompts, bounds and floors as the in-app AI. It never touches the checklist, medicines, notes or milestones, refuses future dates and days more than 60 back, and plan changes are stored as proposals that the app shows in Me with "Use this plan" or "Discard".
+
+In the app: Me has "Use Recomp from Claude" (address, copy, steps). Food shows "Estimate with Claude" when there's no key, which opens Claude with the request typed in. The OAuth consent screen is `app/src/app/oauth/consent.tsx`, served from the web build.
+
+Verified live: 21 connector checks (discovery, every tool, bounds, user isolation, forged token) and 10 OAuth checks (registration with Claude's callback, consent, PKCE exchange, refresh, already-allowed path, wrong verifier). Deploy the function with `supabase functions deploy mcp`.
+
+**Still to do:** host the web build (`npx eas-cli@latest deploy --prod` from `app/`), then point Supabase Auth's Site URL at that address and add `https://<host>/**` to the redirect list. Until then Claude's sign-in step lands on a page that isn't there.
+
+## Next (build plan step 7)
+
+Import an r19 backup into Supabase, then an EAS build for the Android APK.

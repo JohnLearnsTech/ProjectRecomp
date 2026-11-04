@@ -32,6 +32,7 @@ export type Profile = {
   setup_at: string | null;
   keystone_habit_id: string | null;
   bands: { n: string; kg: number | null }[];
+  timezone?: string | null;
 };
 export type ProfilePatch = Partial<Omit<Profile, 'user_id'>>;
 
@@ -302,3 +303,11 @@ export const updateGoalTargets = async (id: string, patch: Partial<Pick<Goal, 'k
   must(await supabase.from('goals').update(patch).eq('id', id));
 };
 export const addPersonalFood = async (f: Omit<PersonalFood, 'id'>) => { must(await supabase.from('personal_foods').insert(f)); };
+
+// ── Step 6: connector ──
+export type ProposalRow = { id: string; origin: 'app' | 'connector'; summary: string; body: unknown; kcal: number | null; protein_g: number | null; status: string; created_at: string };
+export const listPendingProposals = async () =>
+  must(await supabase.from('plan_proposals').select('*').eq('status', 'pending').order('created_at', { ascending: false })) as ProposalRow[];
+export const decideProposal = async (id: string, status: 'applied' | 'dismissed') => {
+  must(await supabase.from('plan_proposals').update({ status, decided_at: new Date().toISOString() }).eq('id', id));
+};

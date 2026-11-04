@@ -1,0 +1,8 @@
+# Only what the CLI needs to deploy the connector; the database is managed by the SQL in migrations/.
+project_id = "qykmzaftzklqsttdezre"
+
+[functions.mcp]
+# The function checks tokens itself (withSupabase): the gateway must let the unauthenticated
+# OAuth discovery request through so Claude can find the sign-in server.
+verify_jwt = false
+import_map = "./functions/mcp/deno.json"

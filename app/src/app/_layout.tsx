@@ -27,6 +27,8 @@ function RootStack() {
       </Stack.Protected>
       {/* Deep-link target for the email link; reachable in both states. */}
       <Stack.Screen name="auth/callback" />
+      {/* The Claude connector's consent page (web); reachable signed in or out. */}
+      <Stack.Screen name="oauth/consent" />
     </Stack>
   );
 }

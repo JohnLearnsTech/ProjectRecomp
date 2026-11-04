@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { ConnectClaude } from '../../components/ConnectClaude';
 import { PlanCard } from '../../components/PlanCard';
 import { aiMessage } from '../../domain/ai';
 import { clearApiKey, getApiKey, maskKey, saveApiKey } from '../../lib/apiKey';
@@ -112,6 +113,8 @@ export default function Me() {
           <Text style={s.primaryText}>Save</Text>
         </Pressable>
       </View>
+
+      <ConnectClaude />
 
       <View style={s.card}>
         <Text style={s.cardTitle}>AI</Text>

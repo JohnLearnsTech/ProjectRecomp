@@ -7,6 +7,7 @@ import { FoodChart } from '../../../components/FoodChart';
 import { PhotoButtons } from '../../../components/FoodAi';
 import { aiMessage } from '../../../domain/ai';
 import { estimateRows, hasKey } from '../../../lib/ai';
+import { handOffToClaude } from '../../../lib/connector';
 import { ScreenHeader } from '../../../components/ScreenHeader';
 import { addKey, d, shortDate } from '../../../domain/dates';
 import { foodName, foodTotals, fqQty, mealKcal, mealSig, recentMeals, shortFoodLabel } from '../../../domain/food';
@@ -176,8 +177,13 @@ export default function Food() {
             {pending > 0 && (
               <View style={{ backgroundColor: c.warnSoft, borderRadius: 12, padding: 12, gap: 10 }}>
                 <Text style={[s.body, { color: c.ink }]}>
-                  {pending} item{pending > 1 ? 's need' : ' needs'} numbers. {keyed ? 'Claude can estimate them, or tap a row to type them in.' : 'Tap a row to type them in, or add your Anthropic API key in Me, Settings, AI to have Claude estimate them.'}
+                  {pending} item{pending > 1 ? 's need' : ' needs'} numbers. {keyed ? 'Claude can estimate them, or tap a row to type them in.' : 'Tap a row to type them in, or let Claude fill them through the Recomp connector (Me, Use Recomp from Claude).'}
                 </Text>
+                {!keyed && (
+                  <Pressable style={[s.outline, { alignSelf: 'flex-start' }]} onPress={() => handOffToClaude()}>
+                    <Text style={s.outlineText}>Estimate with Claude</Text>
+                  </Pressable>
+                )}
                 {keyed && (
                   <Pressable style={[s.outline, { alignSelf: 'flex-start' }, !!aiBusy && { opacity: 0.5 }]} disabled={!!aiBusy} onPress={() => estimatePending()}>
                     <Text style={s.outlineText}>{aiBusy ? 'Asking Claude…' : `Estimate ${pending > 1 ? `all ${pending}` : 'it'} with Claude`}</Text>

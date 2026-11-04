@@ -3,6 +3,8 @@ import { Pressable, Text, TextInput, View } from 'react-native';
 import { aiMessage, PLAN_CHIPS, planWeekdays, type Proposal } from '../domain/ai';
 import { d, addDays, shortDate, key } from '../domain/dates';
 import { acceptProposal, proposePlan } from '../lib/ai';
+import { normPlan } from '../domain/plan';
+import { planDiff } from '../domain/ai';
 import * as db from '../lib/db';
 import { useDays } from '../lib/days';
 import { useRecomp } from '../lib/recomp';
@@ -18,6 +20,8 @@ export function PlanCard({ keyed }: { keyed: boolean }) {
   const [status, setStatus] = useState<string | null>(null);
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [hasSaved, setHasSaved] = useState<boolean | null>(null);
+  const [fromClaude, setFromClaude] = useState<db.ProposalRow[]>([]);
+  useEffect(() => { db.listPendingProposals().then(setFromClaude).catch(() => {}); }, [engine]);
   const { PL, T } = engine;
   const wn = planWeekdays(T.TSTART);
   useEffect(() => { if (hasSaved === null) db.getCurrentPlan().then((p) => setHasSaved(!!p)).catch(() => setHasSaved(false)); }, [hasSaved]);
@@ -61,6 +65,34 @@ export function PlanCard({ keyed }: { keyed: boolean }) {
           <Text key={k} style={s.label}><Text style={{ fontFamily: font.semibold, color: c.ink }}>{pg.name}</Text>: {pg.ex.map((l) => l.split('|')[0]).join(', ')}</Text>
         ))}
       </View>
+
+      {fromClaude.map((p) => {
+        const np = normPlan(p.body);
+        const diff = np ? planDiff(PL, np, p.kcal ?? engine.G.kcal, p.protein_g ?? engine.G.protein, engine.G.kcal, engine.G.protein, wn) : [];
+        return (
+          <View key={p.id} style={{ backgroundColor: c.cat.train.soft, borderRadius: 14, padding: 14, gap: 8 }}>
+            <Text style={[s.label, { fontFamily: font.semibold }]}>Proposed from your Claude chat</Text>
+            <Text style={s.section}>{p.summary}</Text>
+            <Text style={[s.label, { fontFamily: font.semibold }]}>What actually changes</Text>
+            {np ? (diff.length ? diff.map((x, i) => <Text key={i} style={s.body}>• {x}</Text>) : <Text style={s.body2}>Nothing compared with your current plan.</Text>)
+              : <Text style={s.error}>This proposal no longer fits the plan format.</Text>}
+            <View style={s.row}>
+              {np && diff.length > 0 && (
+                <Pressable style={[s.primary, { flex: 1 }]} onPress={async () => {
+                  try {
+                    await db.savePlanVersion({ body: np, source: 'claude', note: p.summary.slice(0, 140), kcal: p.kcal, protein: p.protein_g });
+                    await db.decideProposal(p.id, 'applied'); setFromClaude((o) => o.filter((x) => x.id !== p.id)); setHasSaved(true);
+                    setStatus('New plan in use. Restore previous puts the old one back.'); await reload(); touch();
+                  } catch (e) { setStatus((e as Error).message); }
+                }}><Text style={s.primaryText}>Use this plan</Text></Pressable>
+              )}
+              <Pressable style={[s.outline, { flex: 1 }]} onPress={() => db.decideProposal(p.id, 'dismissed').then(() => setFromClaude((o) => o.filter((x) => x.id !== p.id)))}>
+                <Text style={s.outlineText}>Discard</Text>
+              </Pressable>
+            </View>
+          </View>
+        );
+      })}
 
       {proposal ? (
         <View style={{ backgroundColor: c.cat.train.soft, borderRadius: 14, padding: 14, gap: 8 }}>

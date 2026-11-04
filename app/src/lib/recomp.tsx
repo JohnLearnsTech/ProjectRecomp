@@ -65,6 +65,9 @@ export function RecompProvider({ children }: { children: ReactNode }) {
       const profile = toDomainProfile(p, foods);
       const firstW = goal.startKg ? null : await db.firstWeightFrom(goal.start);
       const engine = makeEngine(goal, profile, planRow ? normPlan(planRow.body) : null, firstW);
+      // Keep the phone's time zone on the profile so the Claude connector knows "today".
+      const tz = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return null; } })();
+      if (p && tz && p.timezone !== tz) db.updateProfile({ timezone: tz }).catch(() => {});
       setState({ engine, profileRow: p, foodIndex: buildFoodIndex(profile.myFoods) });
       setError(null);
     } catch (e) {
