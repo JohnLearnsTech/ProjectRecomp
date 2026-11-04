@@ -4,6 +4,8 @@ import { Alert, KeyboardAvoidingView, Modal, Pressable, RefreshControl, ScrollVi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Bar } from '../../../components/Bar';
 import { FoodChart } from '../../../components/FoodChart';
+import { PanelHead } from '../../../components/ui';
+import { Guides } from '../../../components/Guides';
 import { PhotoButtons } from '../../../components/FoodAi';
 import { aiMessage } from '../../../domain/ai';
 import { estimateRows, hasKey } from '../../../lib/ai';
@@ -118,7 +120,7 @@ export default function Food() {
           <ScreenHeader title="Food" cat="food" />
 
           <View style={s.card}>
-            <Text style={s.cardTitle}>Food log</Text>
+            <PanelHead title="Food log" info={{ label: 'About this section', text: 'Type what you ate in plain words with amounts, one meal per entry. Common Indian foods resolve instantly from a built-in table. Anything else is estimated by Claude and tagged estimate; press edit on any row to correct it.' }} />
             <TextInput
               ref={inputRef}
               style={[s.input, { minHeight: 88, textAlignVertical: 'top', paddingTop: 12 }]}
@@ -228,6 +230,7 @@ export default function Food() {
           </View>
 
           <FoodChart />
+          <Guides kind="eat" />
         </ScrollView>
       </KeyboardAvoidingView>
 

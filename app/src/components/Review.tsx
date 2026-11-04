@@ -7,6 +7,8 @@ import * as db from '../lib/db';
 import { useDays } from '../lib/days';
 import { useRecomp } from '../lib/recomp';
 import { font, useTheme } from '../lib/theme';
+import { Icon } from './Icon';
+import { Mini, PanelHead } from './ui';
 
 /** r19 Weekly review: Claude's grade and words, beside a scorecard the app counts itself. */
 export function ReviewCard() {
@@ -41,9 +43,9 @@ export function ReviewCard() {
   const nd = st.daysInWeek || 7;
   let hm = 0, ho = 0; (st.habits || []).forEach((x: { met: number; of: number }) => { hm += x.met; ho += x.of; });
   const card = (k: string, v: string | null, ok: boolean | null) => v == null ? null : (
-    <View key={k} style={{ width: '48%', borderRadius: 12, padding: 10, backgroundColor: ok === true ? c.cat.move.soft : ok === false ? c.warnSoft : c.surface2 }}>
-      <Text style={s.label}>{k}</Text>
-      <Text style={[s.body, { fontFamily: font.semibold, color: ok === false ? c.warn : c.ink }]}>{v}</Text>
+    <View key={k} style={{ width: '48.5%', borderRadius: 12, paddingVertical: 10, paddingHorizontal: 12, borderWidth: 1, borderColor: ok === false ? c.danger : c.lineSoft, backgroundColor: c.surface2, gap: 2 }}>
+      <Text style={{ fontFamily: font.regular, fontSize: 12, color: c.ink2 }}>{k}</Text>
+      <Text style={{ fontFamily: font.bold, fontSize: 16, color: ok === false ? c.danger : c.cat.body.ink }}>{v}</Text>
     </View>
   );
   const gradeBg = (g: string) => (g[0] === 'A' || g[0] === 'B' ? c.cat.habit.fill : g[0] === 'C' ? c.cat.food.fill : c.warn);
@@ -51,10 +53,9 @@ export function ReviewCard() {
 
   return (
     <View style={s.card}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text style={s.cardTitle}>Weekly review</Text>
-        {review && <Text style={s.label}>{shortDate(d(review.start_date))} – {shortDate(d(review.end_date))}</Text>}
-      </View>
+      <PanelHead title="Weekly review" info={{ label: 'About the weekly review', text: 'Claude reads your last seven days against the seven before and suggests at most one change. A calorie cut is only offered when the seven-day average has stalled and food was logged on at least five days. Nothing changes until you press Apply.' }}
+        right={<Mini label={busy ? 'Reviewing…' : o ? (due ? 'Review this week' : 'Review again') : 'Review my week'} disabled={busy || !keyed} onPress={go} />} />
+      {review && <Text style={[s.label, { marginTop: -6 }]}>{shortDate(d(review.start_date))} – {shortDate(d(review.end_date))} · reviewed {shortDate(d(review.created_at.slice(0, 10)))}</Text>}
       {busy && <Text style={s.body2}>Claude is reading your week. About half a minute.</Text>}
       {err && <Text style={s.error}>{err}</Text>}
       {!o && !busy && (
@@ -65,7 +66,7 @@ export function ReviewCard() {
           <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
             {o.grade ? <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: gradeBg(o.grade), alignItems: 'center', justifyContent: 'center' }} accessibilityLabel={`Grade ${o.grade}`}>
               <Text style={{ fontFamily: font.bold, fontSize: 24, color: '#101210' }}>{o.grade}</Text></View> : null}
-            <Text style={[s.section, { flex: 1 }]}>{o.headline}</Text>
+            <Text style={{ flex: 1, fontFamily: font.bold, fontSize: 19, lineHeight: 24, color: c.ink }}>{o.headline}</Text>
           </View>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
             {[card('Sessions', st.liftScheduled ? `${st.liftDone} of ${st.liftScheduled}` : null, st.liftScheduled ? st.liftDone >= st.liftScheduled : null),
@@ -80,25 +81,35 @@ export function ReviewCard() {
           {(o.truths?.length ? o.truths : o.watch || []).length > 0 && (
             <View style={{ gap: 4 }}>
               <Text style={[s.label, { fontFamily: font.semibold }]}>{o.truths?.length ? 'Hard truths' : 'Watch'}</Text>
-              {(o.truths?.length ? o.truths : o.watch).map((x, i) => <Text key={i} style={s.body}><Text style={{ color: c.warn, fontFamily: font.bold }}>!  </Text>{x}</Text>)}
+              {(o.truths?.length ? o.truths : o.watch).map((x, i) => (
+                <View key={i} style={{ flexDirection: 'row', gap: 9 }}>
+                  <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: c.warnSoft, alignItems: 'center', justifyContent: 'center', marginTop: 1 }}><Text style={{ fontFamily: font.bold, fontSize: 11, color: c.warn }}>!</Text></View>
+                  <Text style={[s.body2, { flex: 1, fontSize: 14 }]}>{x}</Text>
+                </View>
+              ))}
             </View>
           )}
-          {o.leak ? <View style={{ backgroundColor: c.warnSoft, borderRadius: 12, padding: 12 }}><Text style={[s.label, { fontFamily: font.semibold }]}>Biggest leak</Text><Text style={s.body}>{o.leak}</Text></View> : null}
+          {o.leak ? <View style={{ backgroundColor: c.warnSoft, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: c.warn + '55', gap: 3 }}><Text style={{ fontFamily: font.regular, fontSize: 12, color: c.ink2 }}>Biggest leak</Text><Text style={[s.body, { fontFamily: font.semibold }]}>{o.leak}</Text></View> : null}
           {o.commitments?.length ? (
             <View style={{ gap: 4 }}>
               <Text style={[s.label, { fontFamily: font.semibold }]}>Non-negotiables for next week</Text>
-              {o.commitments.map((x, i) => <Text key={i} style={s.body}>{i + 1}. {x}</Text>)}
+              {o.commitments.map((x, i) => <Text key={i} style={[s.body, { fontSize: 15.5, fontFamily: font.medium }]}>{i + 1}. {x}</Text>)}
             </View>
           ) : o.focus ? <Text style={s.body}><Text style={{ fontFamily: font.semibold }}>Next week: </Text>{o.focus}</Text> : null}
           {o.wins?.length ? (
             <View style={{ gap: 4 }}>
               <Text style={[s.label, { fontFamily: font.semibold }]}>Earned</Text>
-              {o.wins.map((x, i) => <Text key={i} style={s.body}><Text style={{ color: c.cat.move.ink, fontFamily: font.bold }}>✓  </Text>{x}</Text>)}
+              {o.wins.map((x, i) => (
+                <View key={i} style={{ flexDirection: 'row', gap: 9 }}>
+                  <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: c.cat.body.fill, alignItems: 'center', justifyContent: 'center', marginTop: 1 }}><Icon name="check" size={12} stroke={3} color={c.cat.body.on} /></View>
+                  <Text style={[s.body2, { flex: 1, fontSize: 14 }]}>{x}</Text>
+                </View>
+              ))}
             </View>
           ) : null}
           {o.suggestion?.what ? (
-            <View style={{ backgroundColor: c.surface2, borderRadius: 12, padding: 12, gap: 6 }}>
-              <Text style={[s.body, { fontFamily: font.semibold }]}>{o.suggestion.what}</Text>
+            <View style={{ backgroundColor: c.cat.body.soft, borderRadius: 12, padding: 13, gap: 6, borderWidth: 1.5, borderColor: c.cat.body.fill }}>
+              <Text style={[s.body, { fontFamily: font.bold, fontSize: 14.5 }]}>{o.suggestion.what}</Text>
               {o.suggestion.why ? <Text style={s.body2}>{o.suggestion.why}</Text> : null}
               {ch && (review?.applied_at ? <Text style={[s.label, { color: c.cat.move.ink, fontFamily: font.semibold }]}>Applied</Text> : (
                 <Pressable style={s.primary} onPress={apply}>
@@ -109,9 +120,6 @@ export function ReviewCard() {
           ) : null}
         </>
       )}
-      <Pressable style={[o ? s.outline : s.primary, (busy || !keyed) && { opacity: 0.5 }]} disabled={busy || !keyed} onPress={go}>
-        <Text style={o ? s.outlineText : s.primaryText}>{busy ? 'Reviewing…' : o ? (due ? 'Review this week' : 'Review again') : 'Review my week'}</Text>
-      </Pressable>
     </View>
   );
 }

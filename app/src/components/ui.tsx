@@ -95,10 +95,10 @@ export function Fold({ title, children, initial = false, big }: { title: string;
   const { c } = useTheme();
   const [open, setOpen] = useState(initial);
   return (
-    <View style={{ borderWidth: 1, borderColor: c.lineSoft, borderRadius: 12, backgroundColor: c.surface2, overflow: 'hidden' }}>
+    <View style={{ borderWidth: 1, borderColor: big ? c.line : c.lineSoft, borderRadius: 12, backgroundColor: big ? c.surface : c.surface2, overflow: 'hidden' }}>
       <Pressable onPress={() => setOpen((o) => !o)} accessibilityRole="button" accessibilityState={{ expanded: open }}
         style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: big ? 15 : 13 }}>
-        <Text style={{ fontFamily: font.bold, fontSize: big ? 16 : 12.5, color: c.ink2, flexShrink: 1 }}>{title}</Text>
+        <Text style={{ fontFamily: font.bold, fontSize: big ? 16 : 12.5, color: big ? c.ink : c.ink2, flexShrink: 1 }}>{title}</Text>
         {big ? <Icon name={open ? 'up' : 'down'} size={16} color={c.ink2} /> : <Text style={{ fontSize: 16, color: c.muted }}>{open ? '–' : '+'}</Text>}
       </Pressable>
       {open && <View style={{ paddingHorizontal: 14, paddingBottom: 14, gap: 10 }}>{children}</View>}

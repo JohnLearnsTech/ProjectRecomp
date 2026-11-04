@@ -13,7 +13,8 @@ import { useRecomp } from '../../../lib/recomp';
 import { font, useTheme, type Palette } from '../../../lib/theme';
 import { endPoint, frame, Halo, poly, valueLabels, xTicks, yGrid } from '../../../components/chart';
 import { Icon } from '../../../components/Icon';
-import { Segmented, Stats as Stats2 } from '../../../components/ui';
+import { Guides } from '../../../components/Guides';
+import { PanelHead, Segmented, Stats as Stats2 } from '../../../components/ui';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -37,6 +38,7 @@ export default function Progress() {
         <VolumeChart />
         <ReviewCard />
         <DailyLog />
+        <Guides kind="rules" />
         <Text style={[s.label, { marginTop: 8 }]}>Recomp is a training, nutrition and habits tool. Its targets come from standard formulas and your own logs; they are not medical advice.</Text>
       </ScrollView>
     </SafeAreaView>
@@ -152,7 +154,7 @@ function WeighIn() {
       <Text style={s.label}>{fmt(d(day))}</Text>
       <Text style={s.cardTitle}>{head}</Text>
       {P.inRange && <Text style={s.label}>Day {diffDays(d(engine.T.START), d(day)) + 1} of {engine.T.TOTAL} · Week {P.week} · Phase {P.phase}</Text>}
-      <Text style={[s.label, { fontFamily: font.semibold, marginTop: 4 }]}>What you measured</Text>
+      <PanelHead size={14} title="What you measured" info={{ label: 'About weighing', text: 'Weigh first thing in the morning, after the bathroom and before food or water, in the same clothes.' }} />
       <View style={s.row}>
         <Field label="Weight (kg)" value={w} onChange={setW} disabled={future} c={c} />
         <Field label="Sleep (h)" value={sl} onChange={setSl} disabled={future} c={c} />
@@ -244,7 +246,7 @@ function ConsistencyFull() {
   ];
   return (
     <View style={s.card}>
-      <Text style={s.cardTitle}>Consistency</Text>
+      <PanelHead title="Consistency" info={{ label: 'About this section', text: "A session is your planned work for the day: the gym on lift days, the walk on cardio days. Do that and the day counts, whatever else you skip. Rest days aren't sessions, so they never break a streak. Overall colours each day by how much of everything you got done (session, food, every habit); a walk counts on minutes or 2,000+ steps. Pick a chip to see one thing on its own. Tap a day for its breakdown; swipe to change month." }} />
       <Text style={s.body2}>A session is the day's planned work: the gym on lift days, the walk on cardio days. Rest days don't count.</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 14 }}>
         {statCells.map(([k, v, n]) => (
