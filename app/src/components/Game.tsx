@@ -1,9 +1,10 @@
+import type React from 'react';
 // What the game shows: your level and today's floor on Today, a short celebration when a day is
 // won or a level or badge is earned, and the badges on Progress. Points appear only when earned.
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Pressable, Text, View } from 'react-native';
+import { Animated, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { d, shortDate } from '../domain/dates';
-import { floorFor, LEVELS } from '../domain/game';
+import { DAY_CAP, floorFor, LEVELS } from '../domain/game';
 import { proteinFloor } from '../domain/plan';
 import { useDays } from '../lib/days';
 import { useGame } from '../lib/game';
@@ -20,13 +21,15 @@ export function GameBar() {
   const { engine, maxDay, day } = useRecomp();
   const { entries, habits, D } = useDays();
   const { c, s } = useTheme('move');
+  const [guide, setGuide] = useState(false);
   if (!g) return null;
   const L = g.level, nx = L.next;
   const pct = nx ? ((g.totalWon - L.from) / Math.max(1, nx.at - L.from)) * 100 : 100;
   const f = floorFor(engine, maxDay, entries[maxDay], habits, proteinFloor(engine.PROFILE, engine.G), D.trainedOn(maxDay));
   const won = !!g.today?.won;
   return (
-    <View style={[s.card, { gap: 10, paddingVertical: 14 }]}>
+    <>
+    <Pressable onPress={() => setGuide(true)} accessibilityRole="button" accessibilityLabel={`${L.name}. How the game works`} style={[s.card, { gap: 10, paddingVertical: 14 }]}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: c.cat.move.fill, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ fontFamily: font.bold, fontSize: 18, color: c.cat.move.on }}>{L.i + 1}</Text>
@@ -39,7 +42,10 @@ export function GameBar() {
           <View style={{ height: 7, borderRadius: 999, backgroundColor: c.lineSoft, overflow: 'hidden' }}>
             <View style={{ height: '100%', width: `${Math.max(3, Math.min(100, pct))}%`, borderRadius: 999, backgroundColor: c.cat.move.fill }} />
           </View>
-          <Text style={s.label}>{nx ? `${nx.need} more day${nx.need === 1 ? '' : 's'} won to ${nx.name}` : 'Top level. Keep it.'}</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <Text style={s.label}>{nx ? `${nx.need} more day${nx.need === 1 ? '' : 's'} won to ${nx.name}` : 'Top level. Keep it.'}</Text>
+            <Text style={[s.label, { color: c.cat.move.ink, fontFamily: font.semibold }]}>How it works ›</Text>
+          </View>
         </View>
       </View>
       {day === maxDay && f.type !== 'off' && (
@@ -53,7 +59,9 @@ export function GameBar() {
           </Text>
         </View>
       )}
-    </View>
+    </Pressable>
+    {guide && <GameGuide onClose={() => setGuide(false)} />}
+    </>
   );
 }
 
@@ -132,5 +140,63 @@ export function Badges() {
         ))}
       </View>
     </View>
+  );
+}
+
+/** How the game works: a short guide that opens from the level card on Today. */
+export function GameGuide({ onClose }: { onClose: () => void }) {
+  const g = useGame();
+  const { engine, maxDay } = useRecomp();
+  const { c, s } = useTheme('move');
+  const P = engine.plan(maxDay);
+  const H = ({ t }: { t: string }) => <Text style={{ fontFamily: font.bold, fontSize: 17, color: c.ink, marginTop: 6 }}>{t}</Text>;
+  const T = ({ children }: { children: React.ReactNode }) => <Text style={{ fontFamily: font.regular, fontSize: 14.5, lineHeight: 22, color: c.ink2 }}>{children}</Text>;
+  const B = ({ children }: { children: React.ReactNode }) => <Text style={{ fontFamily: font.bold, color: c.ink }}>{children}</Text>;
+  const Row = ({ k, v, on }: { k: string; v: string; on?: boolean }) => (
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12, paddingVertical: 7, borderTopWidth: 1, borderTopColor: c.lineSoft }}>
+      <Text style={{ fontFamily: on ? font.bold : font.regular, fontSize: 14, color: on ? c.cat.move.ink : c.ink, flex: 1 }}>{k}</Text>
+      <Text style={{ fontFamily: on ? font.bold : font.regular, fontSize: 14, color: on ? c.cat.move.ink : c.ink2 }}>{v}</Text>
+    </View>
+  );
+  return (
+    <Modal transparent animationType="slide" onRequestClose={onClose}>
+      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: '#0006' }}>
+        <Pressable style={{ flex: 1 }} onPress={onClose} accessibilityLabel="Close" />
+        <ScrollView style={{ maxHeight: '88%', backgroundColor: c.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22 }} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: 40, gap: 8 }}>
+          <View style={{ alignItems: 'center' }}><View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: c.line }} /></View>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={{ flex: 1, fontFamily: font.bold, fontSize: 22, color: c.ink }}>How it works</Text>
+            <Pressable onPress={onClose} accessibilityLabel="Close" style={{ width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: c.line, backgroundColor: c.surface2, alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: c.ink2 }}>✕</Text></Pressable>
+          </View>
+          <T>Recomp rewards showing up, not being perfect. Every day has a small minimum, the floor. Meet it and the day is <B>won</B>. That is the whole game. Anything more is a bonus.</T>
+
+          <H t="How to win a day" />
+          <Row k="Lift day" v="warm-up + two exercises" on={P.type === 'lift'} />
+          <Row k="Cardio day" v="10 min walk or 2,000 steps" on={P.type === 'cardio'} />
+          <Row k="Rest day" v="two of: water, protein, a short walk" on={P.type === 'rest'} />
+          <T>Today is a <B>{P.type === 'lift' ? 'lift' : P.type === 'cardio' ? 'cardio' : 'rest'} day</B>. The card on Today says what's left, and turns green once it's won.</T>
+
+          <H t="Levels" />
+          <T>Levels go up with days won and never go down. A bad week can't take one away.</T>
+          {LEVELS.map(([n, name], i) => <Row key={name} k={`${i + 1}. ${name}`} v={n === 0 ? 'start' : `${n} days won`} on={g?.level.i === i} />)}
+
+          <H t="Streaks" />
+          <T>Your streak counts days won in a row. <B>One missed day a week is forgiven</B>, so a single off day doesn't wipe it out. Two misses in the same Monday-to-Sunday week end it.</T>
+
+          <H t="Points" />
+          <T>Points show up when you earn them, so you can see what a day was worth. A won day is 30, a full session or the step target 25, plus a point a minute walked (up to 20), 5 for each habit met (up to 15), 10 for the protein floor, and 5 each for logging food and weighing in. A day tops out at {DAY_CAP}.</T>
+          <T><B>Coming back counts double.</B> The first day you win after a missed one earns twice the points. Starting again is the hardest part, so it pays the most.</T>
+
+          <H t="This week's quests" />
+          <T>After each weekly review, its three non-negotiables become quests for the next seven days on the This week card. Tick them as you keep them. Keep all three and you earn <B>Promises kept</B>.</T>
+
+          <H t="Badges" />
+          <T>Badges mark milestones: your first day won, ten and fifty days won, a week and a month in a row, coming back after a miss, ten sessions, a new best on a lift, an hour's walk, and keeping every quest in a week. They're all on Progress, under Days won.</T>
+
+          <H t="If you fall off" />
+          <T>Nothing resets. Your level stays and your history stays. The next floor is small on purpose: one ten-minute walk wins a cardio day, and it counts double.</T>
+        </ScrollView>
+      </View>
+    </Modal>
   );
 }
