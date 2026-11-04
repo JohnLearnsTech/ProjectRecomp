@@ -126,6 +126,22 @@ Verified live: 21 connector checks (discovery, every tool, bounds, user isolatio
 
 **Still to do:** host the web build (`npx eas-cli@latest deploy --prod` from `app/`), then point Supabase Auth's Site URL at that address and add `https://<host>/**` to the redirect list. Until then Claude's sign-in step lands on a page that isn't there.
 
-## Next (build plan step 7)
+## Build step 7: backup restore and the Android APK (done)
 
-Import an r19 backup into Supabase, then an EAS build for the Android APK.
+**Restore.** The first setup screen and Me both offer "Restore from a backup…" for a `recomp-backup-<date>.json` saved from the web app (Me, Backup). `app/src/domain/backup.ts` converts it with r19's own rules (reference `docs/03-data-model.md` §17): `dbDec` everywhere, `normPlan`, `normHabits`, `normBands`, provisional goals dropped and exactly one active goal, legacy single sets, `pending` food rows kept as pending, grams read from the label, cache keys rebuilt, and any value a database check would refuse becomes empty instead of failing the restore. The app shows what's in the file first; Restore then calls `import_backup` (migration 0005), which replaces everything in the account in one transaction and returns counts. The app compares those with the file (days, calorie total, food rows, sets per exercise, habit values per habit, goals, reviews, latest weight) and lists any difference.
+
+Decisions taken where the data model left them open: values for habits that were deleted in r19 are kept on hidden (archived) habits; a backup with no current goal restores the history and then runs setup; only the 12 newest saved meals come across; review apply times are the review's own time (r19 didn't record them). Old Google Calendar reminder events are kept in `legacy_calendar_events` but nothing removes them yet, since the phone's own reminders aren't built.
+
+Verified: 4 converter tests (including parity with r19's `dbDec`, `normBands`, `normHabits`), and 14 live checks against Supabase: counts match, day totals recomputed by the trigger, plan versions and restore-previous wiring, restoring twice replaces, a 400-day backup (3,200 food rows, 6,000 sets, 1.7 MB) in about 3 s, another user's data untouched, a failing restore changes nothing, signed-out refused.
+
+**APK.** `eas.json` profile `preview` builds an installable APK (internal distribution, keystore held by EAS):
+
+```bash
+cd app && npx eas-cli@latest build -p android --profile preview
+```
+
+EAS prints a link and QR code; testers open it on their phone and install (they must allow installs from the browser once). The free EAS plan covers this with a monthly build allowance.
+
+## Next
+
+Host the consent page (step 6) so the connector can sign people in; then a real-phone pass: camera photos for labels and plates, the keyboard on long forms, rest-timer vibration, and the Claude app handoff. After that: reminders with expo-notifications, and a JSON backup export from the app.
