@@ -3,6 +3,7 @@ import { SvgXml } from 'react-native-svg';
 // r19's inline icons (function ic and the tab bar's ICON), drawn the same way: 24 px grid,
 // round stroke in the current colour. Copied verbatim from reference/app/recomp.html.
 const P: Record<string, string> = {
+ "pomo": "<circle cx=\"12\" cy=\"13\" r=\"8\"/><path d=\"M12 9v4l2 2M9 2h6\"/>",
  "edit": "<path d=\"M12 20h9\"/><path d=\"M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z\"/>",
  "trash": "<path d=\"M3 6h18\"/><path d=\"M8 6V4h8v2\"/><path d=\"M19 6l-1 14H6L5 6\"/><path d=\"M10 11v6M14 11v6\"/>",
  "play": "<path d=\"M8 5v14l11-7z\" fill=\"currentColor\" stroke=\"none\"/>",

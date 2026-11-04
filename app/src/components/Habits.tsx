@@ -12,7 +12,10 @@ import {
 } from '../lib/habitTimers';
 import { deleteSession, logFocus, pomoTarget, resetDay, setValue, stopAndLog } from '../lib/habits';
 import { useRecomp } from '../lib/recomp';
-import { font, useTheme } from '../lib/theme';
+import { font, useTheme, type Cat } from '../lib/theme';
+import { Icon } from './Icon';
+import { range, Wheel } from './Wheel';
+import { useInfo } from './ui';
 
 /** r19's Habits section on Today: cards, the running timer, Pomodoro, the log sheet. */
 export function Habits({ openId, onOpened }: { openId?: string | null; onOpened?: () => void }) {
@@ -55,14 +58,18 @@ export function Habits({ openId, onOpened }: { openId?: string | null; onOpened?
   const ordered = running ? [habits.find((h) => h.id === running)!, ...habits.filter((h) => h.id !== running)] : habits;
   const sheetHabit = habits.find((h) => h.id === sheet) ?? null;
   const target = pomoTarget(habits, pomo.targetId);
+  // r19 tintHabits(): on the cards, in the Multi palette, Walk wears the move colour, limits the body colour, the rest the habit colour.
+  const tint = (h: HabitDef): Cat => (c.multi ? c.cat[tracksSteps(h) ? 'move' : h.type === 'limit' ? 'body' : 'habit'] : c.cat.habit);
+  const info = useInfo('Build habits are ones you want to hit; limit habits are ones you want to stay under. Each keeps a streak, a strength score and the last two weeks under Details.', 'About this section');
 
   return (
     <View style={s.card}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <Text style={[s.cardTitle, { flex: 1 }]}>Habits</Text>
-        <IconBtn label="Focus timer" glyph="◷" on={showPomo || pomo.phase !== 'idle'} onPress={() => setShowPomo(!showPomo)} />
-        <IconBtn label="Add a habit" glyph="+" onPress={() => setAdding(true)} />
+        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}><Text style={s.cardTitle}>Habits</Text>{info.button}</View>
+        <IconBtn label="Focus intervals (Pomodoro)" icon="pomo" on={showPomo || pomo.phase !== 'idle'} onPress={() => setShowPomo(!showPomo)} />
+        <IconBtn label="Add habit" icon="plus" onPress={() => setAdding(true)} />
       </View>
+      {info.panel}
       {err && <Text style={s.error}>{err}</Text>}
 
       {(showPomo || pomo.phase !== 'idle') && (
@@ -115,20 +122,11 @@ export function Habits({ openId, onOpened }: { openId?: string | null; onOpened?
         const isHr = timed && unitMs(h.unit) === 3600000, fq = (x: number) => (isHr ? fmtHours(x) : trimNum(x));
         const fu = (x: number) => (isHr ? fmtHours(x) : `${trimNum(x)} ${h.unit}`);
         const ratio = h.goal > 0 ? v0 / h.goal : v0 > 0 ? 1 : 0;
-        const ringCol = h.type === 'build' ? c.cat.habit.fill : ratio > 1 ? c.danger : ratio >= 0.75 ? c.warn : c.cat.habit.fill;
-        const streak = D.habitStreak(h), longest = D.habitLongest(h), steps = entries[day]?.steps ?? null;
+        const tc = tint(h);
+        const ringCol = h.type === 'build' ? tc.fill : ratio > 1 ? c.danger : ratio >= 0.75 ? c.warn : tc.fill;
         const ms = timerMs(h.id, now);
         const left = h.goal * unitMs(h.unit) - (valOn(t?.day ?? day, h.id) ?? 0) * unitMs(h.unit) - ms;
         const down = clockMode[h.id] === 'down';
-        const bits: string[] = [];
-        if (streak > 0) bits.push(`🔥 ${streak}${longest > streak ? ' · best ' + longest : ''}`);
-        if (t) bits.push((t.running ? (t.day !== day ? 'Timing' : 'Timing now') : 'On a break') + (t.day !== day ? ` · for ${shortDate(d(t.day))}` : ''));
-        else if (h.type === 'limit') bits.push(h.goal > 0 && v0 > h.goal ? `over by ${fu(v0 - h.goal)}` : `${fu(Math.max(0, h.goal - v0))} left`);
-        else {
-          if (tracksSteps(h) && steps) bits.push(`${steps.toLocaleString('en-IN')} steps`);
-          if (cur != null && v0 >= h.goal) bits.push('done');
-          else if (!(tracksSteps(h) && steps)) bits.push(`${fu(Math.max(0, h.goal - v0))} to go`);
-        }
         if (h.id === running && t) {
           return (
             <View key={h.id} style={{ backgroundColor: c.cat.habit.soft, borderRadius: 18, padding: 16, gap: 8 }}>
@@ -148,14 +146,13 @@ export function Habits({ openId, onOpened }: { openId?: string | null; onOpened?
           <View key={h.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, borderTopWidth: 1, borderTopColor: c.lineSoft, paddingTop: 12 }}>
             <Pressable disabled={future && timed} accessibilityLabel={t ? 'Resume timer' : timed ? `Start ${h.name} timer` : `Open ${h.name}`}
               onPress={() => (timed ? startTimer(h.id, day) : setSheet(h.id))}>
-              <HRing ratio={ratio} color={ringCol} track={c.line} inner={timed ? '▶' : `${Math.round(Math.min(ratio, 9.99) * 100)}%`} ink={c.ink} />
+              <HRing ratio={ratio} color={ringCol} track={c.line} inner={timed ? (t ? 'pause' : 'play') : `${Math.round(Math.min(ratio, 9.99) * 100)}%`} ink={c.ink} />
             </Pressable>
             <Pressable style={{ flex: 1, gap: 4 }} onPress={() => setSheet(h.id)} accessibilityLabel={`${h.name}: log or edit`}>
-              <Text style={[s.row16, { fontFamily: font.semibold }]} numberOfLines={1}>
-                {keystone?.id === h.id ? <Text style={{ color: c.warn }}>★ </Text> : null}{h.name}
+              <Text style={{ fontFamily: font.bold, fontSize: 19, color: c.ink }} numberOfLines={1}>
+                {keystone?.id === h.id ? <Text style={{ color: c.gold }}>★ </Text> : null}{h.name}
               </Text>
-              <Dots h={h} valOn={valOn} todayI={D.todayI} START={D.series()[0]?.k} />
-              <Text style={s.label} numberOfLines={1}>{bits.join(' · ')}</Text>
+              <Dots h={h} valOn={valOn} todayI={D.todayI} START={D.series()[0]?.k} tint={tc} />
             </Pressable>
             {t ? (
               <View style={{ alignItems: 'flex-end', gap: 4 }}>
@@ -167,7 +164,7 @@ export function Habits({ openId, onOpened }: { openId?: string | null; onOpened?
               </View>
             ) : (
               <Pressable onPress={() => setSheet(h.id)} style={{ alignItems: 'flex-end' }}>
-                <Text style={[s.stat, s.num]}>{fq(v0)}</Text>
+                <Text style={{ fontFamily: font.bold, fontSize: 26, color: c.ink, letterSpacing: -0.5, fontVariant: ['tabular-nums'] }}>{fq(v0)}</Text>
                 <Text style={s.label}>of {trimNum(h.goal)} {h.unit}</Text>
               </Pressable>
             )}
@@ -193,7 +190,7 @@ export function Habits({ openId, onOpened }: { openId?: string | null; onOpened?
             { text: 'Cancel', style: 'cancel' },
             { text: 'Remove', style: 'destructive', onPress: () => { setSheet(null); cancelTimer(sheetHabit.id); run(db.updateHabit(sheetHabit.id, { archived_at: new Date().toISOString() })); } },
           ])}
-          valOn={valOn} steps={entries[day]?.steps ?? null} strength={D.habitStrength(sheetHabit)} longest={D.habitLongest(sheetHabit)} pct={D.habitPct(sheetHabit)}
+          tint={c.cat.move} valOn={valOn} steps={entries[day]?.steps ?? null} strength={D.habitStrength(sheetHabit)} longest={D.habitLongest(sheetHabit)} pct={D.habitPct(sheetHabit)}
           todayI={D.todayI} START={D.series()[0]?.k} />
       )}
       {adding && <AddHabit onClose={() => setAdding(false)} onAdd={(h) => { setAdding(false); run(db.addHabit(h)); }} />}
@@ -214,135 +211,155 @@ function HRing({ ratio, color, track, inner, ink }: { ratio: number; color: stri
         <Circle cx={28} cy={28} r={24} stroke={color} strokeWidth={5} fill="none" strokeLinecap="round" strokeDasharray={`${C} ${C}`}
           strokeDashoffset={C * (1 - Math.min(1, ratio))} transform="rotate(-90 28 28)" />
       </Svg>
-      <Text style={{ fontFamily: font.bold, fontSize: inner.length > 3 ? 11 : 14, color: ink }}>{inner}</Text>
+      {inner === 'play' || inner === 'pause' ? <Icon name={inner} size={18} color={ink} /> : <Text style={{ fontFamily: font.bold, fontSize: inner.length > 3 ? 11 : 14, color: ink }}>{inner}</Text>}
     </View>
   );
 }
 
 /** 7-day squares: filled = met, amber = logged but short, hollow = not logged. */
-function Dots({ h, valOn, todayI, START }: { h: HabitDef; valOn: (k: string, id: string) => number | null; todayI: number; START?: string }) {
+function Dots({ h, valOn, todayI, START, tint }: { h: HabitDef; valOn: (k: string, id: string) => number | null; todayI: number; START?: string; tint: Cat }) {
   const { c } = useTheme('habit');
   if (!START) return null;
+  // r19 .hdots: filled = goal met, amber = logged but short, hollow = not logged; today outlined.
   return (
-    <View style={{ flexDirection: 'row', gap: 4 }} accessibilityElementsHidden>
+    <View style={{ flexDirection: 'row', gap: 4, marginTop: 5, alignItems: 'center' }} accessibilityElementsHidden>
       {Array.from({ length: 7 }, (_, j) => {
         const i = todayI - 6 + j;
-        if (i < 0) return <View key={j} style={{ width: 11, height: 11 }} />;
+        if (i < 0) return <View key={j} style={{ width: 9, height: 9, borderRadius: 3, borderWidth: 1, borderColor: c.lineSoft }} />;
         const v = valOn(key(addDays(d(START), i)), h.id);
-        const bg = v == null ? 'transparent' : habitMet(h, v) ? c.cat.habit.fill : c.warn;
-        return <View key={j} style={{ width: 11, height: 11, borderRadius: 3, borderWidth: 1.5, borderColor: v == null ? c.line : bg, backgroundColor: bg }} />;
+        const met = v != null && habitMet(h, v);
+        const dot = <View style={{ width: 9, height: 9, borderRadius: 3, backgroundColor: v == null ? 'transparent' : met ? tint.fill : c.warn, borderWidth: v == null ? 1 : met ? 1.5 : 0, borderColor: v == null ? c.lineSoft : tint.ink }} />;
+        return i === todayI ? <View key={j} style={{ padding: 1.5, borderRadius: 4, borderWidth: 1.5, borderColor: c.ink2 }}>{dot}</View> : <View key={j}>{dot}</View>;
       })}
     </View>
   );
 }
 
 function HabitSheet(p: {
-  h: HabitDef; day: string; future: boolean; isKey: boolean; index: number; count: number; steps: number | null;
+  h: HabitDef; day: string; future: boolean; isKey: boolean; index: number; count: number; steps: number | null; tint: Cat;
   strength: number; longest: number; pct: number | null; todayI: number; START?: string;
   valOn: (k: string, id: string) => number | null; onClose: () => void; onSetValue: (v: number | null) => void; onSteps: (v: number | null) => void;
   onReset: () => void; onChanged: () => void; onGoal: (g: number) => void; onKey: () => void; onMove: (dir: 1 | -1) => void; onDelete: () => void;
 }) {
-  const { h, day } = p;
+  const { h, day, tint } = p;
   const { c, s } = useTheme('habit');
   const timed = isTimeUnit(h.unit), isHr = timed && unitMs(h.unit) === 3600000;
-  const vstep = isHr ? 1 / 12 : h.step;           // hour habits log in 5-minute notches
+  const vstep = isHr ? 1 / 12 : h.step > 0 ? h.step : 1;
   const cur = p.valOn(day, h.id);
   const [v, setV] = useState(cur ?? 0);
-  const [stepsTxt, setStepsTxt] = useState(p.steps != null ? String(p.steps) : '');
+  const [steps, setSteps] = useState(p.steps ?? 0);
   const [sessions, setSessions] = useState<db.HabitSession[]>([]);
   useEffect(() => setV(cur ?? 0), [cur]);
+  useEffect(() => setSteps(p.steps ?? 0), [p.steps]);
   useEffect(() => { if (timed) db.listHabitSessions(day).then((r) => setSessions(r.filter((x) => x.habit_id === h.id))).catch(() => {}); }, [timed, day, h.id, cur]);
   const fq = (x: number) => (isHr ? fmtHours(x) : trimNum(x));
-  const sState = p.strength >= 70 ? c.cat.habit.fill : p.strength >= 40 ? c.warn : c.danger;
-  const setTo = (x: number) => { const n = Math.max(0, +(Math.round(x / vstep) * vstep).toFixed(4)); setV(n); p.onSetValue(n); };
+  const sState = p.strength >= 70 ? tint.fill : p.strength >= 40 ? c.warn : c.danger;
+  const commit = (x: number) => { const n = Math.max(0, +x.toFixed(4)); setV(n); p.onSetValue(n); };
   const timedMs = sessions.reduce((a, g) => a + (new Date(g.ended_at).getTime() - new Date(g.started_at).getTime()), 0);
   const byHand = (cur ?? 0) * unitMs(h.unit) - timedMs;
-  const clock = (iso: string) => new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
+  const clock = (iso: string) => new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).toLowerCase();
   const bars = useMemo(() => Array.from({ length: 14 }, (_, j) => {
     const i = p.todayI - 13 + j;
     if (i < 0 || !p.START) return null;
-    const k = key(addDays(d(p.START), i)), val = p.valOn(k, h.id);
-    return { k, val };
+    const k = key(addDays(d(p.START), i));
+    return { k, val: p.valOn(k, h.id) };
   }), [p.todayI, p.START, p.valOn, h.id]);
-
+  // r19 wheels: hours and minutes for hour habits, one value wheel otherwise; Walk adds two steps wheels.
+  const hh = Math.floor(v), mm = Math.min(59, Math.round((v - hh) * 60));
+  const wmax = Math.max(Math.ceil((h.goal * 2) / vstep) * vstep, vstep * 20, Math.ceil(v / vstep) * vstep + vstep * 4);
+  const sk = Math.floor(steps / 1000) * 1000, sh = Math.min(950, Math.round((steps - sk) / 50) * 50);
+  const setStepsTo = (n: number) => { setSteps(n); p.onSteps(n); };
+  const Hic = ({ icon, glyph, label, onPress, disabled, on }: { icon?: string; glyph?: string; label: string; onPress: () => void; disabled?: boolean; on?: boolean }) => (
+    <Pressable onPress={onPress} disabled={disabled} accessibilityLabel={label} style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: on ? c.gold : c.line, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center', opacity: disabled ? 0.35 : 1 }}>
+      {icon ? <Icon name={icon} size={15} color={c.ink2} /> : <Text style={{ fontSize: 16, color: on ? c.gold : c.ink2 }}>{glyph}</Text>}
+    </Pressable>
+  );
   return (
     <Modal transparent animationType="slide" onRequestClose={p.onClose}>
-      <KeyboardAvoidingView behavior="padding" style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: '#0006' }}>
+      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: '#0006' }}>
         <Pressable style={{ flex: 1 }} onPress={p.onClose} accessibilityLabel="Close" />
-        <ScrollView style={{ maxHeight: '88%', backgroundColor: c.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22 }}
-          contentContainerStyle={{ padding: 20, paddingBottom: 36, gap: 14 }} keyboardShouldPersistTaps="handled">
+        <ScrollView style={{ maxHeight: '88%', backgroundColor: c.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22 }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 32, gap: 12 }}>
+          <View style={{ alignItems: 'center' }}><View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: c.line }} /></View>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={[s.cardTitle, { flex: 1 }]}>{h.name}</Text>
-            <Pressable onPress={p.onClose} accessibilityLabel="Close" hitSlop={10}><Text style={{ fontSize: 20, color: c.ink2 }}>✕</Text></Pressable>
+            <Text style={{ flex: 1, fontFamily: font.bold, fontSize: 18, color: c.ink }}>{h.name}</Text>
+            <Pressable onPress={p.onClose} accessibilityLabel="Close" style={{ width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: c.line, backgroundColor: c.surface2, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 14, color: c.ink2 }}>✕</Text>
+            </Pressable>
           </View>
-          <Text style={s.label}>{day === new Date().toLocaleDateString('en-CA') ? 'Today' : shortDate(d(day))} · {h.type === 'limit' ? `stay at or under ${fq(h.goal)} ${h.unit}` : `goal ${fq(h.goal)} ${h.unit}`}</Text>
           {p.future ? <Text style={s.body2}>This day hasn't happened yet.</Text> : (
             <>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Big glyph="−" label="Less" onPress={() => setTo(v - vstep)} />
-                <View style={{ flex: 1, alignItems: 'center' }}>
-                  <Text style={{ fontFamily: font.bold, fontSize: 40, color: c.ink, fontVariant: ['tabular-nums'] }}>{fq(v)}</Text>
-                  <Text style={s.label}>{isHr ? 'hours' : h.unit}</Text>
-                </View>
-                <Big glyph="+" label="More" onPress={() => setTo(v + vstep)} />
+              <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 8 }}>
+                <Text style={{ fontFamily: font.bold, fontSize: 34, color: c.ink, fontVariant: ['tabular-nums'] }}>{fq(v)}</Text>
+                <Text style={{ fontFamily: font.bold, fontSize: 10.5, color: c.muted }}>{isHr ? 'hours' : h.unit}</Text>
+                {tracksSteps(h) && <>
+                  <Text style={{ fontFamily: font.bold, fontSize: 20, color: c.muted }}>·</Text>
+                  <Text style={{ fontFamily: font.bold, fontSize: 34, color: c.ink, fontVariant: ['tabular-nums'] }}>{steps.toLocaleString('en-US')}</Text>
+                  <Text style={{ fontFamily: font.bold, fontSize: 10.5, color: c.muted }}>steps</Text>
+                </>}
               </View>
-              <View style={[s.row, { flexWrap: 'wrap' }]}>
-                {[h.goal, h.goal / 2, h.goal * 1.5].filter((x, i, a) => x > 0 && a.indexOf(x) === i).map((x) => (
-                  <Chip key={x} label={`${fq(+x.toFixed(4))}${isHr ? ' h' : ''}`} onPress={() => setTo(x)} />
-                ))}
+              <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start', gap: 6 }}>
+                {isHr ? (
+                  <>
+                    <Wheel label="hr" values={range(0, 24, 1)} value={hh} format={(x) => String(x)} color={tint.fill} onChange={(x) => commit(x + mm / 60)} />
+                    <Text style={{ fontFamily: font.bold, fontSize: 24, color: c.muted, marginTop: 52 }}>:</Text>
+                    <Wheel label="min" values={range(0, 59, 1)} value={mm} format={(x) => String(x).padStart(2, '0')} color={tint.fill} onChange={(x) => commit(hh + x / 60)} />
+                  </>
+                ) : (
+                  <Wheel label={h.unit} values={range(0, wmax, vstep)} value={Math.round(v / vstep) * vstep} format={(x) => trimNum(x)} color={tint.fill} onChange={commit} />
+                )}
+                {tracksSteps(h) && <>
+                  <Wheel label="×1000" values={range(0, 30000, 1000)} value={sk} format={(x) => String(Math.round(x / 1000))} color={tint.fill} onChange={(x) => setStepsTo(x + sh)} />
+                  <Wheel label="steps" values={range(0, 950, 50)} value={sh} format={(x) => String(Math.round(x)).padStart(3, '0')} color={tint.fill} onChange={(x) => setStepsTo(sk + x)} />
+                </>}
               </View>
-              {tracksSteps(h) && (
-                <View style={{ gap: 6 }}>
-                  <Text style={s.label}>Steps that day</Text>
-                  <View style={s.row}>
-                    <TextInput style={[s.input, { flex: 1 }]} keyboardType="number-pad" value={stepsTxt} onChangeText={setStepsTxt} placeholder="0" placeholderTextColor={c.muted}
-                      onBlur={() => { const n = stepsTxt.trim() === '' ? null : Math.round(+stepsTxt); if (n == null || (n >= 0 && n <= 200000)) p.onSteps(n); }} accessibilityLabel="Steps" />
-                  </View>
-                </View>
-              )}
-              <Pressable style={[s.outline, { alignSelf: 'flex-start' }]} onPress={() => { setV(0); p.onReset(); }}><Text style={s.outlineText}>↺ Reset to zero</Text></Pressable>
+              <View style={{ flexDirection: 'row' }}>
+                <Pressable onPress={() => { setV(0); p.onReset(); }} accessibilityLabel="Reset today to zero"
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 40, paddingHorizontal: 14, borderRadius: 999, borderWidth: 1, borderColor: c.line }}>
+                  <Icon name="reset" size={15} color={c.ink} /><Text style={{ fontFamily: font.semibold, fontSize: 13.5, color: c.ink }}>Reset to zero</Text>
+                </Pressable>
+              </View>
             </>
           )}
           {timed && (sessions.length > 0 || byHand >= 60000) && (
-            <View style={{ gap: 6 }}>
-              <Text style={[s.label, { fontFamily: font.semibold }]}>Sessions</Text>
+            <View style={{ gap: 2, borderTopWidth: 1, borderTopColor: c.lineSoft, paddingTop: 10 }}>
+              <Text style={{ fontFamily: font.bold, fontSize: 11, color: c.muted }}>Sessions</Text>
               {sessions.map((g) => (
-                <View key={g.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <Text style={[s.body, { flex: 1 }]}>{clock(g.started_at)} – {clock(g.ended_at)}{g.source === 'pomodoro' ? ' · focus' : ''}</Text>
-                  <Text style={[s.body, s.num]}>{fmtHours((new Date(g.ended_at).getTime() - new Date(g.started_at).getTime()) / 3600000)}</Text>
-                  <Pressable hitSlop={8} accessibilityLabel="Delete this session" onPress={() => deleteSession(h, g, cur).then(p.onChanged)}>
-                    <Text style={{ color: c.danger }}>Delete</Text>
-                  </Pressable>
+                <View key={g.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 }}>
+                  <Text style={[s.body, { flex: 1 }]}>{clock(g.started_at)} — {clock(g.ended_at)}{g.source === 'pomodoro' ? ' · focus' : ''}</Text>
+                  <Text style={[s.body, s.num, { fontFamily: font.bold }]}>{fmtHours((new Date(g.ended_at).getTime() - new Date(g.started_at).getTime()) / 3600000)}</Text>
+                  <Pressable hitSlop={8} accessibilityLabel="Delete this session" onPress={() => deleteSession(h, g, cur).then(p.onChanged)}><Icon name="trash" size={16} color={c.muted} /></Pressable>
                 </View>
               ))}
               {byHand >= 60000 && <Text style={s.label}>Entered by hand +{fmtHours(byHand / 3600000)}</Text>}
             </View>
           )}
-          <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 60 }} accessibilityLabel="Last 14 days">
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 2, height: 46 }} accessibilityLabel="Last 14 days">
             {bars.map((b, j) => {
               if (!b) return <View key={j} style={{ flex: 1 }} />;
-              if (b.val == null) return <View key={j} style={{ flex: 1, height: 6, borderRadius: 2, backgroundColor: c.lineSoft }} />;
+              const today = b.k === day;
+              const box = { flex: 1, height: '100%' as const, borderTopLeftRadius: 3, borderTopRightRadius: 3, justifyContent: 'flex-end' as const, overflow: 'hidden' as const,
+                backgroundColor: b.val == null ? 'transparent' : c.lineSoft, borderWidth: today ? 1.5 : 0, borderColor: c.ink2 };
+              if (b.val == null) return <View key={j} style={box}><View style={{ height: 2, borderRadius: 2, backgroundColor: c.line }} /></View>;
               const frac = h.goal > 0 ? b.val / h.goal : b.val > 0 ? 1 : 0;
-              return <View key={j} style={{ flex: 1, height: `${Math.max(8, Math.min(100, Math.round(frac * 100)))}%`, borderRadius: 3,
-                backgroundColor: habitMet(h, b.val) ? c.cat.habit.fill : h.type === 'build' ? c.warn : c.danger, borderWidth: b.k === day ? 1.5 : 0, borderColor: c.ink }} />;
+              return <View key={j} style={box}><View style={{ height: `${Math.max(8, Math.min(100, Math.round(frac * 100)))}%`, backgroundColor: habitMet(h, b.val) ? tint.fill : h.type === 'build' ? c.warn : c.danger }} /></View>;
             })}
           </View>
           <Text style={s.label}><Text style={{ color: sState }}>● </Text>Strength {p.strength}{p.longest ? ` · best ${p.longest}` : ''}{p.pct != null ? ` · ${p.pct}% of days` : ''}</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', borderTopWidth: 1, borderTopColor: c.lineSoft, paddingTop: 12 }}>
             <Text style={s.label}>Goal</Text>
-            <Big small glyph="−" label="Lower goal" onPress={() => p.onGoal(Math.max(0, +(h.goal - h.step).toFixed(4)))} />
-            <Text style={[s.body, { fontFamily: font.semibold, minWidth: 40, textAlign: 'center' }]}>{fq(h.goal)}</Text>
-            <Big small glyph="+" label="Raise goal" onPress={() => p.onGoal(+(h.goal + h.step).toFixed(4))} />
+            <Hic glyph="−" label="Lower goal" onPress={() => p.onGoal(Math.max(0, +(h.goal - h.step).toFixed(4)))} />
+            <Text style={[s.body, { fontFamily: font.bold, minWidth: 40, textAlign: 'center', fontVariant: ['tabular-nums'] }]}>{fq(h.goal)}</Text>
+            <Hic glyph="+" label="Raise goal" onPress={() => p.onGoal(+(h.goal + h.step).toFixed(4))} />
             <Text style={s.label}>{h.unit}{h.type === 'limit' ? ' max' : ''}</Text>
-          </View>
-          <View style={s.row}>
-            <Pressable style={[s.outline, { flex: 1 }]} onPress={p.onKey}><Text style={s.outlineText}>{p.isKey ? '★ Keystone' : '☆ Make keystone'}</Text></Pressable>
-            <Pressable style={[s.outline, p.index <= 0 && { opacity: 0.35 }]} disabled={p.index <= 0} onPress={() => p.onMove(-1)} accessibilityLabel="Move up"><Text style={s.outlineText}>↑</Text></Pressable>
-            <Pressable style={[s.outline, p.index >= p.count - 1 && { opacity: 0.35 }]} disabled={p.index >= p.count - 1} onPress={() => p.onMove(1)} accessibilityLabel="Move down"><Text style={s.outlineText}>↓</Text></Pressable>
-            <Pressable style={s.outline} onPress={p.onDelete} accessibilityLabel="Remove habit"><Text style={[s.outlineText, { color: c.danger }]}>Remove</Text></Pressable>
+            <View style={{ flexDirection: 'row', gap: 6, marginLeft: 'auto' }}>
+              <Hic glyph={p.isKey ? '★' : '☆'} on={p.isKey} label={p.isKey ? 'Keystone habit' : 'Make this the keystone'} onPress={p.onKey} />
+              <Hic icon="up" label="Move up" disabled={p.index <= 0} onPress={() => p.onMove(-1)} />
+              <Hic icon="down" label="Move down" disabled={p.index >= p.count - 1} onPress={() => p.onMove(1)} />
+              <Hic icon="trash" label="Remove habit" onPress={p.onDelete} />
+            </View>
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
@@ -412,11 +429,11 @@ function WalkSteps({ ask, current, onClose, onAdd }: { ask: { h: HabitDef; day: 
   );
 }
 
-function IconBtn({ label, glyph, onPress, on }: { label: string; glyph: string; onPress: () => void; on?: boolean }) {
+function IconBtn({ label, icon, onPress, on }: { label: string; icon: string; onPress: () => void; on?: boolean }) {
   const { c } = useTheme('habit');
   return (
-    <Pressable onPress={onPress} accessibilityLabel={label} style={{ width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: c.line, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? c.cat.habit.soft : 'transparent' }}>
-      <Text style={{ fontSize: 20, color: c.ink, fontFamily: font.medium }}>{glyph}</Text>
+    <Pressable onPress={onPress} accessibilityLabel={label} style={{ width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: c.line, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? c.cat.habit.soft : c.surface }}>
+      <Icon name={icon} size={17} color={c.ink} />
     </Pressable>
   );
 }

@@ -10,6 +10,7 @@ import { ScreenHeader } from '../../../components/ScreenHeader';
 import floors from '../../../domain/data/floors.json';
 import { d, diffDays, shortDate } from '../../../domain/dates';
 import { currentQuote, nextQuote } from '../../../domain/quotes';
+import { Icon } from '../../../components/Icon';
 import * as db from '../../../lib/db';
 import { evidence, latestWeight, trainedOn, useHistory } from '../../../lib/history';
 import { useRecomp } from '../../../lib/recomp';
@@ -118,12 +119,16 @@ export default function Today() {
               <View key={i} style={{ borderRadius: 999, borderWidth: 1, borderColor: '#ffffff33', paddingHorizontal: 12, paddingVertical: 7 }}>
                 <Text style={{ color: c.pauseInk, fontFamily: font.regular, fontSize: 13 }}>
                   {ch.before === false || !ch.before ? ch.t : ''}
-                  {ch.b ? <Text style={{ fontFamily: font.bold }}>{ch.b}</Text> : null}
+                  {ch.b ? <Text style={{ fontFamily: font.bold, color: c.cat.move.fill }}>{ch.b}</Text> : null}
                   {ch.before ? ch.t : ''}
                 </Text>
               </View>
             ))}
           </View>
+          <Pressable onPress={() => setQuote(nextQuote())} accessibilityLabel="Show another" hitSlop={8}
+            style={{ alignSelf: 'flex-start', width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: '#ffffff33', alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name="shuffle" size={16} color={c.pauseInk} />
+          </Pressable>
         </Pressable>
 
         <Habits openId={habit} onOpened={() => router.setParams({ habit: undefined })} />

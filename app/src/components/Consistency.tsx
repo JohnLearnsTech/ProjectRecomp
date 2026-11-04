@@ -3,12 +3,17 @@ import { Pressable, Text, View } from 'react-native';
 import { addDays, d, key, shortDate } from '../domain/dates';
 import { useDays } from '../lib/days';
 import { useRecomp } from '../lib/recomp';
-import { font, useTheme, type Palette } from '../lib/theme';
+import { font, mix, useTheme, type Palette } from '../lib/theme';
 
 export const DOT_NAME: Record<string, string> = { full: 'all done', most: 'most done', some: 'some done', none: 'missed', empty: 'nothing logged', pend: 'today, in progress', future: 'ahead', out: 'outside the plan' };
 /** Colours for r19's dot and calendar states. Lightness differs, not hue alone. */
 export const dotFill = (c: Palette, st: string) =>
   st === 'full' ? c.cat.move.fill : st === 'most' ? c.cat.move.fill + '8c' : st === 'some' ? c.cat.move.fill + '40' : st === 'none' ? c.warnSoft : 'transparent';
+
+/** r19 .cs-d on Today's card: shades of the accent's ink over the soft line colour. */
+const csFill = (c: Palette, st: string) =>
+  st === 'full' ? c.cat.move.ink : st === 'most' ? mix(c.cat.move.ink, c.lineSoft, 0.58) : st === 'some' ? mix(c.cat.move.ink, c.lineSoft, 0.26)
+    : st === 'none' ? mix(c.warn, c.lineSoft, 0.45) : st === 'future' || st === 'out' ? 'transparent' : c.lineSoft;
 
 /** Today's Consistency card: four Monday-to-Sunday weeks, one pill a day; tap opens Progress. */
 export function ConsistencyCard() {
@@ -36,8 +41,8 @@ export function ConsistencyCard() {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 6 }}>
         {cells.map(({ k, dt, st }) => (
           <View key={k} style={{ width: `${100 / 7}%`, paddingHorizontal: 3 }} accessibilityLabel={`${shortDate(dt)}: ${DOT_NAME[st] ?? st}`}>
-            <View style={{ height: 22, borderRadius: 11, backgroundColor: dotFill(c, st), borderWidth: st === 'empty' || st === 'pend' || st === 'future' ? 1 : 0,
-              borderColor: c.line, opacity: st === 'out' ? 0.3 : 1, ...(k === maxDay ? { borderWidth: 2, borderColor: c.ink } : null) }} />
+            <View style={{ height: 20, borderRadius: 8, backgroundColor: csFill(c, st), borderWidth: st === 'future' || st === 'out' ? 1 : 0, borderColor: c.lineSoft,
+              ...(k === maxDay ? { borderWidth: 1.5, borderColor: c.ink } : null) }} />
           </View>
         ))}
       </View>
