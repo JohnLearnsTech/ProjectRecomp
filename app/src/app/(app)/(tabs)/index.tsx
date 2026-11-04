@@ -11,6 +11,7 @@ import floors from '../../../domain/data/floors.json';
 import { d, diffDays, shortDate } from '../../../domain/dates';
 import { currentQuote, nextQuote } from '../../../domain/quotes';
 import { Icon } from '../../../components/Icon';
+import { WeekCard } from '../../../components/WeekCard';
 import * as db from '../../../lib/db';
 import { evidence, latestWeight, trainedOn, useHistory } from '../../../lib/history';
 import { useRecomp } from '../../../lib/recomp';
@@ -131,6 +132,7 @@ export default function Today() {
           </Pressable>
         </Pressable>
 
+        <WeekCard />
         <Habits openId={habit} onOpened={() => router.setParams({ habit: undefined })} />
         <ConsistencyCard />
 

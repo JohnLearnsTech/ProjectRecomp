@@ -265,9 +265,7 @@ function HabitSheet(p: {
     return { k, val: p.valOn(k, h.id) };
   }), [p.todayI, p.START, p.valOn, h.id]);
   // r19 wheels: hours and minutes for hour habits, one value wheel otherwise; Walk adds two steps wheels.
-  const hh = Math.floor(v), mm = Math.min(59, Math.round((v - hh) * 60));
   const wmax = Math.max(Math.ceil((h.goal * 2) / vstep) * vstep, vstep * 20, Math.ceil(v / vstep) * vstep + vstep * 4);
-  const sk = Math.floor(steps / 1000) * 1000, sh = Math.min(950, Math.round((steps - sk) / 50) * 50);
   const setStepsTo = (n: number) => { setSteps(n); p.onSteps(n); };
   const Hic = ({ icon, glyph, label, onPress, disabled, on }: { icon?: string; glyph?: string; label: string; onPress: () => void; disabled?: boolean; on?: boolean }) => (
     <Pressable onPress={onPress} disabled={disabled} accessibilityLabel={label} style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: on ? c.gold : c.line, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center', opacity: disabled ? 0.35 : 1 }}>
@@ -288,30 +286,37 @@ function HabitSheet(p: {
           </View>
           {p.future ? <Text style={s.body2}>This day hasn't happened yet.</Text> : (
             <>
-              <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 8 }}>
-                <Text style={{ fontFamily: font.bold, fontSize: 34, color: c.ink, fontVariant: ['tabular-nums'] }}>{fq(v)}</Text>
-                <Text style={{ fontFamily: font.bold, fontSize: 10.5, color: c.muted }}>{isHr ? 'hours' : h.unit}</Text>
-                {tracksSteps(h) && <>
-                  <Text style={{ fontFamily: font.bold, fontSize: 20, color: c.muted }}>·</Text>
-                  <Text style={{ fontFamily: font.bold, fontSize: 34, color: c.ink, fontVariant: ['tabular-nums'] }}>{steps.toLocaleString('en-US')}</Text>
-                  <Text style={{ fontFamily: font.bold, fontSize: 10.5, color: c.muted }}>steps</Text>
-                </>}
-              </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start', gap: 6 }}>
-                {isHr ? (
-                  <>
-                    <Wheel label="hr" values={range(0, 24, 1)} value={hh} format={(x) => String(x)} color={tint.fill} onChange={(x) => commit(x + mm / 60)} />
-                    <Text style={{ fontFamily: font.bold, fontSize: 24, color: c.muted, marginTop: 52 }}>:</Text>
-                    <Wheel label="min" values={range(0, 59, 1)} value={mm} format={(x) => String(x).padStart(2, '0')} color={tint.fill} onChange={(x) => commit(hh + x / 60)} />
-                  </>
-                ) : (
-                  <Wheel label={h.unit} values={range(0, wmax, vstep)} value={Math.round(v / vstep) * vstep} format={(x) => trimNum(x)} color={tint.fill} onChange={commit} />
-                )}
-                {tracksSteps(h) && <>
-                  <Wheel label="×1000" values={range(0, 30000, 1000)} value={sk} format={(x) => String(Math.round(x / 1000))} color={tint.fill} onChange={(x) => setStepsTo(x + sh)} />
-                  <Wheel label="steps" values={range(0, 950, 50)} value={sh} format={(x) => String(Math.round(x)).padStart(3, '0')} color={tint.fill} onChange={(x) => setStepsTo(sk + x)} />
-                </>}
-              </View>
+              {timed || tracksSteps(h) ? (
+                // Time habits and Walk: plain text boxes (owner's choice over r19's wheels).
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  {timed && (
+                    <TypeBox label={isHr ? 'Time (h:mm)' : `Time (${h.unit})`} value={fq(v)} placeholder={isHr ? '1:30' : '20'}
+                      parse={(t) => {
+                        const m = t.trim().match(/^(\d{1,2}):(\d{1,2})$/);
+                        if (isHr) return m ? +m[1] + Math.min(59, +m[2]) / 60 : t.trim() === '' ? 0 : Number(t.replace(',', '.'));
+                        return m ? +m[1] * 60 + +m[2] : t.trim() === '' ? 0 : Number(t.replace(',', '.'));
+                      }}
+                      ok={(x) => x >= 0 && x <= (isHr ? 24 : 1440)} onCommit={commit} />
+                  )}
+                  {!timed && (
+                    <TypeBox label={h.unit || 'Value'} value={trimNum(v)} placeholder="0" parse={(t) => (t.trim() === '' ? 0 : Number(t.replace(',', '.')))} ok={(x) => x >= 0} onCommit={commit} />
+                  )}
+                  {tracksSteps(h) && (
+                    <TypeBox label="Steps" value={steps ? String(steps) : ''} placeholder="6000" parse={(t) => (t.trim() === '' ? 0 : Math.round(Number(t.replace(/[,\s]/g, ''))))}
+                      ok={(x) => x >= 0 && x <= 200000} onCommit={setStepsTo} />
+                  )}
+                </View>
+              ) : (
+                <>
+                  <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 8 }}>
+                    <Text style={{ fontFamily: font.bold, fontSize: 34, color: c.ink, fontVariant: ['tabular-nums'] }}>{fq(v)}</Text>
+                    <Text style={{ fontFamily: font.bold, fontSize: 10.5, color: c.muted }}>{h.unit}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+                    <Wheel label={h.unit} values={range(0, wmax, vstep)} value={Math.round(v / vstep) * vstep} format={(x) => trimNum(x)} color={tint.fill} onChange={commit} />
+                  </View>
+                </>
+              )}
               <View style={{ flexDirection: 'row' }}>
                 <Pressable onPress={() => { setV(0); p.onReset(); }} accessibilityLabel="Reset today to zero"
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 40, paddingHorizontal: 14, borderRadius: 999, borderWidth: 1, borderColor: c.line }}>
@@ -361,6 +366,23 @@ function HabitSheet(p: {
         </ScrollView>
       </View>
     </Modal>
+  );
+}
+
+/** A labelled number box that saves when you leave it or press done; refuses values out of range. */
+function TypeBox({ label, value, placeholder, parse, ok, onCommit }: { label: string; value: string; placeholder: string; parse: (t: string) => number; ok: (x: number) => boolean; onCommit: (x: number) => void }) {
+  const { c, s } = useTheme('habit');
+  const [t, setT] = useState(value);
+  const [bad, setBad] = useState(false);
+  useEffect(() => setT(value), [value]);
+  const save = () => { const x = parse(t); if (!Number.isFinite(x) || !ok(x)) { setBad(true); return; } setBad(false); onCommit(x); };
+  return (
+    <View style={{ flex: 1, gap: 5 }}>
+      <Text style={{ fontFamily: font.bold, fontSize: 11, color: c.ink2 }}>{label}</Text>
+      <TextInput style={[s.input, { fontSize: 24, fontFamily: font.bold, minHeight: 56, textAlign: 'center' }, bad && { borderColor: c.danger }]} value={t} onChangeText={(x) => { setT(x); setBad(false); }}
+        onBlur={save} onSubmitEditing={save} returnKeyType="done" keyboardType="numbers-and-punctuation" placeholder={placeholder} placeholderTextColor={c.muted} accessibilityLabel={label} selectTextOnFocus />
+      {bad && <Text style={s.error}>That doesn't look right.</Text>}
+    </View>
   );
 }
 

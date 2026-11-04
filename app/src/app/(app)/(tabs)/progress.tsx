@@ -30,6 +30,7 @@ export default function Progress() {
   const ys = useRef<Record<string, number>>({});
   const [cur, setCur] = useState('chart');
   const mark = (k: string) => (e: LayoutChangeEvent) => { ys.current[k] = e.nativeEvent.layout.y; };
+  useEffect(() => { if (at === 'review' && ys.current.review != null) { scroll.current?.scrollTo({ y: ys.current.review - 56, animated: true }); router.setParams({ at: undefined }); } }, [at, calY]);
   useEffect(() => { if (at === 'cal' && calY != null) { scroll.current?.scrollTo({ y: calY - 12, animated: true }); router.setParams({ at: undefined }); } }, [at, calY]);
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.paper }} edges={['top']}>
