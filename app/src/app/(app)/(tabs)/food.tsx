@@ -16,6 +16,7 @@ import { ScreenHeader } from '../../../components/ScreenHeader';
 import { addKey, d, shortDate } from '../../../domain/dates';
 import { foodName, foodTotals, fqQty, mealKcal, mealSig, recentMeals, shortFoodLabel } from '../../../domain/food';
 import type { FoodRow } from '../../../domain/types';
+import { useDays } from '../../../lib/days';
 import * as db from '../../../lib/db';
 import { addFoodText, addMealRows, rememberFood, toRow } from '../../../lib/foodlog';
 import { useRecomp } from '../../../lib/recomp';
@@ -103,6 +104,12 @@ export default function Food() {
   ];
 
   const t = foodTotals(rows);
+  // The chart and Today read the day cache; if it disagrees with the rows just fetched (food
+  // changed elsewhere, such as Claude through the connector), refresh it so every number matches.
+  const { entries: dayCache, reload: reloadDays } = useDays();
+  const cached = Math.round(+(dayCache[day]?.kcal ?? 0));
+  const fresh = Math.round(rows.reduce((a, r) => a + (+r.kcal || 0), 0));
+  useEffect(() => { if (rows.length && cached !== fresh) reloadDays().catch(() => {}); }, [cached, fresh]); // eslint-disable-line react-hooks/exhaustive-deps
   const pending = rows.filter((r) => r.needs_estimate).length;
 
   // Group consecutive rows by meal for the table (legacy rows without a meal stay ungrouped).

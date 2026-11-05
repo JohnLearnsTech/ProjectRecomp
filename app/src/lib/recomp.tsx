@@ -85,7 +85,9 @@ export function RecompProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const roll = () => { const now = todayKey(); setReal((r) => (r === now ? r : now)); };
     const t = setInterval(roll, 60000);
-    const sub = AppState.addEventListener('change', (s) => { if (s === 'active') roll(); });
+    // Coming back to the app also refetches: Claude may have logged or estimated food through the
+    // connector while the person was away, and every screen's cache must pick that up together.
+    const sub = AppState.addEventListener('change', (s) => { if (s === 'active') { roll(); setRev((r) => r + 1); } });
     return () => { clearInterval(t); sub.remove(); };
   }, []);
   useEffect(() => {
