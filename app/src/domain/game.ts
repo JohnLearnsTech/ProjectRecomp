@@ -9,7 +9,21 @@ import { addDays, d, diffDays, key, mondayOf } from './dates';
 import { habitMet, isTimeUnit, tracksSteps, unitMs, type DayEntry, type Entries, type HabitDef } from './days';
 import type { Engine } from './plan';
 
-export const LEVELS: [number, string][] = [[0, 'Day One'], [3, 'Showing Up'], [10, 'Building'], [25, 'Consistent'], [50, 'Hardworking'], [100, 'Unstoppable']];
+// Ten ranks, never more than 20 days won apart, so the next one is always within reach. Each has
+// an identity line and its own colour, cool to warm to gold.
+export const RANKS: { at: number; name: string; motto: string; tint: string }[] = [
+  { at: 0, name: 'Day One', motto: 'Every streak starts with one day.', tint: '#8A94A6' },
+  { at: 3, name: 'Showing Up', motto: 'You came back. Most people don’t.', tint: '#3FB8AF' },
+  { at: 7, name: 'First Week', motto: 'A week of proof that you can.', tint: '#4CB86A' },
+  { at: 14, name: 'Building', motto: 'It’s turning into a routine.', tint: '#8CC63F' },
+  { at: 21, name: 'Steady', motto: 'Three weeks in. This isn’t luck.', tint: '#E3C23A' },
+  { at: 30, name: 'Consistent', motto: 'A month of keeping your word to yourself.', tint: '#F2994A' },
+  { at: 45, name: 'Committed', motto: 'This is who you are now.', tint: '#EB5757' },
+  { at: 60, name: 'Hardworking', motto: 'Two months. People notice.', tint: '#D65DB1' },
+  { at: 80, name: 'Relentless', motto: 'Bad days don’t stop you any more.', tint: '#9B6BFF' },
+  { at: 100, name: 'Unstoppable', motto: 'A hundred days won. Rare air.', tint: '#FFC83D' },
+];
+export const LEVELS: [number, string][] = RANKS.map((r) => [r.at, r.name]);
 export const DAY_CAP = 100;
 
 export type DayResult = { k: string; won: boolean; pending: boolean; pts: number; comeback: boolean; type: string };
@@ -107,7 +121,7 @@ export function gameState(g: GameInput) {
   ];
   return {
     days, today, totalWon, points, streak, best, badges,
-    level: { i: li, name: LEVELS[li][1], next: next ? { name: next[1], need: next[0] - totalWon, at: next[0] } : null, from: LEVELS[li][0] },
+    level: { i: li, name: LEVELS[li][1], motto: RANKS[li].motto, tint: RANKS[li].tint, next: next ? { name: next[1], need: next[0] - totalWon, at: next[0], tint: RANKS[li + 1].tint } : null, from: LEVELS[li][0] },
     daysIn: diffDays(d(START), d(maxDay)) + 1,
   };
 }

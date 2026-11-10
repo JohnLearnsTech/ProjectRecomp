@@ -2,20 +2,43 @@ import type React from 'react';
 // What the game shows: your level and today's floor on Today, a short celebration when a day is
 // won or a level or badge is earned, and the badges on Progress. Points appear only when earned.
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Animated, Modal, Pressable, ScrollView, Text, Vibration, View } from 'react-native';
+import Svg, { Circle, Path, Text as SvgText } from 'react-native-svg';
 import { d, shortDate } from '../domain/dates';
-import { DAY_CAP, floorFor, LEVELS } from '../domain/game';
+import { DAY_CAP, floorFor, LEVELS, RANKS } from '../domain/game';
 import { proteinFloor } from '../domain/plan';
 import { useDays } from '../lib/days';
 import { useGame } from '../lib/game';
 import { useRecomp } from '../lib/recomp';
-import { font, useTheme } from '../lib/theme';
+import { font, mix, useTheme } from '../lib/theme';
 import { Icon } from './Icon';
 
 const seen = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
 const mark = (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* ignore */ } };
 
-/** Today: level, progress to the next one, the streak, and today's floor. */
+/** A rank's emblem: a shield in the rank's colour with its number, inside a progress ring.
+ *  Locked ranks are an outline. */
+export function Emblem({ n, tint, size = 64, pct, locked, track }: { n: number; tint: string; size?: number; pct?: number; locked?: boolean; track?: string }) {
+  const { c } = useTheme('move');
+  const r = 46, circ = 2 * Math.PI * r;
+  // A rounded shield: flat top, pointed base.
+  const shield = 'M50 16 L76 26 Q78 27 78 30 L78 52 Q78 72 50 86 Q22 72 22 52 L22 30 Q22 27 24 26 Z';
+  return (
+    <Svg width={size} height={size} viewBox="0 0 100 100">
+      {pct != null && <>
+        <Circle cx={50} cy={50} r={r} stroke={track ?? c.lineSoft} strokeWidth={5} fill="none" />
+        <Circle cx={50} cy={50} r={r} stroke={tint} strokeWidth={5} fill="none" strokeLinecap="round" strokeDasharray={`${circ} ${circ}`}
+          strokeDashoffset={circ * (1 - Math.max(0.02, Math.min(1, pct / 100)))} transform="rotate(-90 50 50)" />
+      </>}
+      {/* Locked: the rank's own colour, faint, so the next one is something to look forward to. */}
+      <Path d={shield} fill={locked ? mix(tint, c.surface, 0.18) : tint} stroke={locked ? mix(tint, c.surface, 0.6) : mix(tint, '#000000', 0.75)} strokeWidth={locked ? 3 : 2.5} strokeDasharray={locked ? '6 4' : undefined} />
+      {!locked && <Path d="M50 22 L72 30 L72 40 Q50 32 28 40 L28 30 Z" fill="#ffffff" opacity={0.18} />}
+      <SvgText x={50} y={61} fontSize={n >= 10 ? 26 : 30} fontWeight="700" fontFamily={font.bold} textAnchor="middle" fill={locked ? mix(tint, c.ink, 0.55) : '#101210'}>{String(n)}</SvgText>
+    </Svg>
+  );
+}
+
+/** Today: your rank, how close the next one is, the streak, and today's floor. */
 export function GameBar() {
   const g = useGame();
   const { engine, maxDay, day } = useRecomp();
@@ -24,37 +47,55 @@ export function GameBar() {
   const [guide, setGuide] = useState(false);
   if (!g) return null;
   const L = g.level, nx = L.next;
-  const pct = nx ? ((g.totalWon - L.from) / Math.max(1, nx.at - L.from)) * 100 : 100;
+  const span = nx ? nx.at - L.from : 1, done = g.totalWon - L.from;
+  const pct = nx ? (done / Math.max(1, span)) * 100 : 100;
   const f = floorFor(engine, maxDay, entries[maxDay], habits, proteinFloor(engine.PROFILE, engine.G), D.trainedOn(maxDay));
   const won = !!g.today?.won;
+  const bg = mix(L.tint, c.surface, 0.13), edge = mix(L.tint, c.surface, 0.45);
   return (
     <>
-    <Pressable onPress={() => setGuide(true)} accessibilityRole="button" accessibilityLabel={`${L.name}. How the game works`} style={[s.card, { gap: 10, paddingVertical: 14 }]}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: c.cat.move.fill, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontFamily: font.bold, fontSize: 18, color: c.cat.move.on }}>{L.i + 1}</Text>
-        </View>
-        <View style={{ flex: 1, gap: 4 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-            <Text style={{ fontFamily: font.bold, fontSize: 17, color: c.ink }}>{L.name}</Text>
-            <Text style={s.label}>{g.streak > 0 ? `${g.streak}-day streak` : `${g.totalWon} days won`}</Text>
+    <Pressable onPress={() => setGuide(true)} accessibilityRole="button" accessibilityLabel={`Level ${L.i + 1}, ${L.name}. How the game works`}
+      style={[s.card, { gap: 12, paddingVertical: 16, backgroundColor: bg, borderWidth: 1.5, borderColor: edge }]}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+        <Emblem n={L.i + 1} tint={L.tint} size={72} pct={pct} track={mix(L.tint, c.surface, 0.25)} />
+        <View style={{ flex: 1, gap: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <Text style={{ fontFamily: font.bold, fontSize: 11, letterSpacing: 1.4, color: mix(L.tint, c.ink, 0.7) }}>LEVEL {L.i + 1} OF {LEVELS.length}</Text>
+            {g.streak > 0 && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3, backgroundColor: c.surface }}>
+                <Text style={{ fontSize: 12 }}>🔥</Text>
+                <Text style={{ fontFamily: font.bold, fontSize: 12, color: c.ink }}>{g.streak}</Text>
+              </View>
+            )}
           </View>
-          <View style={{ height: 7, borderRadius: 999, backgroundColor: c.lineSoft, overflow: 'hidden' }}>
-            <View style={{ height: '100%', width: `${Math.max(3, Math.min(100, pct))}%`, borderRadius: 999, backgroundColor: c.cat.move.fill }} />
-          </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text style={s.label}>{nx ? `${nx.need} more day${nx.need === 1 ? '' : 's'} won to ${nx.name}` : 'Top level. Keep it.'}</Text>
-            <Text style={[s.label, { color: c.cat.move.ink, fontFamily: font.semibold }]}>How it works ›</Text>
-          </View>
+          <Text style={{ fontFamily: font.bold, fontSize: 24, lineHeight: 28, color: c.ink }}>{L.name}</Text>
+          <Text style={{ fontFamily: font.regular, fontSize: 13, lineHeight: 18, color: c.ink2 }}>{L.motto}</Text>
         </View>
       </View>
+      {nx ? (
+        <View style={{ gap: 7 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            {/* One pip per day won this level needs: each day you win lights one. */}
+            <View style={{ flex: 1, flexDirection: 'row', gap: 3 }}>
+              {Array.from({ length: span }, (_, i) => (
+                <View key={i} style={{ flex: 1, height: 9, borderRadius: 3, backgroundColor: i < done ? L.tint : mix(L.tint, c.surface, 0.3) }} />
+              ))}
+            </View>
+            <Emblem n={L.i + 2} tint={nx.tint} size={40} locked />
+          </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
+            <Text style={[s.label, { color: c.ink }]}><Text style={{ fontFamily: font.bold }}>{nx.need} more day{nx.need === 1 ? '' : 's'} won</Text> to {nx.name}</Text>
+            <Text style={[s.label, { color: mix(L.tint, c.ink, 0.7), fontFamily: font.semibold }]}>See all ›</Text>
+          </View>
+        </View>
+      ) : <Text style={[s.label, { color: c.ink }]}>The top rank. Keep it.</Text>}
       {day === maxDay && f.type !== 'off' && (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 12, padding: 11, backgroundColor: won ? c.cat.move.soft : c.surface2, borderWidth: 1, borderColor: won ? c.cat.move.fill : c.lineSoft }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 12, padding: 11, backgroundColor: won ? c.cat.move.soft : c.surface, borderWidth: 1, borderColor: won ? c.cat.move.fill : c.lineSoft }}>
           <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: won ? c.cat.move.fill : 'transparent', borderWidth: won ? 0 : 1.5, borderColor: c.muted, alignItems: 'center', justifyContent: 'center' }}>
             {won && <Icon name="check" size={13} stroke={3} color={c.cat.move.on} />}
           </View>
           <Text style={{ flex: 1, fontFamily: font.regular, fontSize: 13.5, lineHeight: 19, color: c.ink }}>
-            {won ? <Text style={{ fontFamily: font.bold }}>Today is won. </Text> : <Text style={{ fontFamily: font.bold }}>To win today: </Text>}
+            {won ? <Text style={{ fontFamily: font.bold }}>Today is won{nx ? `: ${nx.need} to go` : ''}. </Text> : <Text style={{ fontFamily: font.bold }}>Win today{nx ? ` and you’re ${nx.need - 1 === 0 ? 'there' : nx.need - 1 + ' away'}` : ''}: </Text>}
             {won ? 'Anything more is a bonus.' : f.text}
           </Text>
         </View>
@@ -65,12 +106,46 @@ export function GameBar() {
   );
 }
 
+/** The level-up moment: full screen, the new emblem, its motto and what's next. */
+function LevelUp({ i, onClose }: { i: number; onClose: () => void }) {
+  const { c } = useTheme('move');
+  const R = RANKS[i], N = RANKS[i + 1];
+  const sc = useRef(new Animated.Value(0.4)).current, op = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Vibration.vibrate([0, 60, 80, 120]);
+    Animated.parallel([
+      Animated.spring(sc, { toValue: 1, friction: 4, tension: 70, useNativeDriver: true }),
+      Animated.timing(op, { toValue: 1, duration: 260, useNativeDriver: true }),
+    ]).start();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <Modal transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable onPress={onClose} accessibilityRole="alert" accessibilityLabel={`Level up: ${R.name}. Tap to close`}
+        style={{ flex: 1, backgroundColor: mix(R.tint, '#0b0c0b', 0.22), alignItems: 'center', justifyContent: 'center', padding: 28, gap: 14 }}>
+        <Animated.View style={{ transform: [{ scale: sc }], opacity: op }}>
+          <Emblem n={i + 1} tint={R.tint} size={190} pct={100} track={mix(R.tint, '#0b0c0b', 0.35)} />
+        </Animated.View>
+        <Animated.View style={{ opacity: op, alignItems: 'center', gap: 8 }}>
+          <Text style={{ fontFamily: font.bold, fontSize: 13, letterSpacing: 2, color: R.tint }}>LEVEL UP</Text>
+          <Text style={{ fontFamily: font.bold, fontSize: 38, color: '#F4F6F2', textAlign: 'center' }}>{R.name}</Text>
+          <Text style={{ fontFamily: font.regular, fontSize: 17, lineHeight: 24, color: '#F4F6F2', opacity: 0.85, textAlign: 'center' }}>{R.motto}</Text>
+          {N && <Text style={{ fontFamily: font.semibold, fontSize: 14, color: '#F4F6F2', opacity: 0.65, marginTop: 10, textAlign: 'center' }}>Next: {N.name} at {N.at} days won</Text>}
+          <View style={{ marginTop: 18, borderRadius: 999, paddingHorizontal: 22, paddingVertical: 12, backgroundColor: R.tint }}>
+            <Text style={{ fontFamily: font.bold, fontSize: 16, color: '#101210' }}>Keep going</Text>
+          </View>
+        </Animated.View>
+      </Pressable>
+    </Modal>
+  );
+}
+
 /** A short celebration, once per event: a day won, a level up, a new badge. Tap to close. */
 export function Celebrate() {
   const g = useGame();
   const { maxDay } = useRecomp();
   const { c } = useTheme('move');
   const [msg, setMsg] = useState<{ title: string; line: string; pts?: number } | null>(null);
+  const [up, setUp] = useState<number | null>(null);
   const op = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     if (!g || !g.today?.won) return;
@@ -81,16 +156,18 @@ export function Celebrate() {
     queue.push(g.today.comeback
       ? { id: 'won', title: 'Back on it', line: 'You came back after a miss. That counts double today.', pts: g.today.pts }
       : { id: 'won', title: 'Day won', line: g.streak > 1 ? `${g.streak} days in a row. That's how it's built.` : 'The floor is met. That is the whole job.', pts: g.today.pts });
-    if (lvlOf(g.totalWon) > lvlOf(g.totalWon - 1)) queue.push({ id: 'lvl', title: `Level up: ${g.level.name}`, line: `${g.totalWon} days won. Keep stacking them.` });
+    if (lvlOf(g.totalWon) > lvlOf(g.totalWon - 1)) queue.push({ id: 'lvl', title: `Level up: ${g.level.name}`, line: g.level.motto });
     g.badges.filter((b) => b.at === maxDay).forEach((b) => queue.push({ id: 'b:' + b.id, title: `Badge: ${b.name}`, line: b.why }));
     const next = queue.find((q) => !shown.includes(q.id));
     if (!next) return;
     mark(key, [...shown.filter(Boolean), next.id].join(','));
+    if (next.id === 'lvl') { setUp(g.level.i); return; }
     setMsg(next);
     Animated.timing(op, { toValue: 1, duration: 220, useNativeDriver: true }).start();
     const t = setTimeout(() => Animated.timing(op, { toValue: 0, duration: 260, useNativeDriver: true }).start(() => setMsg(null)), 4200);
     return () => clearTimeout(t);
-  }, [g?.today?.won, g?.level.i, g?.badges.map((b) => b.at).join(), msg == null]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [g?.today?.won, g?.level.i, g?.badges.map((b) => b.at).join(), msg == null, up == null]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (up != null) return <LevelUp i={up} onClose={() => setUp(null)} />;
   if (!msg) return null;
   return (
     <Animated.View style={{ position: 'absolute', left: 16, right: 16, bottom: 104, opacity: op, transform: [{ translateY: op.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }] }}>
@@ -178,7 +255,20 @@ export function GameGuide({ onClose }: { onClose: () => void }) {
 
           <H t="Levels" />
           <T>Levels go up with days won and never go down. A bad week can't take one away.</T>
-          {LEVELS.map(([n, name], i) => <Row key={name} k={`${i + 1}. ${name}`} v={n === 0 ? 'start' : `${n} days won`} on={g?.level.i === i} />)}
+          {RANKS.map((r, i) => {
+            const cur = g?.level.i === i, got = (g?.level.i ?? -1) >= i;
+            return (
+              <View key={r.name} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6, paddingHorizontal: 8, borderRadius: 14,
+                backgroundColor: cur ? mix(r.tint, c.surface, 0.16) : 'transparent', borderWidth: cur ? 1.5 : 0, borderColor: mix(r.tint, c.surface, 0.5) }}>
+                <Emblem n={i + 1} tint={r.tint} size={44} locked={!got} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontFamily: font.bold, fontSize: 15, color: got ? c.ink : c.muted }}>{r.name}{cur ? '  · you are here' : ''}</Text>
+                  <Text style={{ fontFamily: font.regular, fontSize: 12.5, color: got ? c.ink2 : c.muted }}>{r.motto}</Text>
+                </View>
+                <Text style={{ fontFamily: font.semibold, fontSize: 12.5, color: got ? c.ink2 : c.muted }}>{r.at === 0 ? 'start' : `${r.at} days`}</Text>
+              </View>
+            );
+          })}
 
           <H t="Streaks" />
           <T>Your streak counts days won in a row. <B>One missed day a week is forgiven</B>, so a single off day doesn't wipe it out. Two misses in the same Monday-to-Sunday week end it.</T>
