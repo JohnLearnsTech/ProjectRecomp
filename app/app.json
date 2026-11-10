@@ -42,7 +42,25 @@
         }
       ],
       "expo-sharing",
-      "react-native-health-connect"
+      "react-native-health-connect",
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "Today",
+              "label": "Project Recomp \u00b7 Today",
+              "description": "Calories and protein left, walk steps, and your lift day.",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            }
+          ]
+        }
+      ]
     ],
     "scheme": "recomp",
     "experiments": {
