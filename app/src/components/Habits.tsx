@@ -21,7 +21,7 @@ import { range, Wheel } from './Wheel';
 import { useInfo } from './ui';
 
 /** r19's Habits section on Today: cards, the running timer, Pomodoro, the log sheet. */
-export function Habits({ openId, onOpened }: { openId?: string | null; onOpened?: () => void }) {
+export function Habits({ openId, stopId, onOpened }: { openId?: string | null; stopId?: string | null; onOpened?: () => void }) {
   const { day, maxDay, touch, engine } = useRecomp();
   const { D, entries, habits, habitRows, keystone } = useDays();
   const { c, s } = useTheme('habit');
@@ -36,6 +36,13 @@ export function Habits({ openId, onOpened }: { openId?: string | null; onOpened?
   const [err, setErr] = useState<string | null>(null);
   const future = day > maxDay;
   useEffect(() => { if (openId) { setSheet(openId); onOpened?.(); } }, [openId]); // eslint-disable-line react-hooks/exhaustive-deps
+  // The widget's Stop: stop and log the timer as the Stop button here would.
+  useEffect(() => {
+    if (!stopId || !habits.length) return;
+    const h = habits.find((x) => x.id === stopId);
+    onOpened?.();
+    if (h && timers[stopId]) stop(h);
+  }, [stopId, habits.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const valOn = (k: string, id: string) => D.habitVal(k, id);
   const run = (p: Promise<unknown>) => p.then(touch).catch((e) => setErr((e as Error).message));

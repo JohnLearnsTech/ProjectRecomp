@@ -50,11 +50,11 @@
             {
               "name": "Today",
               "label": "Project Recomp \u00b7 Today",
-              "description": "Calories and protein left, walk steps, and your lift day.",
+              "description": "Today at a glance: calories, protein, steps, your habits and a running timer, with pause and stop.",
               "minWidth": "250dp",
-              "minHeight": "110dp",
+              "minHeight": "180dp",
               "targetCellWidth": 4,
-              "targetCellHeight": 2,
+              "targetCellHeight": 3,
               "resizeMode": "horizontal|vertical",
               "updatePeriodMillis": 1800000
             }

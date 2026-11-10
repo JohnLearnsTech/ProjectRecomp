@@ -29,6 +29,8 @@ export function useNow(active: boolean) {
   return now;
 }
 
+/** The live timers, for the home screen widget (which reads and writes the same store). */
+export const allTimers = () => timers;
 export const timerMs = (id: string, now = Date.now()) => { const t = timers[id]; return t ? (t.accumMs || 0) + (t.running ? now - t.startedAt : 0) : 0; };
 export const anyRunning = () => Object.values(timers).some((t) => t && t.running);
 export function startTimer(id: string, day: string) {

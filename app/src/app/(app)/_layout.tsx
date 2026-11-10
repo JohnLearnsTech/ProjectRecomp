@@ -1,11 +1,13 @@
 import * as Notifications from 'expo-notifications';
 import { router, Stack } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import { ToastHost } from '../../components/ToastHost';
 import { DaysProvider, useDays } from '../../lib/days';
 import { syncSteps } from '../../lib/steps';
-import { tracksSteps } from '../../domain/days';
+import { habitMet, isTimeUnit, tracksSteps } from '../../domain/days';
+import { trimNum } from '../../domain/dates';
+import { allTimers, useTimerStore } from '../../lib/habitTimers';
 import { requestWidgetUpdate } from 'react-native-android-widget';
 import { useGame } from '../../lib/game';
 import { fmt12, loadCue } from '../../lib/workout';
@@ -45,8 +47,13 @@ function StepSync() {
 // Keeps the home screen widget in step with today's numbers.
 function WidgetSync() {
   const { engine, maxDay } = useRecomp();
-  const { D, entries, loaded } = useDays();
+  const { D, entries, habits, keystone, loaded } = useDays();
   const game = useGame();
+  const { timers } = useTimerStore();
+  const running = Object.values(timers).some((t) => t?.running);
+  // A running timer's minutes move on: redraw once a minute while the app is open.
+  const [tick, setTick] = useState(0);
+  useEffect(() => { if (!running) return; const t = setInterval(() => setTick((x) => x + 1), 60000); return () => clearInterval(t); }, [running]);
   useEffect(() => {
     if (!loaded) return;
     const P = engine.plan(maxDay), e = entries[maxDay] ?? {}, cue = loadCue();
@@ -58,10 +65,16 @@ function WidgetSync() {
       day: maxDay, kcalTarget: P.kcal, kcalLeft: Math.round(P.kcal - (+(e.kcal ?? 0))), proteinTarget: P.protein,
       proteinLeft: Math.max(0, Math.round(P.protein - (+(e.protein ?? 0)))), steps: +(e.steps ?? 0), stepsTarget: P.steps,
       lift, liftLine, level: game?.level.name ?? null, streak: game?.streak ?? 0,
+      // The keystone first, then the rest in order: four fit on the widget.
+      habits: [...(keystone ? [keystone] : []), ...habits.filter((h) => h.id !== keystone?.id)].slice(0, 4).map((h) => {
+        const v = D.habitVal(maxDay, h.id);
+        return { id: h.id, name: h.name, timed: isTimeUnit(h.unit), met: habitMet(h, v), val: v == null ? 'not yet' : `${trimNum(v)}${h.unit ? ' ' + h.unit : ''}` };
+      }),
+      names: Object.fromEntries(habits.map((h) => [h.id, h.name])),
     };
     writeSnapshot(snap);
-    requestWidgetUpdate({ widgetName: 'Today', renderWidget: () => todayWidget(snap) }).catch(() => {});
-  }, [loaded, maxDay, entries, game?.level.name, game?.streak]); // eslint-disable-line react-hooks/exhaustive-deps
+    requestWidgetUpdate({ widgetName: 'Today', renderWidget: () => todayWidget(snap, allTimers()) }).catch(() => {});
+  }, [loaded, maxDay, entries, habits, game?.level.name, game?.streak, timers, tick]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }
 

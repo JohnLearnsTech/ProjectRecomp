@@ -28,7 +28,7 @@ export default function Today() {
   const { engine, day, maxDay, rev, refresh, error } = useRecomp();
   const { c, s } = useTheme('move');
   const h = useHistory();
-  const { habit } = useLocalSearchParams<{ habit?: string }>();
+  const { habit, stop } = useLocalSearchParams<{ habit?: string; stop?: string }>();
   const [log, setLog] = useState<db.DayLog | null>(null);
   const [quote, setQuote] = useState(currentQuote());
 
@@ -143,7 +143,7 @@ export default function Today() {
         </Pressable>
 
         <WeekCard />
-        <Habits openId={habit} onOpened={() => router.setParams({ habit: undefined })} />
+        <Habits openId={habit} stopId={stop} onOpened={() => router.setParams({ habit: undefined, stop: undefined })} />
         <ConsistencyCard />
 
         <Text style={[s.label, { marginTop: 8 }]}>
