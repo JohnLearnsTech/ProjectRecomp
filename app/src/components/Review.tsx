@@ -9,6 +9,9 @@ import { useRecomp } from '../lib/recomp';
 import { font, useTheme } from '../lib/theme';
 import { Icon } from './Icon';
 import { Mini, PanelHead } from './ui';
+import { handOffToClaude } from '../lib/connector';
+
+const REVIEW_ASK = 'Run my weekly review in Project Recomp and save it to the app.';
 
 /** r19 Weekly review: Claude's grade and words, beside a scorecard the app counts itself. */
 export function ReviewCard() {
@@ -38,6 +41,8 @@ export function ReviewCard() {
     try { await applyReviewChange(review, engine, goalId, maxDay, saved); await reload(); touch(); setReview(await db.getLatestReview()); }
     catch (e) { setErr((e as Error).message); }
   };
+  // Without a key the review runs in Claude through the connector, which saves it back here;
+  // the app refetches when it comes back to the foreground.
   const due = reviewDue(engine.T.START, maxDay, review?.end_date ?? null);
   const o: ReviewOut | null = review?.out ?? null, st = review?.stats ?? {};
   const nd = st.daysInWeek || 7;
@@ -54,12 +59,12 @@ export function ReviewCard() {
   return (
     <View style={s.card}>
       <PanelHead title="Weekly review" info={{ label: 'About the weekly review', text: 'Claude reads your last seven days against the seven before and suggests at most one change. A calorie cut is only offered when the seven-day average has stalled and food was logged on at least five days. Nothing changes until you press Apply.' }}
-        right={<Mini label={busy ? 'Reviewing…' : o ? (due ? 'Review this week' : 'Review again') : 'Review my week'} disabled={busy || !keyed} onPress={go} />} />
+        right={<Mini label={busy ? 'Reviewing…' : !keyed ? 'Review with Claude' : o ? (due ? 'Review this week' : 'Review again') : 'Review my week'} disabled={busy} onPress={keyed ? go : () => handOffToClaude(REVIEW_ASK)} />} />
       {review && <Text style={[s.label, { marginTop: -6 }]}>{shortDate(d(review.start_date))} – {shortDate(d(review.end_date))} · reviewed {shortDate(d(review.created_at.slice(0, 10)))}</Text>}
       {busy && <Text style={s.body2}>Claude is reading your week. About half a minute.</Text>}
       {err && <Text style={s.error}>{err}</Text>}
       {!o && !busy && (
-        <Text style={s.body2}>Claude grades your last seven days against the plan, names every target you missed and on which day, and sets three non-negotiables for next week. No sugar-coating. {keyed ? 'Takes about half a minute.' : 'Add your Anthropic API key in Me, Settings, AI to use it.'}</Text>
+        <Text style={s.body2}>Claude grades your last seven days against the plan, names every target you missed and on which day, and sets three non-negotiables for next week. No sugar-coating. {keyed ? 'Takes about half a minute.' : 'Tap Review with Claude: it opens Claude, which reads your week through the Project Recomp connector and saves the review here. Come back to the app to see it.'}</Text>
       )}
       {o && (
         <>
