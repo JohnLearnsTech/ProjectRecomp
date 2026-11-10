@@ -18,6 +18,7 @@ import {
 } from '../../../domain/training';
 import { useTraining } from '../../../lib/useTraining';
 import { useDays } from '../../../lib/days';
+import { useRecomp } from '../../../lib/recomp';
 import { loadWarm, loadWo, saveWarm } from '../../../lib/workout';
 import { font, useTheme } from '../../../lib/theme';
 
@@ -30,6 +31,7 @@ export default function Train() {
   const { engine, day, maxDay, P, list, today, entries, bands, log, trainTick } = T;
   const { c, s } = useTheme('train');
   const { entries: dayEntries } = useDays();
+  const { refresh } = useRecomp();
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [extra, setExtra] = useState<Record<string, number>>({});
   const [swapFor, setSwapFor] = useState<Resolved | null>(null);
@@ -57,7 +59,7 @@ export default function Train() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.paper }} edges={['top']}>
-      <ScrollView contentContainerStyle={s.screen} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={false} onRefresh={() => T.reload()} />}>
+      <ScrollView contentContainerStyle={s.screen} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={false} onRefresh={() => { refresh(); T.reload(); }} />}>
         <ScreenHeader title="Train" strip={false} dayLine={false} cat="train" />
         <Nudge />
         {err && <Text style={s.error}>{err}</Text>}

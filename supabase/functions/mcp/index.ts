@@ -49,7 +49,7 @@ Deno.serve(
         const ctx = await ctxP, k = date || ctx.today, p = ctx.engine.plan(k);
         const [log, food, sets, hl] = await Promise.all([
           sb.from('day_logs').select('weight_kg, steps, sleep_h, waist_cm, note').eq('date', k).maybeSingle(),
-          sb.from('food_entries').select('id, meal_no, label, kcal, protein_g, carbs_g, fat_g, fiber_g, source, needs_estimate').eq('date', k).order('position'),
+          sb.from('food_entries').select('id, meal_no, eaten_at, label, kcal, protein_g, carbs_g, fat_g, fiber_g, source, needs_estimate').eq('date', k).order('position'),
           sb.from('set_entries').select('exercise_name, set_no, weight_kg, band_slot, reps').eq('date', k).order('exercise_name').order('set_no'),
           sb.from('habit_logs').select('habit_id, value').eq('date', k),
         ]);
@@ -119,10 +119,11 @@ Deno.serve(
 
       server.registerTool('log_food', {
         title: 'Log food', description: 'Log what the person ate, as they would type it ("2 chapati, 1 katori dal, 1 apple"). One call is one meal. Items the built-in table or their own foods know get numbers at once; anything else comes back with needs_estimate, so estimate it next with set_food_estimates.',
-        inputSchema: z.object({ text: z.string().min(1).max(600), date: DateArg }),
-      }, async ({ text: t, date }) => {
+        inputSchema: z.object({ text: z.string().min(1).max(600), date: DateArg,
+          time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional().describe('When it was eaten, HH:MM on a 24-hour clock in the person\'s time. Pass it when they say ("at 1 pm" is 13:00); leave it out to use now for today.') }),
+      }, async ({ text: t, date, time }) => {
         const ctx = await ctxP, k = writeDay(ctx, date);
-        return text({ date: k, logged: await logFoodText(sb, ctx, k, t) });
+        return text({ date: k, logged: await logFoodText(sb, ctx, k, t, time) });
       });
 
       const measure = (field: 'weight_kg' | 'steps' | 'sleep_h', lo: number, hi: number, label: string) => async ({ value, date }: { value: number; date?: string }) => {

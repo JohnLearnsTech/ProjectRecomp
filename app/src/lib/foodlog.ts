@@ -6,8 +6,8 @@ import {
 import type { FoodRow } from '../domain/types';
 import * as db from './db';
 
-export const toRow = (e: db.FoodEntry): FoodRow & { id: string; needs_estimate: boolean; position: number } => ({
-  id: e.id, position: e.position, label: e.label, raw: e.raw_text ?? undefined, kcal: +e.kcal, p: +e.protein_g, c: +e.carbs_g,
+export const toRow = (e: db.FoodEntry): FoodRow & { id: string; needs_estimate: boolean; position: number; at: string | null } => ({
+  id: e.id, position: e.position, at: e.eaten_at ?? null, label: e.label, raw: e.raw_text ?? undefined, kcal: +e.kcal, p: +e.protein_g, c: +e.carbs_g,
   f: +e.fat_g, fib: +e.fiber_g, meal: e.meal_no, src: e.source, needs_estimate: e.needs_estimate,
 });
 

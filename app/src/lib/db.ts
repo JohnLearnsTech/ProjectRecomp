@@ -1,6 +1,7 @@
 // Typed access to the Recomp schema (supabase/migrations/0001_init.sql).
 // RLS scopes every query to the signed-in user, so no user_id filters are needed;
 // user_id is filled by the column default auth.uid() on insert.
+import { localKey } from '../domain/dates';
 import { supabase } from './supabase';
 
 /** r19 day key: the device's local calendar date, YYYY-MM-DD. */
@@ -85,9 +86,9 @@ export type FoodEntry = {
   id: string; date: string; position: number; meal_no: number | null;
   label: string; raw_text: string | null; grams: number | null;
   kcal: number; protein_g: number; carbs_g: number; fat_g: number; fiber_g: number;
-  source: FoodSource; cache_key: string | null; needs_estimate: boolean;
+  source: FoodSource; cache_key: string | null; needs_estimate: boolean; eaten_at: string | null;
 };
-export type NewFood = Omit<FoodEntry, 'id' | 'date' | 'position' | 'meal_no' | 'needs_estimate'>;
+export type NewFood = Omit<FoodEntry, 'id' | 'date' | 'position' | 'meal_no' | 'needs_estimate' | 'eaten_at'>;
 
 export const listFood = async (date: string) =>
   must(await supabase.from('food_entries').select('*').eq('date', date).order('position')) as FoodEntry[];
@@ -97,16 +98,35 @@ export const addMeal = async (date: string, rows: NewFood[]) => {
   const existing = await listFood(date);
   const meal = Math.max(0, ...existing.map((r) => r.meal_no ?? 0)) + 1;
   const start = existing.length ? Math.max(...existing.map((r) => r.position)) + 1 : 0;
+  // Eaten now when logged on the day itself; a backfilled day gets no time until one is set.
+  const eaten_at = date === localKey() ? new Date().toISOString() : null;
   // defaultToNull:false so columns a row omits take their DB default, not null.
   return must(
     await supabase.from('food_entries')
-      .insert(rows.map((r, i) => ({ ...r, date, meal_no: meal, position: start + i })), { defaultToNull: false })
+      .insert(rows.map((r, i) => ({ ...r, date, meal_no: meal, position: start + i, eaten_at })), { defaultToNull: false })
       .select('*'),
   ) as FoodEntry[];
 };
 
 export const updateFood = async (id: string, patch: Partial<NewFood>) => {
   must(await supabase.from('food_entries').update(patch).eq('id', id));
+};
+/** A meal's time, for all its rows. */
+export const setMealTime = async (date: string, meal: number, eaten_at: string | null) => {
+  must(await supabase.from('food_entries').update({ eaten_at }).match({ date, meal_no: meal }));
+};
+/** Moves one row to another meal, taking that meal's time (or keeping its own for a new meal). */
+export const moveFood = async (id: string, date: string, meal: number) => {
+  const other = must(await supabase.from('food_entries').select('eaten_at').match({ date, meal_no: meal }).limit(1)) as { eaten_at: string | null }[];
+  must(await supabase.from('food_entries').update(other.length ? { meal_no: meal, eaten_at: other[0].eaten_at } : { meal_no: meal }).eq('id', id));
+};
+/** Renumbers a meal. If the new number is taken, the two meals are swapped, so nothing merges by accident. */
+export const renumberMeal = async (date: string, from: number, to: number) => {
+  if (from === to) return;
+  const taken = must(await supabase.from('food_entries').select('id').match({ date, meal_no: to })) as { id: string }[];
+  must(await supabase.from('food_entries').update({ meal_no: -1 }).match({ date, meal_no: from }));
+  if (taken.length) must(await supabase.from('food_entries').update({ meal_no: from }).match({ date, meal_no: to }));
+  must(await supabase.from('food_entries').update({ meal_no: to }).match({ date, meal_no: -1 }));
 };
 export const deleteFood = async (id: string) => {
   must(await supabase.from('food_entries').delete().eq('id', id));

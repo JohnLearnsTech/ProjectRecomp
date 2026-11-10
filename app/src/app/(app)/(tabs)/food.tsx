@@ -4,7 +4,7 @@ import { Alert, Platform, KeyboardAvoidingView, Modal, Pressable, RefreshControl
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Bar } from '../../../components/Bar';
 import { FoodChart } from '../../../components/FoodChart';
-import { PanelHead } from '../../../components/ui';
+import { Mini, PanelHead } from '../../../components/ui';
 import { toast } from '../../../lib/toast';
 import { Guides } from '../../../components/Guides';
 import { Icon } from '../../../components/Icon';
@@ -23,12 +23,23 @@ import { useRecomp } from '../../../lib/recomp';
 import { font, useTheme } from '../../../lib/theme';
 
 type Row = ReturnType<typeof toRow>;
+/** "8:45 am" from an ISO time, in the phone's time zone. */
+const clock = (iso: string) => { const t = new Date(iso), h = t.getHours(), m = t.getMinutes(); return `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`; };
+const hhmm = (iso: string | null) => { if (!iso) return ''; const t = new Date(iso); return `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`; };
+/** A day key plus HH:MM (or 8:45 pm style) to an ISO time; null when it doesn't read as a time. */
+const atTime = (day: string, txt: string) => {
+  const m = txt.trim().toLowerCase().match(/^(\d{1,2})(?::?(\d{2}))?\s*(am|pm)?$/); if (!m) return null;
+  let h = +m[1]; const mi = +(m[2] ?? 0);
+  if (m[3]) { if (h < 1 || h > 12) return null; h = (h % 12) + (m[3] === 'pm' ? 12 : 0); }
+  if (h > 23 || mi > 59) return null;
+  return new Date(+day.slice(0, 4), +day.slice(5, 7) - 1, +day.slice(8, 10), h, mi).toISOString();
+};
 const n0 = (x: number) => Math.round(x).toLocaleString('en-IN');
 const n1 = (x: number) => (Math.round(x * 10) / 10).toString();
 const SRC: Record<string, string> = { table: 'table', claude: 'estimate', you: 'yours', label: 'label', none: 'no numbers', pending: 'no numbers' };
 
 export default function Food() {
-  const { engine, day, maxDay, rev, touch, foodIndex, profileRow } = useRecomp();
+  const { engine, day, maxDay, rev, touch, refresh, foodIndex, profileRow } = useRecomp();
   const { c, s } = useTheme('food');
   const params = useLocalSearchParams<{ focus?: string }>();
   const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
@@ -39,6 +50,7 @@ export default function Food() {
   const [saved, setSaved] = useState<db.SavedMeal[]>([]);
   const [fqEdit, setFqEdit] = useState(false);
   const [recent, setRecent] = useState<ReturnType<typeof recentMeals<Row>>>([]);
+  const [mealFor, setMealFor] = useState<{ meal: number; at: string | null } | null>(null);
   const [edit, setEdit] = useState<Row | null>(null);
   const [saveFor, setSaveFor] = useState<Row[] | null>(null);
   const [keyed, setKeyed] = useState(false);
@@ -51,7 +63,8 @@ export default function Food() {
   const load = useCallback(async () => {
     const from = addKey(maxDay, -20) < START ? START : addKey(maxDay, -20);
     const [today, meals, range] = await Promise.all([db.listFood(day), db.listSavedMeals(), db.listFoodRange(from, maxDay)]);
-    setRows(today.map(toRow));
+    // By meal, then entry order, so a row moved to another meal sits with it.
+    setRows(today.map(toRow).sort((a, b) => (a.meal ?? 1e9) - (b.meal ?? 1e9) || a.position - b.position));
     setSaved(meals);
     const byDay: Record<string, Row[]> = {};
     range.forEach((e) => (byDay[e.date] ||= []).push(toRow(e)));
@@ -111,6 +124,7 @@ export default function Food() {
   const fresh = Math.round(rows.reduce((a, r) => a + (+r.kcal || 0), 0));
   useEffect(() => { if (rows.length && cached !== fresh) reloadDays().catch(() => {}); }, [cached, fresh]); // eslint-disable-line react-hooks/exhaustive-deps
   const pending = rows.filter((r) => r.needs_estimate).length;
+  const mealNos = [...new Set(rows.map((r) => r.meal).filter((m): m is number => m != null))].sort((a, b) => a - b);
 
   // Group consecutive rows by meal for the table (legacy rows without a meal stay ungrouped).
   const groups = useMemo(() => {
@@ -126,7 +140,7 @@ export default function Food() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.paper }} edges={['top']}>
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={s.screen} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={false} onRefresh={() => load()} />}>
+        <ScrollView contentContainerStyle={s.screen} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={false} onRefresh={() => { refresh(); load(); }} />}>
           <ScreenHeader title="Food" cat="food" />
 
           <View style={s.card}>
@@ -230,6 +244,8 @@ export default function Food() {
                           <View key={r.id}>
                             <TRow editing={edit?.id === r.id} onEdit={() => setEdit(r)} onDelete={() => run(async () => { if (edit?.id === r.id) setEdit(null); await db.deleteFood(r.id); })}
                               meal={i === 0 && g.meal != null ? `Meal ${g.meal}` : ''}
+                              mealSub={i === 0 && g.meal != null ? (g.rows[0].at ? clock(g.rows[0].at) : '+ time') : undefined}
+                              onMeal={i === 0 && g.meal != null ? () => setMealFor({ meal: g.meal!, at: g.rows[0].at }) : undefined}
                               item={shortFoodLabel(r.label)}
                               tag={SRC[r.src ?? 'none']}
                               warn={r.needs_estimate}
@@ -251,7 +267,8 @@ export default function Food() {
             ) : (
               <Text style={s.body2}>Nothing logged for this day yet.</Text>
             )}
-            {edit && <EditRow key={edit.id} row={edit} keyed={keyed} cuisine={profileRow?.cuisine} onClose={() => setEdit(null)} onDone={() => { setEdit(null); touch(); load(); }} />}
+            {edit && <EditRow key={edit.id} row={edit} keyed={keyed} cuisine={profileRow?.cuisine} meals={mealNos} day={day} onClose={() => setEdit(null)} onDone={() => { setEdit(null); touch(); load(); }} />}
+            {rows.length > 0 && <Text style={s.label}>Tap a meal’s number to set its time or renumber it. Edit a row to move it to another meal.</Text>}
           </View>
 
           <FoodChart />
@@ -259,6 +276,8 @@ export default function Food() {
         </ScrollView>
       </KeyboardAvoidingView>
 
+      {mealFor && <MealSheet day={day} meal={mealFor.meal} at={mealFor.at} meals={mealNos} onClose={() => setMealFor(null)}
+        onDone={(m) => { setMealFor(null); touch(); load(); if (m) setStatus(m); }} />}
       {saveFor && <SaveMeal rows={saveFor} onClose={() => setSaveFor(null)} onDone={() => { setSaveFor(null); touch(); setStatus('Meal saved. It now has a one-tap card.'); }} />}
     </SafeAreaView>
   );
@@ -279,8 +298,8 @@ function Totals({ label, value, frac, color }: { label: string; value: string; f
 
 // Number columns fit a bold four-digit total ("1,779", "136.4") at large phone text sizes.
 const COLS = [62, 250, 66, 58, 58, 58, 54, 76];
-function TRow({ head, subtotal, total, meal, item, tag, warn, cells, fatFlag, action, onEdit, onDelete, editing }: {
-  head?: boolean; subtotal?: boolean; total?: boolean; meal?: string; item?: string; tag?: string; warn?: boolean; fatFlag?: boolean;
+function TRow({ head, subtotal, total, meal, mealSub, onMeal, item, tag, warn, cells, fatFlag, action, onEdit, onDelete, editing }: {
+  head?: boolean; subtotal?: boolean; total?: boolean; meal?: string; mealSub?: string; onMeal?: () => void; item?: string; tag?: string; warn?: boolean; fatFlag?: boolean;
   cells: string[]; action?: { label: string; onPress: () => void }; onEdit?: () => void; onDelete?: () => void; editing?: boolean;
 }) {
   const { c, s } = useTheme('food');
@@ -291,7 +310,12 @@ function TRow({ head, subtotal, total, meal, item, tag, warn, cells, fatFlag, ac
       backgroundColor: editing ? c.cat.food.soft : head || total ? c.surface2 : c.surface }}>
       {all.map((v, i) => (
         <View key={i} style={{ width: COLS[i], paddingHorizontal: 8, paddingVertical: 6, alignItems: i >= 2 ? 'flex-end' : 'flex-start', flexDirection: i === 1 ? 'row' : 'column', gap: 6, ...(i === 1 ? { alignItems: 'center' } : null) }}>
-          {i === 1 && action ? (
+          {i === 0 && onMeal ? (
+            <Pressable onPress={onMeal} hitSlop={6} accessibilityRole="button" accessibilityLabel={`${v}, ${mealSub}. Change time or number`}>
+              <Text style={{ fontSize: 12, color: c.ink2, fontFamily: Platform.OS === 'web' ? 'ui-monospace, monospace' : 'monospace', textDecorationLine: 'underline' }} numberOfLines={1}>{v}</Text>
+              {!!mealSub && <Text style={{ fontSize: 10.5, color: mealSub.startsWith('+') ? c.cat.food.ink : c.muted, fontFamily: font.semibold }} numberOfLines={1} adjustsFontSizeToFit>{mealSub}</Text>}
+            </Pressable>
+          ) : i === 1 && action ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Text style={s.label}>{v}</Text>
               <Pressable onPress={action.onPress} hitSlop={8} style={{ backgroundColor: c.cat.food.soft, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
@@ -341,8 +365,10 @@ const FIELDS = [['kcal', 'kcal'], ['p', 'Protein g'], ['c', 'Carbs g'], ['f', 'F
 
 /** Row edit: unchanged numbers keep the source; changed ones become "yours" and are remembered. */
 /** r19 editPanel: inline under the table. "Ask Claude again" fills the boxes; nothing saves until Save row. */
-function EditRow({ row, keyed, cuisine, onClose, onDone }: { row: Row; keyed: boolean; cuisine?: string | null; onClose: () => void; onDone: () => void }) {
+function EditRow({ row, keyed, cuisine, meals, day, onClose, onDone }: { row: Row; keyed: boolean; cuisine?: string | null; meals: number[]; day: string; onClose: () => void; onDone: () => void }) {
   const { c, s } = useTheme('food');
+  const newMeal = (meals.length ? Math.max(...meals) : 0) + 1;
+  const [meal, setMeal] = useState<number | null>(row.meal ?? null);
   const [label, setLabel] = useState(row.label);
   const [v, setV] = useState<Record<string, string>>(Object.fromEntries(FIELDS.map(([k]) => [k, row.src === 'none' && !row[k] ? '' : String(row[k])])));
   const [note, setNote] = useState<string | null>(null);
@@ -364,6 +390,7 @@ function EditRow({ row, keyed, cuisine, onClose, onDone }: { row: Row; keyed: bo
         label: label.trim() || row.label, kcal: num.kcal, protein_g: num.p, carbs_g: num.c, fat_g: num.f, fiber_g: num.fib,
         source: fromClaude ? 'claude' : changed || row.src === 'none' ? 'you' : (row.src as db.FoodSource),
       });
+      if (meal != null && meal !== row.meal) await db.moveFood(row.id, day, meal);
       if (changed && !fromClaude) await rememberFood(row.raw ?? row.label, label.trim() || row.label, { kcal: num.kcal, p: num.p, c: num.c, f: num.f, fib: num.fib }, null);
       onDone();
     } catch (e) { setNote((e as Error).message); }
@@ -390,6 +417,19 @@ function EditRow({ row, keyed, cuisine, onClose, onDone }: { row: Row; keyed: bo
         <Text style={{ fontFamily: font.bold, fontSize: 11, color: c.ink2 }}>What it was</Text>
         <TextInput style={s.input} value={label} onChangeText={setLabel} accessibilityLabel="What it was" />
       </View>
+      {row.meal != null && (
+        <View style={{ gap: 4 }}>
+          <Text style={{ fontFamily: font.bold, fontSize: 11, color: c.ink2 }}>Meal</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+            {[...meals, newMeal].map((m) => (
+              <Pressable key={m} onPress={() => setMeal(m)} accessibilityState={{ selected: meal === m }}
+                style={{ minHeight: 36, paddingHorizontal: 12, borderRadius: 999, justifyContent: 'center', backgroundColor: meal === m ? c.ink : c.surface }}>
+                <Text style={{ fontFamily: font.semibold, fontSize: 13, color: meal === m ? c.paper : c.ink2 }}>{m === newMeal ? 'New meal' : `Meal ${m}`}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      )}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>{box('kcal', 'kcal')}{box('p', 'protein')}{box('c', 'carbs')}{box('f', 'fat')}{box('fib', 'fiber')}</View>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
         <Pressable style={[s.primary, { minHeight: 42, paddingHorizontal: 18 }]} onPress={save}><Text style={s.primaryText}>Save row</Text></Pressable>
@@ -402,6 +442,52 @@ function EditRow({ row, keyed, cuisine, onClose, onDone }: { row: Row; keyed: bo
         Change any number and it becomes yours. Either way nothing saves until you press Save row.
       </Text>
     </View>
+  );
+}
+
+/** A meal's time and number. A number that's already used swaps the two meals. */
+function MealSheet({ day, meal, at, meals, onClose, onDone }: { day: string; meal: number; at: string | null; meals: number[]; onClose: () => void; onDone: (msg?: string) => void }) {
+  const { c, s } = useTheme('food');
+  const [time, setTime] = useState(hhmm(at));
+  const [no, setNo] = useState(meal);
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const save = async () => {
+    const iso = time.trim() ? atTime(day, time) : null;
+    if (time.trim() && !iso) return setErr('Type a time like 8:45, 13:30 or 8:45 pm.');
+    setBusy(true);
+    try {
+      if (iso !== at) await db.setMealTime(day, meal, iso);
+      if (no !== meal) await db.renumberMeal(day, meal, no);
+      onDone(no !== meal && meals.includes(no) ? `Meals ${meal} and ${no} swapped.` : undefined);
+    } catch (e) { setErr((e as Error).message); setBusy(false); }
+  };
+  return (
+    <Modal transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={{ flex: 1, backgroundColor: '#0006' }} onPress={onClose} accessibilityLabel="Close" />
+      <View style={{ backgroundColor: c.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 32, gap: 12 }}>
+        <Text style={s.cardTitle}>Meal {meal}</Text>
+        <Text style={[s.label, { fontFamily: font.semibold }]}>Eaten at</Text>
+        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+          <TextInput style={[s.input, { flex: 1, textAlign: 'center' }]} value={time} onChangeText={setTime} placeholder="8:45 pm" placeholderTextColor={c.muted}
+            maxLength={8} keyboardType="numbers-and-punctuation" accessibilityLabel="Time eaten" />
+          <Mini label="Now" onPress={() => setTime(hhmm(new Date().toISOString()))} />
+          {!!time && <Mini label="No time" onPress={() => setTime('')} />}
+        </View>
+        <Text style={[s.label, { fontFamily: font.semibold }]}>Meal number</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+          {Array.from({ length: Math.max(...meals, meal) }, (_, i) => i + 1).map((m) => (
+            <Pressable key={m} onPress={() => setNo(m)} accessibilityState={{ selected: no === m }}
+              style={{ minWidth: 44, minHeight: 40, paddingHorizontal: 12, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: no === m ? c.ink : c.surface2 }}>
+              <Text style={{ fontFamily: font.semibold, color: no === m ? c.paper : c.ink2 }}>{m}</Text>
+            </Pressable>
+          ))}
+        </View>
+        {no !== meal && meals.includes(no) && <Text style={s.label}>Meal {no} becomes Meal {meal}: the two swap places.</Text>}
+        {err && <Text style={s.error}>{err}</Text>}
+        <Pressable style={[s.primary, busy && { opacity: 0.5 }]} disabled={busy} onPress={save}><Text style={s.primaryText}>{busy ? 'Saving…' : 'Save'}</Text></Pressable>
+      </View>
+    </Modal>
   );
 }
 

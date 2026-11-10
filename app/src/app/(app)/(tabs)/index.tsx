@@ -25,7 +25,7 @@ import { font, useTheme } from '../../../lib/theme';
 const n = (x: number) => Math.round(x).toLocaleString('en-IN');
 
 export default function Today() {
-  const { engine, day, maxDay, rev, reload, error } = useRecomp();
+  const { engine, day, maxDay, rev, refresh, error } = useRecomp();
   const { c, s } = useTheme('move');
   const h = useHistory();
   const { habit } = useLocalSearchParams<{ habit?: string }>();
@@ -58,7 +58,7 @@ export default function Today() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.paper }} edges={['top']}>
-      <ScrollView contentContainerStyle={s.screen} refreshControl={<RefreshControl refreshing={false} onRefresh={reload} />}>
+      <ScrollView contentContainerStyle={s.screen} refreshControl={<RefreshControl refreshing={false} onRefresh={refresh} />}>
         <ScreenHeader title="Today" />
         <GameBar />
         {error && <Text style={s.error}>{error}</Text>}

@@ -24,7 +24,7 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 export default function Progress() {
   const { at } = useLocalSearchParams<{ at?: string }>();
   const { c, s } = useTheme('body');
-  const { reload } = useRecomp();
+  const { refresh } = useRecomp();
   const { reload: reloadDays } = useDays();
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
   const [calY, setCalY] = useState<number | null>(null);
@@ -37,7 +37,7 @@ export default function Progress() {
     <SafeAreaView style={{ flex: 1, backgroundColor: c.paper }} edges={['top']}>
       <ScrollView ref={scroll} contentContainerStyle={s.screen} keyboardShouldPersistTaps="handled" stickyHeaderIndices={[1]} scrollEventThrottle={64}
         onScroll={(e) => { const y = e.nativeEvent.contentOffset.y + 70; let k = LINKS[0][0]; LINKS.forEach(([id]) => { if ((ys.current[id] ?? 1e9) <= y) k = id; }); if (k !== cur) setCur(k); }}
-        refreshControl={<RefreshControl refreshing={false} onRefresh={() => { reload(); reloadDays(); }} />}>
+        refreshControl={<RefreshControl refreshing={false} onRefresh={() => { refresh(); reloadDays(); }} />}>
         <ScreenHeader title="Progress" strip={false} dayLine={false} cat="body" />
         <View style={{ backgroundColor: c.paper, marginHorizontal: -20, paddingHorizontal: 20, paddingVertical: 6 }}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>

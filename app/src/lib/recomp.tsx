@@ -22,6 +22,7 @@ type Ctx = {
   rev: number;
   touch: () => void;
   reload: () => Promise<void>;
+  refresh: () => Promise<void>;
 };
 
 const RecompContext = createContext<Ctx | null>(null);
@@ -87,7 +88,7 @@ export function RecompProvider({ children }: { children: ReactNode }) {
     const t = setInterval(roll, 60000);
     // Coming back to the app also refetches: Claude may have logged or estimated food through the
     // connector while the person was away, and every screen's cache must pick that up together.
-    const sub = AppState.addEventListener('change', (s) => { if (s === 'active') { roll(); setRev((r) => r + 1); } });
+    const sub = AppState.addEventListener('change', (s) => { if (s === 'active') { roll(); reload().finally(() => setRev((r) => r + 1)); } });
     return () => { clearInterval(t); sub.remove(); };
   }, []);
   useEffect(() => {
@@ -102,6 +103,8 @@ export function RecompProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<Ctx>(() => ({
     ready, error, ...state, real, maxDay, day, setDay, rev, touch: () => setRev((r) => r + 1), reload,
+    // Pull-to-refresh: the plan and goal, then every screen's own fetch (they all follow rev).
+    refresh: () => reload().finally(() => setRev((r) => r + 1)),
   }), [ready, error, state, real, maxDay, day, setDay, rev, reload]);
 
   return <RecompContext.Provider value={value}>{children}</RecompContext.Provider>;

@@ -92,17 +92,30 @@ export async function daysFor(sb: DB, ctx: Ctx) {
 }
 
 /** Adds rows as one new meal (r19: each Add takes max(meal)+1). */
-export async function addMeal(sb: DB, date: string, rows: Record<string, unknown>[]) {
+/** A wall-clock date and HH:MM in a time zone, as an ISO instant. */
+export function zonedISO(date: string, hhmm: string, tz: string | null | undefined) {
+  const [h, m] = hhmm.split(':').map(Number);
+  const guess = Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10), h, m);
+  // The zone's offset at that moment: how its clock reads the guess, minus the guess.
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: tz || 'UTC', hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).formatToParts(new Date(guess));
+  const g = (t: string) => +(parts.find((x) => x.type === t)?.value ?? 0);
+  const off = Date.UTC(g('year'), g('month') - 1, g('day'), g('hour'), g('minute')) - guess;
+  return new Date(guess - off).toISOString();
+}
+
+/** One meal. eatenAt: an ISO time; omitted means now when logging today, none for a past day. */
+export async function addMeal(sb: DB, date: string, rows: Record<string, unknown>[], eatenAt?: string | null, today?: string) {
   const ex = must(await sb.from('food_entries').select('meal_no, position').eq('date', date)) as any[];
   const meal = Math.max(0, ...ex.map((r) => r.meal_no ?? 0)) + 1, start = ex.length ? Math.max(...ex.map((r) => r.position)) + 1 : 0;
-  return must(await sb.from('food_entries').insert(rows.map((r, i) => ({ ...r, date, meal_no: meal, position: start + i })), { defaultToNull: false }).select('id, label, kcal, protein_g, source, needs_estimate')) as any[];
+  const eaten_at = eatenAt !== undefined ? eatenAt : today && date === today ? new Date().toISOString() : null;
+  return must(await sb.from('food_entries').insert(rows.map((r, i) => ({ ...r, date, meal_no: meal, position: start + i, eaten_at })), { defaultToNull: false }).select('id, meal_no, label, kcal, protein_g, source, needs_estimate, eaten_at')) as any[];
 }
 
 const recOf = (r: any): CacheRec => ({ name: r.name, serving_g: +r.serving_g, by: r.source === 'you' || r.source === 'label' ? 'you' : null, unitOnly: !!r.unit_only,
   per100: { kcal: +r.kcal_100g, p: +r.protein_100g, c: +r.carbs_100g, f: +r.fat_100g, fib: +r.fiber_100g } });
 
 /** The app's addFoodText: your foods and the table, then remembered estimates, else no numbers yet. */
-export async function logFoodText(sb: DB, ctx: Ctx, date: string, raw: string) {
+export async function logFoodText(sb: DB, ctx: Ctx, date: string, raw: string, time?: string) {
   const parts = splitFoodInput(raw.trim());
   const rows: Record<string, unknown>[] = new Array(parts.length); const unknown: number[] = [];
   parts.forEach((p, i) => {
@@ -123,7 +136,8 @@ export async function logFoodText(sb: DB, ctx: Ctx, date: string, raw: string) {
       rows[i] = { label: e.label, raw_text: p, grams: round1(po.g), kcal: e.kcal, protein_g: e.p, carbs_g: e.c, fat_g: e.f, fiber_g: e.fib, source: e.by === 'you' ? 'you' : 'claude', cache_key: k }; }
     else rows[i] = { label: p, raw_text: p, grams: parseGrams(p), kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fiber_g: 0, source: 'none', cache_key: isDish(p) ? null : k };
   });
-  return rows.length ? addMeal(sb, date, rows) : [];
+  const at = time ? zonedISO(date, time, ctx.profileRow?.timezone) : undefined;
+  return rows.length ? addMeal(sb, date, rows, at, ctx.today) : [];
 }
 
 export const daysBack = (k: string, n: number) => key(addDays(d(k), -n));
