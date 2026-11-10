@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { defaultBands, isTimed, loadKind, sessionList, type Band, type SetHistory, type Set_ } from '../domain/training';
+import { cancelTrainDay } from './reminders';
 import * as db from './db';
 import { useRecomp } from './recomp';
 import { toHistory } from './workout';
@@ -74,7 +75,7 @@ export function useTraining() {
   }, [P.session, load, touch]);
 
   const saveBands = useCallback(async (b: Band[]) => { await db.updateBands(b); await reloadAll(); }, [reloadAll]);
-  const markTrained = useCallback(async () => { await db.setCheck(day, 'train', true); setTrainTick(true); touch(); }, [day, touch]);
+  const markTrained = useCallback(async () => { await db.setCheck(day, 'train', true); setTrainTick(true); touch(); cancelTrainDay(day).catch(() => {}); }, [day, touch]);
   const saveDay = useCallback(async (f: db.DayFields) => { await db.saveDayFields(day, f); setLog((l) => ({ ...(l ?? ({} as db.DayLog)), ...f, date: day })); touch(); }, [day, touch]);
 
   return { engine, day, maxDay, P, list, swaps, entries, today, bands, log, trainTick, loaded, writeCell, writeSetFull, chooseSwap, saveBands, markTrained, saveDay, reload: load };

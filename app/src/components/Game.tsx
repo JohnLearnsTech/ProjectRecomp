@@ -125,7 +125,7 @@ export function Badges() {
           </View>
         ))}
       </View>
-      <Text style={s.label}>A day is won when its floor is met: on lift days the warm-up and two exercises, on cardio days ten minutes of walking, on rest days two of water, protein and a short walk.</Text>
+      <Text style={s.label}>A day is won when its floor is met: on lift days the warm-up and two exercises (or the warm-up alone on a day you're wiped), on cardio days ten minutes of walking, on rest days two of water, protein and a short walk.</Text>
       <Text style={{ fontFamily: font.bold, fontSize: 15, color: c.ink, marginTop: 4 }}>Badges</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {g.badges.map((b) => (
@@ -171,7 +171,7 @@ export function GameGuide({ onClose }: { onClose: () => void }) {
           <T>Recomp rewards showing up, not being perfect. Every day has a small minimum, the floor. Meet it and the day is <B>won</B>. That is the whole game. Anything more is a bonus.</T>
 
           <H t="How to win a day" />
-          <Row k="Lift day" v="warm-up + two exercises" on={P.type === 'lift'} />
+          <Row k="Lift day" v="warm-up + two exercises, or warm-up if wiped" on={P.type === 'lift'} />
           <Row k="Cardio day" v="10 min walk or 2,000 steps" on={P.type === 'cardio'} />
           <Row k="Rest day" v="two of: water, protein, a short walk" on={P.type === 'rest'} />
           <T>Today is a <B>{P.type === 'lift' ? 'lift' : P.type === 'cardio' ? 'cardio' : 'rest'} day</B>. The card on Today says what's left, and turns green once it's won.</T>

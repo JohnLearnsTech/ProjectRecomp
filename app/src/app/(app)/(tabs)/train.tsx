@@ -4,6 +4,7 @@ import { Linking, Modal, Pressable, RefreshControl, ScrollView, Text, TextInput,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Nudge } from '../../../components/Consistency';
 import { Icon } from '../../../components/Icon';
+import { LiftPlan } from '../../../components/LiftPlan';
 import { Guides } from '../../../components/Guides';
 import { Mini, useInfo } from '../../../components/ui';
 import floors from '../../../domain/data/floors.json';
@@ -70,14 +71,11 @@ export default function Train() {
             <Mini label="Edit plan" onPress={() => { try { localStorage.setItem('recomp:metab', 'plan'); } catch { /* ignore */ } router.push('/me'); }} />
           </View>
           {floorTip.panel}
-          {P.type === 'lift' && !future && (
-            <>
-              <Pressable style={s.primary} onPress={() => router.push('/session')} accessibilityRole="button">
-                <Text style={s.primaryText}>▶  {live ? 'Resume session' : anySets ? 'Continue in session mode' : 'Start session'}</Text>
-              </Pressable>
-              <Text style={s.label}>One exercise at a time, with a rest timer, last time’s numbers and a suggested load.</Text>
-            </>
-          )}
+          {P.type === 'lift' && !future && (day === maxDay || !anySets ? <LiftPlan /> : (
+            <Pressable style={s.primary} onPress={() => router.push('/session')} accessibilityRole="button">
+              <Text style={s.primaryText}>▶  {live ? 'Resume session' : 'Continue in session mode'}</Text>
+            </Pressable>
+          ))}
           {P.type === 'lift' && (
             <Pressable onPress={() => { setWarm(!warm); saveWarm(!warm); }} accessibilityRole="switch" accessibilityState={{ checked: warm }}
               style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 999, paddingHorizontal: 14, minHeight: 32, backgroundColor: warm ? c.cat.train.soft : c.surface2, borderWidth: 1, borderColor: warm ? c.cat.train.soft : c.line }}>

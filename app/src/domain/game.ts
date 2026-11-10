@@ -30,7 +30,8 @@ export function floorFor(engine: Engine, k: string, e: DayEntry | undefined, hab
   const p = engine.plan(k), steps = +(e?.steps ?? 0), walk = walkMin(e, habits);
   const exercises = e?.sets ? Object.values(e.sets).filter((a) => filledSets(a) > 0).length : 0;
   if (!p.inRange) return { met: false, text: '', type: 'off' };
-  if (p.type === 'lift') return { met: trained || exercises >= 2, text: 'The warm-up plus the first two exercises.', type: 'lift' };
+  // A wiped day's fallback (the 'warmup' tick) keeps the day: showing up is the habit being built.
+  if (p.type === 'lift') return { met: trained || exercises >= 2 || !!e?.checks?.warmup, text: 'The warm-up plus the first two exercises. On a wiped day, the warm-up alone.', type: 'lift' };
   if (p.type === 'cardio') return { met: walk >= 10 || steps >= 2000 || !!e?.checks?.train, text: 'Ten minutes of walking.', type: 'cardio' };
   const water = !!e?.checks?.water, protein = !!e?.checks?.protein || (e?.protein != null && +e.protein >= pFloor), moved = walk >= 10 || steps >= 3000;
   return { met: [water, protein, moved].filter(Boolean).length >= 2, text: 'Water, protein, a short walk. Two of the three.', type: 'rest' };

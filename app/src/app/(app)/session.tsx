@@ -1,5 +1,5 @@
 import { useKeepAwake } from 'expo-keep-awake';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import { Linking, Pressable, ScrollView, Text, TextInput, Vibration, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,6 +12,9 @@ import { useTraining } from '../../lib/useTraining';
 import { loadRestLen, loadWo, saveRestLen, saveWo, type Wo } from '../../lib/workout';
 import { font, useTheme } from '../../lib/theme';
 import { Icon } from '../../components/Icon';
+import mobPreJson from '../../domain/data/mobPre.json';
+
+const WARM = (mobPreJson as string[]).map((x) => x.split('|'));
 
 // r19 session mode (05-business-logic §8): one exercise at a time with a rest timer, last
 // time's numbers and a suggested load. State lives on the device; minimising keeps it.
@@ -23,6 +26,7 @@ export default function Session() {
   const T = useTraining();
   const { engine, day, maxDay, P, list, today, entries, bands, loaded } = T;
   const { c, s } = useTheme('train');
+  const { short: shortParam } = useLocalSearchParams<{ short?: string }>();
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
   const [wo, setWoState] = useState<Wo | null>(null);
   const [sel, setSel] = useState<number | null>(null);
@@ -41,7 +45,9 @@ export default function Session() {
     const stored = loadWo();
     if (stored && stored.day === day && stored.session === P.session && !stored.done) { setWoState(stored); return; }
     const first = list.findIndex((R) => !exDone(today[R.name] ?? [], R.sch));
-    setWo({ day, session: P.session, start: Date.now(), idx: first < 0 ? 0 : first });
+    // The 10-minute version is the first two exercises; once they are done there is nothing short left.
+    const short = shortParam === '1' && first >= 0 && first < 2;
+    setWo({ day, session: P.session, start: Date.now(), idx: first < 0 ? 0 : first, short });
   }, [loaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 250 ms tick for the clock and rest; buzz once when the rest runs out.
@@ -55,7 +61,7 @@ export default function Session() {
   }, []);
   useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 3500); return () => clearTimeout(t); } }, [toast]);
 
-  const L = list;
+  const L = wo?.short ? list.slice(0, 2) : list;
   const idx = wo ? wo.idx : 0;
   const summary = !!wo && idx >= L.length;
   const R = !summary ? L[Math.max(0, Math.min(L.length - 1, idx))] : null;
@@ -124,7 +130,7 @@ export default function Session() {
         </Pressable>
         <View style={{ flex: 1 }}>
           <Text style={[s.section, { fontFamily: font.bold }]}>{name}</Text>
-          <Text style={[s.body2, s.num]}>{fmtDur(now - wo.start)}</Text>
+          <Text style={[s.body2, s.num]}>{fmtDur(now - wo.start)}{wo.short ? '  ·  10-minute version' : ''}</Text>
         </View>
         {!summary && <Pressable style={[s.outline, { borderRadius: 999 }]} onPress={() => go(L.length)}><Text style={s.outlineText}>Finish</Text></Pressable>}
       </View>
@@ -142,6 +148,7 @@ export default function Session() {
           <Summary />
         ) : R && sug && (
           <>
+            {wo.short && idx === 0 && !cur.some((x) => x && x.r != null) && <WarmUp />}
             <View style={{ gap: 4 }}>
               <Text style={s.label}>Exercise {idx + 1} of {L.length}</Text>
               <Text style={{ fontFamily: font.bold, fontSize: 30, lineHeight: 34, color: c.ink }}>{R.name}</Text>
@@ -242,8 +249,16 @@ export default function Session() {
     });
     return (
       <View style={{ gap: 14 }}>
-        <Text style={s.label}>Session done</Text>
-        <Text style={{ fontFamily: font.bold, fontSize: 30, color: c.ink }}>{name}</Text>
+        <Text style={s.label}>{wo!.short ? 'Floor done' : 'Session done'}</Text>
+        <Text style={{ fontFamily: font.bold, fontSize: 30, color: c.ink }}>{wo!.short && sets ? 'That counts. Go walk.' : name}</Text>
+        {wo!.short && sets > 0 && list.length > 2 && (
+          <View style={[s.card, { gap: 8 }]}>
+            <Text style={s.body}>Today is won. If you feel like more, the rest of {name} is {list.length - 2} exercise{list.length - 2 > 1 ? 's' : ''} away. No pressure either way.</Text>
+            <Pressable style={[s.outline, { alignSelf: 'flex-start' }]} onPress={() => { setWo({ ...wo!, short: false, idx: 2 }); setSel(null); scroll.current?.scrollTo({ y: 0, animated: false }); }}>
+              <Text style={s.outlineText}>Keep going</Text>
+            </Pressable>
+          </View>
+        )}
         <View style={[s.card, { flexDirection: 'row', justifyContent: 'space-between' }]}>
           {[['Time', fmtDur(now - wo!.start)], ['Sets', String(sets)], ['Exercises', `${exN}/${L.length}`]].map(([k, val]) => (
             <View key={k}><Text style={s.label}>{k}</Text><Text style={s.stat}>{val}</Text></View>
@@ -271,6 +286,26 @@ export default function Session() {
       </View>
     );
   }
+}
+
+/** The warm-up, inline at the start of the 10-minute version: standing and chair only. */
+function WarmUp() {
+  const { c, s } = useTheme('train');
+  const [open, setOpen] = useState(true);
+  return (
+    <View style={[s.card, { gap: 6 }]}>
+      <Pressable onPress={() => setOpen(!open)} accessibilityState={{ expanded: open }} style={{ flexDirection: 'row', justifyContent: 'space-between', minHeight: 32, alignItems: 'center' }}>
+        <Text style={[s.body, { fontFamily: font.semibold }]}>Warm-up first, about 5 minutes</Text>
+        <Text style={{ color: c.muted, fontSize: 16 }}>{open ? '–' : '+'}</Text>
+      </Pressable>
+      {open && WARM.map(([nm, how]) => (
+        <View key={nm} style={{ gap: 1 }}>
+          <Text style={[s.body2, { color: c.ink }]}>{nm}</Text>
+          {!!how && <Text style={s.label}>{how}</Text>}
+        </View>
+      ))}
+    </View>
+  );
 }
 
 function Pill({ label, on, onPress }: { label: string; on?: boolean; onPress: () => void }) {

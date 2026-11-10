@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Bar } from '../../../components/Bar';
 import { ConsistencyCard, Nudge } from '../../../components/Consistency';
 import { Habits } from '../../../components/Habits';
+import { LiftPlan } from '../../../components/LiftPlan';
 import { Ring } from '../../../components/Ring';
 import { ScreenHeader } from '../../../components/ScreenHeader';
 import floors from '../../../domain/data/floors.json';
@@ -76,13 +77,7 @@ export default function Today() {
                 <Text style={s.cardTitle}>{head}</Text>
                 {P.type === 'lift' && LIFTS[P.session!] && <Text style={s.label}>{LIFTS[P.session!].length} exercises</Text>}
               </View>
-              {P.type === 'lift' && (trained ? (
-                <HeroRow done title="Session" text={`${NAMES[P.session!]} logged`} />
-              ) : !future ? (
-                <Pressable style={[s.primary, { backgroundColor: c.cat.train.fill }]} onPress={() => router.push('/session')} accessibilityRole="button">
-                  <Text style={[s.primaryText, { color: c.cat.train.on }]}>▶  Start session</Text>
-                </Pressable>
-              ) : null)}
+              {P.type === 'lift' && (past && trained ? <HeroRow done title="Session" text={`${NAMES[P.session!]} logged`} /> : !future ? <LiftPlan /> : null)}
               {P.type === 'cardio' && (
                 <HeroRow done={steps >= P.steps} title="Cardio" text={P.cardio}
                   action={steps >= P.steps || future ? undefined : { label: 'Log steps', onPress: () => router.push('/quick') }} />

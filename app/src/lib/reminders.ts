@@ -6,6 +6,7 @@ import { addDays, d, key } from '../domain/dates';
 import { planWeekdays } from '../domain/ai';
 import type { Engine } from '../domain/plan';
 import * as db from './db';
+import { fmt12, loadCue } from './workout';
 
 const REM_SKIP: Record<string, 1> = { waist: 1, photos: 1, lab: 1, task: 1, mobility: 1, train: 1, protein: 1, water: 1 };
 const REM_TIME: Record<string, string> = { waking: '07:00', morning: '08:00', breakfast: '07:30', lunch: '13:00', afternoon: '16:00', evening: '20:00', dinner: '20:30', bedtime: '22:30', night: '22:45' };
@@ -18,7 +19,10 @@ export function remRows(engine: Engine, maxDay: string, userChecks: db.UserCheck
   const wn = planWeekdays(T.TSTART);
   const ph = PL.phases[(P.inRange ? P.phase : 1) - 1];
   const liftNames = wn.filter((_, i) => ph.weeks.some((w) => w[i] && w[i].t === 'lift'));
-  const rows: RemRow[] = [{ k: 'train', label: 'Training days', sub: (liftNames.join(', ') || 'none') + ' this phase · follows each phase', dflt: ['18:30', true] }];
+  const rows: RemRow[] = [
+    { k: 'train', label: 'Training days', sub: (liftNames.join(', ') || 'none') + ' this phase · follows each phase', dflt: ['18:30', true] },
+    { k: 'train2', label: 'Training backup', sub: 'Only if you haven’t trained by then · cancelled once you do', dflt: ['18:15', true] },
+  ];
   const uc = userChecks.map((u) => ({ id: u.id, t: u.title, w: u.when_label, s: u.subtitle, builtinOnly: u.builtin_only }));
   engine.checkList(P, uc, hidden).filter((c) => !REM_SKIP[c.id]).forEach((c) => {
     rows.push({ k: 'chk:' + c.id, label: c.t, sub: 'Daily' + (c.w ? ' · ' + c.w : ''), dflt: [REM_TIME[String(c.w || '').toLowerCase()] || '09:00', false] });
@@ -39,13 +43,23 @@ export async function scheduleReminders(engine: Engine, maxDay: string, rows: Re
   await Notifications.cancelAllScheduledNotificationsAsync();
   const { PL, T, G } = engine;
   const now = Date.now(), horizon = key(addDays(d(maxDay), 56)), end = T.END < horizon ? T.END : horizon;
-  const out: { title: string; body: string; when: Date }[] = [];
+  const out: { title: string; body: string; when: Date; id?: string; url?: string }[] = [];
+  const cue = loadCue();
   const it = (k: string) => items[k];
   // Lift days, phase by phase, at the training time.
   if (it('train')?.on) {
     for (let k = maxDay; k <= end; k = key(addDays(d(k), 1))) {
       const p = engine.plan(k);
-      if (p.type === 'lift' && p.session) out.push({ title: 'Lift · ' + String(PL.phases[p.phase - 1]?.name || '').split('·').pop()!.trim(), body: PL.programs[p.session]?.name + '. Open Recomp, Train, Start session.', when: at(k, it('train').time) });
+      if (p.type === 'lift' && p.session) out.push({ id: 'train:' + k, url: '/session?short=1', title: cue ? `Before your ${cue.anchor}: two exercises` : 'Lift day: two exercises, 10 minutes',
+        body: PL.programs[p.session]?.name + '. Warm-up and the first two. Tap to start.', when: at(k, it('train').time) });
+    }
+  }
+  // The backup: same days, later. Cancelled for the day once the person trains (cancelTrainDay).
+  if (it('train2')?.on) {
+    for (let k = maxDay; k <= end; k = key(addDays(d(k), 1))) {
+      const p = engine.plan(k);
+      if (p.type === 'lift' && p.session) out.push({ id: 'train2:' + k, url: '/session?short=1', title: 'Still time for your two exercises',
+        body: (cue?.backup ? `Before your ${fmt12(cue.backup)} ${cue.anchor}. ` : '') + 'Ten minutes counts. Tap to start.', when: at(k, it('train2').time) });
     }
   }
   rows.filter((r) => r.k.startsWith('chk:') && it(r.k)?.on).forEach((r) => {
@@ -62,9 +76,26 @@ export async function scheduleReminders(engine: Engine, maxDay: string, rows: Re
   }
   const due = out.filter((x) => x.when.getTime() > now + 60000).sort((a, b) => +a.when - +b.when).slice(0, 400);
   for (const x of due) {
-    await Notifications.scheduleNotificationAsync({ content: { title: x.title, body: x.body }, trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: x.when, channelId: 'reminders' } });
+    await Notifications.scheduleNotificationAsync({ identifier: x.id, content: { title: x.title, body: x.body, data: x.url ? { url: x.url } : {} }, trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: x.when, channelId: 'reminders' } });
   }
   return due.length;
+}
+
+/** The day's training reminders are moot once the person has trained. */
+export async function cancelTrainDay(k: string) {
+  if (Platform.OS === 'web') return;
+  await Promise.all(['train:', 'train2:'].map((p) => Notifications.cancelScheduledNotificationAsync(p + k).catch(() => {})));
+}
+
+/** Rebuild every reminder from what is saved, as Me > Reminders > Update does. */
+export async function rescheduleSaved(engine: Engine, maxDay: string) {
+  if (Platform.OS === 'web') return 0;
+  const [uc, h, r] = await Promise.all([db.listUserChecks(), db.listHiddenChecks(), db.listReminders()]);
+  const hidden = Object.fromEntries(h.map((x) => [x.check_id, x.label === x.check_id ? true : x.label])) as Record<string, string | true>;
+  const rows = remRows(engine, maxDay, uc, hidden);
+  const saved = Object.fromEntries(r.map((x) => [x.key, { on: x.enabled, time: String(x.local_time).slice(0, 5) }]));
+  const items = Object.fromEntries(rows.map((x) => [x.k, saved[x.k] ?? { on: x.dflt[1], time: x.dflt[0] }]));
+  return scheduleReminders(engine, maxDay, rows, items);
 }
 
 export const clearReminders = () => Notifications.cancelAllScheduledNotificationsAsync();

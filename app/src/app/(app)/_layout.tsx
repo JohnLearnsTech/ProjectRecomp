@@ -1,8 +1,27 @@
-import { Stack } from 'expo-router';
+import * as Notifications from 'expo-notifications';
+import { router, Stack } from 'expo-router';
+import { useEffect } from 'react';
+import { Platform } from 'react-native';
 import { ToastHost } from '../../components/ToastHost';
 import { DaysProvider } from '../../lib/days';
 import { RecompProvider } from '../../lib/recomp';
 import { font, useTheme } from '../../lib/theme';
+
+// Tapping a reminder opens what it is about (a training reminder opens the 10-minute session).
+// Each response is handled once, so coming back to the app does not reopen it.
+let handled: string | null = null;
+function NotificationTaps() {
+  const last = Notifications.useLastNotificationResponse();
+  useEffect(() => {
+    if (!last || last.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return;
+    const id = last.notification.request.identifier, url = last.notification.request.content.data?.url;
+    if (id === handled || typeof url !== 'string' || !url.startsWith('/')) return;
+    handled = id;
+    Notifications.clearLastNotificationResponseAsync().catch(() => {});
+    setTimeout(() => router.push(url as never), 300);
+  }, [last]);
+  return null;
+}
 
 export default function AppStack() {
   const { c } = useTheme();
@@ -25,6 +44,7 @@ export default function AppStack() {
         <Stack.Screen name="quick" options={{ presentation: 'formSheet', sheetAllowedDetents: 'fitToContents', headerShown: false, contentStyle: { backgroundColor: c.surface } }} />
       </Stack>
       <ToastHost />
+      {Platform.OS !== 'web' && <NotificationTaps />}
       </DaysProvider>
     </RecompProvider>
   );
