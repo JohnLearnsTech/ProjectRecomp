@@ -3,8 +3,9 @@ import { router, Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import { ToastHost } from '../../components/ToastHost';
-import { DaysProvider } from '../../lib/days';
-import { RecompProvider } from '../../lib/recomp';
+import { DaysProvider, useDays } from '../../lib/days';
+import { syncSteps } from '../../lib/steps';
+import { RecompProvider, useRecomp } from '../../lib/recomp';
 import { font, useTheme } from '../../lib/theme';
 
 // Tapping a reminder opens what it is about (a training reminder opens the 10-minute session).
@@ -20,6 +21,17 @@ function NotificationTaps() {
     Notifications.clearLastNotificationResponseAsync().catch(() => {});
     setTimeout(() => router.push(url as never), 300);
   }, [last]);
+  return null;
+}
+
+// Steps from Health Connect, on open and whenever the app comes back (rev bumps on resume).
+function StepSync() {
+  const { engine, maxDay, rev, ready, touch } = useRecomp();
+  const { entries, loaded } = useDays();
+  useEffect(() => {
+    if (!ready || !loaded) return;
+    syncSteps(maxDay, engine.T.START, (k) => entries[k]?.steps ?? null).then((ch) => { if (ch.length) touch(); }).catch(() => {});
+  }, [rev, ready, loaded, maxDay]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }
 
@@ -45,6 +57,7 @@ export default function AppStack() {
       </Stack>
       <ToastHost />
       {Platform.OS !== 'web' && <NotificationTaps />}
+      {Platform.OS === 'android' && <StepSync />}
       </DaysProvider>
     </RecompProvider>
   );

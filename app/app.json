@@ -17,7 +17,10 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.johnlearnstech.recomp"
+      "package": "com.johnlearnstech.recomp",
+      "permissions": [
+        "android.permission.health.READ_STEPS"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -33,11 +36,13 @@
           "android": {
             "buildArchs": [
               "arm64-v8a"
-            ]
+            ],
+            "minSdkVersion": 26
           }
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "react-native-health-connect"
     ],
     "scheme": "recomp",
     "experiments": {

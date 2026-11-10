@@ -11,6 +11,7 @@ import * as db from '../../lib/db';
 import { useDays } from '../../lib/days';
 import { exportFile } from '../../lib/exportBackup';
 import { useRecomp } from '../../lib/recomp';
+import { connectSteps, disconnectSteps, openStepSources, stepsConnected, stepsSupported, syncSteps } from '../../lib/steps';
 import { clearReminders, remRows, scheduleReminders, scheduledCount } from '../../lib/reminders';
 import { ACCENTS, font, setPrefs, usePrefs, useTheme } from '../../lib/theme';
 import { BackupImport } from '../BackupImport';
@@ -132,6 +133,7 @@ export function SettingsTab({ storedKey, setStoredKey, toast }: { storedKey: str
   const cycleTheme = () => setPrefs({ theme: prefs.theme === 'auto' ? 'light' : prefs.theme === 'light' ? 'dark' : 'auto' });
   return (
     <View style={{ gap: 14 }}>
+      {stepsSupported && <StepsCard toast={toast} />}
       <View style={s.card}>
         <PanelHead title="Settings" right={
           <Pressable onPress={cycleTheme} accessibilityLabel={`Theme: ${prefs.theme}. Tap to change.`} style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: c.line, alignItems: 'center', justifyContent: 'center' }}>
@@ -188,6 +190,45 @@ export function SettingsTab({ storedKey, setStoredKey, toast }: { storedKey: str
         <Text style={s.label}>Signed in as {session?.user.email}</Text>
         <Mini label="Sign out" danger onPress={() => { signOut(); toast('Signed out'); }} />
       </View>
+    </View>
+  );
+}
+
+/** Me > Settings: steps counted by the phone, read from Health Connect. */
+function StepsCard({ toast }: { toast: (t: string) => void }) {
+  const { c, s } = useTheme('move');
+  const { engine, maxDay, touch } = useRecomp();
+  const { entries } = useDays();
+  const [on, setOn] = useState(stepsConnected());
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const connect = async () => {
+    setBusy(true); setErr(null);
+    try {
+      await connectSteps(); setOn(true);
+      const ch = await syncSteps(maxDay, engine.T.START, (k) => entries[k]?.steps ?? null, 14);
+      if (ch.length) touch();
+      toast(ch.length ? `Connected. Steps filled in for ${ch.length} day${ch.length > 1 ? 's' : ''}.` : 'Connected. If no steps appear, check that a step app writes to Health Connect.');
+    } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
+  };
+  return (
+    <View style={s.card}>
+      <PanelHead title="Steps from your phone" />
+      <Text style={s.body2}>{on
+        ? 'On. Recomp reads your step count from Health Connect when you open it, and fills in the last week. A higher number you type yourself is kept.'
+        : 'Read your daily steps from Health Connect instead of typing them. It works with whatever counts your steps: the phone itself, Samsung Health, Google Fit or a watch.'}</Text>
+      {err && <Cue>{err}</Cue>}
+      <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+        {!on ? (
+          <Pressable style={[s.primary, { flex: 1 }, busy && { opacity: 0.5 }]} disabled={busy} onPress={connect}><Text style={s.primaryText}>{busy ? 'Connecting…' : 'Connect step counter'}</Text></Pressable>
+        ) : (
+          <>
+            <Mini label="Step sources" onPress={openStepSources} />
+            <Mini label="Stop syncing" onPress={() => { disconnectSteps(); setOn(false); toast('Step syncing off'); }} />
+          </>
+        )}
+      </View>
+      {on && <Text style={[s.label, { color: c.muted }]}>No steps showing? Open Step sources and check an app or your phone is allowed to write steps to Health Connect.</Text>}
     </View>
   );
 }

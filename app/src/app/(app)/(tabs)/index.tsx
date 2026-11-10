@@ -19,6 +19,7 @@ import { Celebrate, GameBar } from '../../../components/Game';
 import * as db from '../../../lib/db';
 import { evidence, latestWeight, trainedOn, useHistory } from '../../../lib/history';
 import { useRecomp } from '../../../lib/recomp';
+import { stepsConnected, stepsSupported } from '../../../lib/steps';
 import { font, useTheme } from '../../../lib/theme';
 
 const n = (x: number) => Math.round(x).toLocaleString('en-IN');
@@ -93,6 +94,11 @@ export default function Today() {
                 <Tile value={String(pLeft)} label="g protein to go" frac={pr / (P.protein || 1)} color={c.cat.protein.fill} onPress={() => router.navigate('/food')} ok={hasFood && pLeft === 0} />
                 <Tile value={n(steps)} label={`of ${n(P.steps)} steps`} frac={steps / (P.steps || 1)} color={c.cat.move.fill} onPress={() => router.push('/quick')} ok={steps >= P.steps} />
               </View>
+              {stepsSupported && !stepsConnected() && day === maxDay && (
+                <Pressable onPress={() => { try { localStorage.setItem('recomp:metab', 'settings'); } catch { /* ignore */ } router.push('/me'); }} accessibilityRole="button">
+                  <Text style={[s.label, { color: c.cat.move.ink, fontFamily: font.semibold }]}>Count steps automatically from your phone ›</Text>
+                </Pressable>
+              )}
             </>
           )}
         </View>
