@@ -273,6 +273,8 @@ export const setKeystone = async (id: string | null) => updateProfile({ keystone
 export type HabitSession = { id: string; habit_id: string; date: string; started_at: string; ended_at: string; source: 'timer' | 'pomodoro' };
 export const listHabitSessions = async (date: string) =>
   must(await supabase.from('habit_sessions').select('id, habit_id, date, started_at, ended_at, source').eq('date', date).order('started_at')) as HabitSession[];
+export const listHabitSessionsRange = async (from: string, to: string, habitIds: string[]) =>
+  habitIds.length ? must(await supabase.from('habit_sessions').select('id, habit_id, date, started_at, ended_at, source').gte('date', from).lte('date', to).in('habit_id', habitIds).eq('source', 'timer').order('started_at')) as HabitSession[] : [];
 export const addHabitSessions = async (rows: { habit_id: string; date: string; started_at: string; ended_at: string; source: 'timer' | 'pomodoro' }[]) => {
   if (rows.length) must(await supabase.from('habit_sessions').insert(rows));
 };

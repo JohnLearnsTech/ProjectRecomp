@@ -7,6 +7,7 @@ import { aiMessage } from '../../domain/ai';
 import { clearApiKey, maskKey, saveApiKey } from '../../lib/apiKey';
 import { signOut, useAuth } from '../../lib/auth';
 import { checkKey, MODEL } from '../../lib/claude';
+import { tracksSteps } from '../../domain/days';
 import * as db from '../../lib/db';
 import { useDays } from '../../lib/days';
 import { exportFile } from '../../lib/exportBackup';
@@ -198,7 +199,7 @@ export function SettingsTab({ storedKey, setStoredKey, toast }: { storedKey: str
 function StepsCard({ toast }: { toast: (t: string) => void }) {
   const { c, s } = useTheme('move');
   const { engine, maxDay, touch } = useRecomp();
-  const { entries } = useDays();
+  const { entries, habits } = useDays();
   const [on, setOn] = useState(stepsConnected());
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -206,17 +207,18 @@ function StepsCard({ toast }: { toast: (t: string) => void }) {
     setBusy(true); setErr(null);
     try {
       await connectSteps(); setOn(true);
-      const ch = await syncSteps(maxDay, engine.T.START, (k) => entries[k]?.steps ?? null, 14);
-      if (ch.length) touch();
-      toast(ch.length ? `Connected. Steps filled in for ${ch.length} day${ch.length > 1 ? 's' : ''}.` : 'Connected. If no steps appear, check that a step app writes to Health Connect.');
+      const walkIds = habits.filter(tracksSteps).map((h) => h.id);
+      const r = await syncSteps({ today: maxDay, start: engine.T.START, have: (k) => entries[k]?.steps ?? null, walkIds, days: 14, force: true });
+      if (r.changed.length) touch();
+      toast(!walkIds.length ? 'Connected. Add a Walk habit and its timer’s steps will count.' : r.changed.length ? `Connected. Walk steps filled in for ${r.changed.length} day${r.changed.length > 1 ? 's' : ''}.` : 'Connected. Steps from your next timed walk will show up.');
     } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
   };
   return (
     <View style={s.card}>
       <PanelHead title="Steps from your phone" />
       <Text style={s.body2}>{on
-        ? 'On. Recomp reads your step count from Health Connect when you open it, and fills in the last week. A higher number you type yourself is kept.'
-        : 'Read your daily steps from Health Connect instead of typing them. It works with whatever counts your steps: the phone itself, Samsung Health, Google Fit or a watch.'}</Text>
+        ? 'On. Only steps taken while your walk timer runs count, pauses left out. Recomp reads them from Health Connect when a walk ends and when you open the app. A number you type yourself is kept.'
+        : 'Fill in steps from your timed walks automatically. Only steps taken while the walk timer runs count, read from Health Connect, so it works with whatever counts your steps: the phone itself, Samsung Health, Google Fit or a watch.'}</Text>
       {err && <Cue>{err}</Cue>}
       <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
         {!on ? (

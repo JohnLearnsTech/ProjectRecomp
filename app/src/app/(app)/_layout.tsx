@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 import { ToastHost } from '../../components/ToastHost';
 import { DaysProvider, useDays } from '../../lib/days';
 import { syncSteps } from '../../lib/steps';
+import { tracksSteps } from '../../domain/days';
 import { RecompProvider, useRecomp } from '../../lib/recomp';
 import { font, useTheme } from '../../lib/theme';
 
@@ -27,10 +28,11 @@ function NotificationTaps() {
 // Steps from Health Connect, on open and whenever the app comes back (rev bumps on resume).
 function StepSync() {
   const { engine, maxDay, rev, ready, touch } = useRecomp();
-  const { entries, loaded } = useDays();
+  const { entries, habits, loaded } = useDays();
   useEffect(() => {
     if (!ready || !loaded) return;
-    syncSteps(maxDay, engine.T.START, (k) => entries[k]?.steps ?? null).then((ch) => { if (ch.length) touch(); }).catch(() => {});
+    syncSteps({ today: maxDay, start: engine.T.START, have: (k) => entries[k]?.steps ?? null, walkIds: habits.filter(tracksSteps).map((h) => h.id) })
+      .then((r) => { if (r.changed.length) touch(); }).catch(() => {});
   }, [rev, ready, loaded, maxDay]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }

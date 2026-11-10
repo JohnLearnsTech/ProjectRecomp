@@ -12,6 +12,7 @@ import {
   timerMs, toggleClockMode, useNow, useTimerStore,
 } from '../lib/habitTimers';
 import { deleteSession, logFocus, pomoTarget, resetDay, setValue, setValue as setValueH, stopAndLog } from '../lib/habits';
+import { stepsConnected, syncSteps } from '../lib/steps';
 import { toast } from '../lib/toast';
 import { useRecomp } from '../lib/recomp';
 import { font, useTheme, type Cat } from '../lib/theme';
@@ -21,7 +22,7 @@ import { useInfo } from './ui';
 
 /** r19's Habits section on Today: cards, the running timer, Pomodoro, the log sheet. */
 export function Habits({ openId, onOpened }: { openId?: string | null; onOpened?: () => void }) {
-  const { day, maxDay, touch } = useRecomp();
+  const { day, maxDay, touch, engine } = useRecomp();
   const { D, entries, habits, habitRows, keystone } = useDays();
   const { c, s } = useTheme('habit');
   const { timers, pomo, clockMode } = useTimerStore();
@@ -54,7 +55,15 @@ export function Habits({ openId, onOpened }: { openId?: string | null; onOpened?
     try {
       const r = await stopAndLog(h, (k) => valOn(k, h.id));
       touch();
-      if (r && tracksSteps(h)) setWalkAsk({ h, day: r.day, ms: r.ms });
+      if (r && tracksSteps(h)) {
+        // With the step counter connected, this walk's steps come from the phone; otherwise ask.
+        if (stepsConnected()) {
+          const res = await syncSteps({ today: maxDay, start: engine.T.START, have: (k) => entries[k]?.steps ?? null, walkIds: habits.filter(tracksSteps).map((x) => x.id), days: 1, force: true });
+          if (res.changed.length) touch();
+          const n = res.totals[r.day];
+          toast(n ? `Walk saved. ${n.toLocaleString('en-IN')} steps on timed walks today.` : 'Walk saved. Steps can take a few minutes to reach Health Connect; they’ll fill in next time you open Recomp.');
+        } else setWalkAsk({ h, day: r.day, ms: r.ms });
+      }
     } catch (e) { setErr((e as Error).message); }
   };
 
