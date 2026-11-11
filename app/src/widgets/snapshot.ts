@@ -12,7 +12,9 @@ export type Snapshot = {
   lift: 'todo' | 'done' | 'warm' | 'rest' | 'cardio' | 'off';
   liftLine: string;
   level: string | null; streak: number;
-  /** Up to four habits for the widget's chips; timed ones start a timer from the widget. */
+  /** The rank for the Level widget: number, name, colour, and how far to the next. */
+  rank: { i: number; name: string; tint: string; motto: string; next: string | null; need: number; pct: number } | null;
+  /** Up to six habits for the widget's chips; timed ones start a timer from the widget. */
   habits: { id: string; name: string; timed: boolean; val: string; met: boolean }[];
   /** Names of every habit, so a running timer can be labelled. */
   names: Record<string, string>;

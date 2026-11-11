@@ -12,7 +12,7 @@ import { requestWidgetUpdate } from 'react-native-android-widget';
 import { useGame } from '../../lib/game';
 import { fmt12, loadCue } from '../../lib/workout';
 import { writeSnapshot, type Snapshot } from '../../widgets/snapshot';
-import { todayWidget } from '../../widgets/TodayWidget';
+import { renderWidget, WIDGETS } from '../../widgets/widgets';
 import { RecompProvider, useRecomp } from '../../lib/recomp';
 import { font, useTheme } from '../../lib/theme';
 
@@ -65,15 +65,17 @@ function WidgetSync() {
       day: maxDay, kcalTarget: P.kcal, kcalLeft: Math.round(P.kcal - (+(e.kcal ?? 0))), proteinTarget: P.protein,
       proteinLeft: Math.max(0, Math.round(P.protein - (+(e.protein ?? 0)))), steps: +(e.steps ?? 0), stepsTarget: P.steps,
       lift, liftLine, level: game?.level.name ?? null, streak: game?.streak ?? 0,
+      rank: game ? { i: game.level.i, name: game.level.name, tint: game.level.tint, motto: game.level.motto, next: game.level.next?.name ?? null, need: game.level.next?.need ?? 0,
+        pct: game.level.next ? ((game.totalWon - game.level.from) / Math.max(1, game.level.next.at - game.level.from)) * 100 : 100 } : null,
       // The keystone first, then the rest in order: four fit on the widget.
-      habits: [...(keystone ? [keystone] : []), ...habits.filter((h) => h.id !== keystone?.id)].slice(0, 4).map((h) => {
+      habits: [...(keystone ? [keystone] : []), ...habits.filter((h) => h.id !== keystone?.id)].slice(0, 6).map((h) => {
         const v = D.habitVal(maxDay, h.id);
         return { id: h.id, name: h.name, timed: isTimeUnit(h.unit), met: habitMet(h, v), val: v == null ? 'not yet' : `${trimNum(v)}${h.unit ? ' ' + h.unit : ''}` };
       }),
       names: Object.fromEntries(habits.map((h) => [h.id, h.name])),
     };
     writeSnapshot(snap);
-    requestWidgetUpdate({ widgetName: 'Today', renderWidget: () => todayWidget(snap, allTimers()) }).catch(() => {});
+    WIDGETS.forEach((w) => { requestWidgetUpdate({ widgetName: w, renderWidget: () => renderWidget(w, snap, allTimers()) }).catch(() => {}); });
   }, [loaded, maxDay, entries, habits, game?.level.name, game?.streak, timers, tick]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }
