@@ -106,7 +106,8 @@ function WidgetSync() {
       proteinLeft: Math.max(0, Math.round(P.protein - (+(e.protein ?? 0)))), steps: +(e.steps ?? 0), stepsTarget: P.steps,
       lift, liftLine, level: game?.level.name ?? null, streak: game?.streak ?? 0,
       rank: game ? { i: game.level.i, name: game.level.name, tint: game.level.tint, motto: game.level.motto, next: game.level.next?.name ?? null, need: game.level.next?.need ?? 0,
-        pct: game.level.next ? ((game.totalWon - game.level.from) / Math.max(1, game.level.next.at - game.level.from)) * 100 : 100 } : null,
+        pct: game.level.next ? ((game.totalWon - game.level.from) / Math.max(1, game.level.next.at - game.level.from)) * 100 : 100,
+        span: game.level.next ? game.level.next.at - game.level.from : 1, done: game.level.next ? game.totalWon - game.level.from : 1 } : null,
       // The keystone first, then the rest in order: four fit on the widget.
       habits: [...(keystone ? [keystone] : []), ...habits.filter((h) => h.id !== keystone?.id)].slice(0, 6).map((h) => {
         const v = D.habitVal(maxDay, h.id);

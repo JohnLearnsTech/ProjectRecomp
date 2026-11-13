@@ -13,7 +13,7 @@ export type Snapshot = {
   liftLine: string;
   level: string | null; streak: number;
   /** The rank for the Level widget: number, name, colour, and how far to the next. */
-  rank: { i: number; name: string; tint: string; motto: string; next: string | null; need: number; pct: number } | null;
+  rank: { i: number; name: string; tint: string; motto: string; next: string | null; need: number; pct: number; span: number; done: number } | null;
   /** Up to six habits for the widget's chips; timed ones start a timer from the widget. */
   habits: { id: string; name: string; timed: boolean; val: string; met: boolean }[];
   /** Habits whose timer is a walk (the live step tracker follows those). */

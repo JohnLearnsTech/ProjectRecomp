@@ -113,6 +113,11 @@
               "resizeMode": "horizontal|vertical",
               "updatePeriodMillis": 1800000
             }
+          ],
+          "fonts": [
+            "./assets/fonts/Doto-Black.ttf",
+            "./assets/fonts/SpaceGrotesk-Medium.ttf",
+            "./assets/fonts/SpaceGrotesk-Bold.ttf"
           ]
         }
       ]
