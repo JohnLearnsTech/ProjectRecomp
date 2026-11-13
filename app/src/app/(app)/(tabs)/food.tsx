@@ -220,7 +220,7 @@ export default function Food() {
                   {pending} item{pending > 1 ? 's need' : ' needs'} numbers. {keyed ? 'Claude can estimate them, or tap a row to type them in.' : 'Tap a row to type them in, or let Claude fill them through the Project Recomp connector (Me, Settings).'}
                 </Text>
                 {!keyed && (
-                  <Pressable style={[s.outline, { alignSelf: 'flex-start' }]} onPress={() => handOffToClaude()}>
+                  <Pressable style={[s.outline, { alignSelf: 'flex-start' }]} onPress={() => handOffToClaude().then((w) => { if (w === 'new') setStatus('Tip: to keep every request in one Claude chat, save its link under Me, Settings.'); })}>
                     <Text style={s.outlineText}>Estimate with Claude</Text>
                   </Pressable>
                 )}
