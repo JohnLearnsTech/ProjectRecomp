@@ -7,6 +7,7 @@
 import { Platform } from 'react-native';
 import { addKey } from '../domain/dates';
 import * as db from './db';
+import { sensorDays } from './walk';
 
 export const stepsSupported = Platform.OS === 'android';
 const FLAG = 'recomp:hcsteps';
@@ -65,7 +66,10 @@ export async function syncSteps(o: { today: string; start: string; have: (k: str
       }
     }
     const changed: string[] = [], totals: Record<string, number> = {};
+    const own = sensorDays();
     for (let k = from; k <= o.today; k = addKey(k, 1)) {
+      // Days the live walk tracker counted belong to it.
+      if (own[k]) continue;
       let n = 0;
       for (const x of sessions.filter((y) => y.date === k)) n += await count(new Date(x.started_at), new Date(x.ended_at));
       totals[k] = n;

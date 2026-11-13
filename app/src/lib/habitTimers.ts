@@ -45,6 +45,15 @@ function pauseTimerRaw(id: string) {
   if (t && t.running) { const now = Date.now(); t.accumMs = (t.accumMs || 0) + (now - t.startedAt); (t.segs ||= []).push({ s: t.startedAt, e: now }); t.running = false; }
 }
 export const pauseTimer = (id: string) => { pauseTimerRaw(id); emit(); };
+/** A pause or resume that happened earlier (tapped on the walk notification while the app was away). */
+export function pauseTimerAt(id: string, at: number) {
+  const t = timers[id];
+  if (t && t.running && at > t.startedAt) { t.accumMs = (t.accumMs || 0) + (at - t.startedAt); (t.segs ||= []).push({ s: t.startedAt, e: at }); t.running = false; emit(); }
+}
+export function resumeTimerAt(id: string, at: number) {
+  const t = timers[id];
+  if (t && !t.running) { t.startedAt = Math.min(at, Date.now()); t.running = true; emit(); }
+}
 /** Ends the timer and hands back what to log: its day, total ms and segments. */
 export function stopTimer(id: string): { day: string; ms: number; segs: Seg[] } | null {
   const t = timers[id]; if (!t) return null;

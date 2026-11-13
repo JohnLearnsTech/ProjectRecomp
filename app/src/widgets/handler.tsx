@@ -1,12 +1,15 @@
-// Runs headless when Android asks a widget to draw (added, resized, the 30-minute refresh) or a
-// widget button is tapped. Pause, resume and start change only the timer kept on the phone, so
-// they work here without the app; stopping logs time to the account, so Stop opens the app.
-// A timer change redraws the Timer and Habits widgets together.
+// Runs headless when Android asks a widget to draw (added, resized, the 30-minute refresh, or the
+// live walk tracker's nudge) or a widget button is tapped. Pause, resume and start change the
+// timer kept on the phone, so they work here without the app; a walk's live tracker follows.
+// Stopping logs time to the account, so Stop opens the app.
 import { requestWidgetUpdate, type WidgetTaskHandlerProps } from 'react-native-android-widget';
 import { localKey } from '../domain/dates';
-import { allTimers, pauseTimer, startTimer } from '../lib/habitTimers';
+import { allTimers, pauseTimer, startTimer, timerMs } from '../lib/habitTimers';
+import { pauseWalk, resumeWalk, startWalk, walkState } from '../lib/walk';
 import { readSnapshot } from './snapshot';
-import { renderWidget, WIDGETS } from './widgets';
+import { renderWidget, WIDGETS, type Live } from './widgets';
+
+export const liveWalk = (): Live => { const st = walkState(); return st?.active ? { habitId: st.habitId, steps: st.steps, running: st.running } : null; };
 
 export async function widgetTaskHandler({ widgetInfo, widgetAction, clickAction, clickActionData, renderWidget: draw }: WidgetTaskHandlerProps) {
   const name = widgetInfo.widgetName;
@@ -14,11 +17,15 @@ export async function widgetTaskHandler({ widgetInfo, widgetAction, clickAction,
   if (widgetAction === 'WIDGET_CLICK') {
     const id = typeof clickActionData?.id === 'string' ? clickActionData.id : null;
     if (!id) return;
-    if (clickAction === 'TIMER_PAUSE') pauseTimer(id);
-    else if (clickAction === 'TIMER_START') { const t = allTimers()[id]; startTimer(id, t?.day ?? localKey()); }
-    else return;
-    const other = name === 'Timer' ? 'Habits' : 'Timer';
-    await requestWidgetUpdate({ widgetName: other, renderWidget: () => renderWidget(other, readSnapshot(), allTimers()) }).catch(() => {});
+    const snap = readSnapshot(), isWalk = !!snap?.walkIds?.includes(id), st = walkState();
+    if (clickAction === 'TIMER_PAUSE') { pauseTimer(id); if (st?.active && st.habitId === id) pauseWalk(); }
+    else if (clickAction === 'TIMER_START') {
+      startTimer(id, allTimers()[id]?.day ?? localKey());
+      if (isWalk) { if (st?.active && st.habitId === id) resumeWalk(); else startWalk(id, snap?.names[id] ?? 'Walk', timerMs(id)); }
+    } else return;
+    for (const other of ['Timer', 'Habits', 'Steps'].filter((w) => w !== name)) {
+      await requestWidgetUpdate({ widgetName: other, renderWidget: () => renderWidget(other, readSnapshot(), allTimers(), liveWalk()) }).catch(() => {});
+    }
   }
-  draw(renderWidget(name, readSnapshot(), allTimers()));
+  draw(renderWidget(name, readSnapshot(), allTimers(), liveWalk()));
 }

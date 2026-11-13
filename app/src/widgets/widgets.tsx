@@ -1,196 +1,230 @@
-// Six small home screen widgets, each about one thing: the habit timer, habits, food, the lift
-// day, your level, and steps. Pure: each draws the snapshot the app wrote (and, for timers, the
-// timer store on the phone). Light and dark versions; the launcher picks by the phone's theme.
+// Six small home screen widgets, each about one thing, each with its own colour: the habit
+// timer, habits, food, the lift day, your level, and steps. Bold gradients, white type, big
+// numbers and rings. Pure: each draws the snapshot the app wrote, the timer store on the phone,
+// and (while walking) the live walk tracker's count.
 import { FlexWidget, SvgWidget, TextWidget } from 'react-native-android-widget';
 import type { Timer } from '../lib/habitTimers';
 import { isFresh, type Snapshot } from './snapshot';
 
 export const WIDGETS = ['Timer', 'Habits', 'Food', 'Lift', 'Level', 'Steps'] as const;
 export type WidgetName = (typeof WIDGETS)[number];
+/** The live walk, when one is being tracked: its habit and steps so far. */
+export type Live = { habitId: string; steps: number; running: boolean } | null;
 
 type Hex = `#${string}`;
-type Pal = Record<'bg' | 'card' | 'ink' | 'muted' | 'food' | 'protein' | 'move' | 'train' | 'btn' | 'btnInk', Hex>;
-const DARK: Pal = { bg: '#141614', card: '#1F221F', ink: '#F2F4F0', muted: '#9AA29A', food: '#F5B82E', protein: '#7FB2FF', move: '#9BE15D', train: '#FF8A5B', btn: '#F2F4F0', btnInk: '#141614' };
-const LIGHT: Pal = { bg: '#FBFBF8', card: '#EFF1EC', ink: '#161816', muted: '#646B64', food: '#B57D00', protein: '#2F6FD6', move: '#3F8F1F', train: '#C9531E', btn: '#161816', btnInk: '#FBFBF8' };
+const W: Hex = '#FFFFFF', SOFT: Hex = '#FFFFFFB8', GLASS: Hex = '#FFFFFF26', GLASS2: Hex = '#FFFFFF40';
+const GRAD: Record<string, [Hex, Hex]> = {
+  steps: ['#0BA360', '#3CBA92'], food: ['#FF512F', '#F09819'], lift: ['#7F00FF', '#E100FF'],
+  done: ['#11998E', '#38EF7D'], timer: ['#0F2027', '#2C5364'], habits: ['#1A2980', '#26D0CE'], stale: ['#232526', '#414345'],
+};
+const NEON: Hex = '#39FF88';
+const TILE: Hex[] = ['#FF6B6B', '#FFD93D', '#6BCB77', '#4D96FF', '#C77DFF', '#FF9F45'];
 
 const n = (x: number) => Math.round(x).toLocaleString('en-IN');
 const clock = (ms: number) => { const t = new Date(ms), h = t.getHours(); return `${((h + 11) % 12) + 1}:${String(t.getMinutes()).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`; };
-const dur = (ms: number) => { const m = Math.floor(ms / 60000); return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} min`; };
+const mins = (ms: number) => { const m = Math.floor(ms / 60000); return m < 60 ? `${m}` : `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`; };
+const darken = (hex: string, f: number) => '#' + [1, 3, 5].map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) * f).toString(16).padStart(2, '0')).join('') as Hex;
 
-/** The widget's background card; tapping empty space opens the app (or a deep link). */
-function Frame({ p, children, uri, gap = 6 }: { p: Pal; children: React.ReactNode; uri?: string; gap?: number }) {
+/** A progress ring with text in the middle, drawn as SVG. */
+function ring(pct: number, big: string, small: string, color = '#FFFFFF', track = '#FFFFFF33') {
+  const r = 42, c = 2 * Math.PI * r, p = Math.max(0, Math.min(100, pct));
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<circle cx="50" cy="50" r="${r}" stroke="${track}" stroke-width="10" fill="none"/>
+<circle cx="50" cy="50" r="${r}" stroke="${color}" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="${(c * p) / 100} ${c}" transform="rotate(-90 50 50)"/>
+<text x="50" y="${small ? 54 : 60}" font-size="${big.length > 3 ? 22 : 28}" font-weight="700" font-family="sans-serif" text-anchor="middle" fill="#FFFFFF">${big}</text>
+${small ? `<text x="50" y="70" font-size="11" font-weight="700" font-family="sans-serif" text-anchor="middle" fill="#FFFFFFB8">${small}</text>` : ''}</svg>`;
+}
+/** The rank's shield, as in the app, with a soft glow. */
+const shield = (num: number, tint: string) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<circle cx="50" cy="50" r="46" fill="#FFFFFF" fill-opacity="0.12"/>
+<path d="M50 10 L78 21 Q80 22 80 25 L80 49 Q80 72 50 89 Q20 72 20 49 L20 25 Q20 22 22 21 Z" fill="${tint}" stroke="#FFFFFF" stroke-width="3.5"/>
+<path d="M50 16 L74 25 L74 36 Q50 28 26 36 L26 25 Z" fill="#FFFFFF" fill-opacity="0.28"/>
+<text x="50" y="62" font-size="${num >= 10 ? 28 : 34}" font-weight="700" font-family="sans-serif" text-anchor="middle" fill="#101210">${num}</text></svg>`;
+const dumbbell = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#FFFFFF" fill-opacity="0.2"/>
+<g fill="#FFFFFF"><rect x="18" y="36" width="10" height="28" rx="3"/><rect x="29" y="30" width="9" height="40" rx="3"/><rect x="62" y="30" width="9" height="40" rx="3"/><rect x="72" y="36" width="10" height="28" rx="3"/><rect x="38" y="46" width="24" height="8" rx="2"/></g></svg>`;
+
+/** The widget's card: a gradient; tapping empty space opens the app (or a deep link). */
+function Card({ g, children, uri, gap = 6, pad = 12 }: { g: [Hex, Hex]; children: React.ReactNode; uri?: string; gap?: number; pad?: number }) {
   return (
     <FlexWidget clickAction={uri ? 'OPEN_URI' : 'OPEN_APP'} clickActionData={uri ? { uri } : undefined}
-      style={{ height: 'match_parent', width: 'match_parent', backgroundColor: p.bg, borderRadius: 22, padding: 12, flexDirection: 'column', justifyContent: 'center', flexGap: gap }}>
+      style={{ height: 'match_parent', width: 'match_parent', borderRadius: 24, padding: pad, flexDirection: 'column', justifyContent: 'center', flexGap: gap,
+        backgroundGradient: { from: g[0], to: g[1], orientation: 'TL_BR' } }}>
       {children}
     </FlexWidget>
   );
 }
-const Title = ({ t, p, right }: { t: string; p: Pal; right?: string }) => (
-  <FlexWidget style={{ width: 'match_parent', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-    <TextWidget text={t} style={{ fontSize: 12, fontWeight: '700', color: p.muted }} maxLines={1} />
-    {right ? <TextWidget text={right} style={{ fontSize: 11.5, color: p.muted }} maxLines={1} /> : <FlexWidget />}
-  </FlexWidget>
-);
-function Btn({ text, p, filled, uri, action, data }: { text: string; p: Pal; filled?: boolean; uri?: string; action?: string; data?: Record<string, unknown> }) {
+const Label = ({ t, color = SOFT }: { t: string; color?: Hex }) => <TextWidget text={t} style={{ fontSize: 11, fontWeight: '700', color, letterSpacing: 0.12 }} maxLines={1} />;
+function Pill({ text, uri, action, data, solid, ink = '#101210' }: { text: string; uri?: string; action?: string; data?: Record<string, unknown>; solid?: Hex; ink?: Hex }) {
   return (
     <FlexWidget clickAction={uri ? 'OPEN_URI' : action} clickActionData={uri ? { uri } : data}
-      style={{ backgroundColor: filled ? p.btn : p.card, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 }}>
-      <TextWidget text={text} style={{ fontSize: 12.5, fontWeight: '700', color: filled ? p.btnInk : p.ink }} maxLines={1} />
+      style={{ backgroundColor: solid ?? GLASS2, borderRadius: 999, paddingHorizontal: 13, paddingVertical: 7 }}>
+      <TextWidget text={text} style={{ fontSize: 12.5, fontWeight: '700', color: solid ? ink : W }} maxLines={1} />
     </FlexWidget>
   );
 }
-const Stale = ({ p, name }: { p: Pal; name: string }) => (
-  <Frame p={p}>
-    <TextWidget text={name} style={{ fontSize: 14, fontWeight: '700', color: p.ink }} />
-    <TextWidget text="Open Recomp to load today." style={{ fontSize: 12, color: p.muted }} />
-  </Frame>
+const Stale = ({ name }: { name: string }) => (
+  <Card g={GRAD.stale}>
+    <Label t={name.toUpperCase()} />
+    <TextWidget text="Tap to load today" style={{ fontSize: 14, fontWeight: '700', color: W }} />
+  </Card>
 );
 
-// ── Timer: the running habit, or quick starts for timed habits ──
-function TimerW({ s, p, timers, now }: { s: Snapshot | null; p: Pal; timers: Record<string, Timer>; now: number }) {
+// ── Steps: a ring to the target, the count, and LIVE while a walk is tracked ──
+function StepsW({ s, live }: { s: Snapshot | null; live: Live }) {
+  if (!isFresh(s) || !s) return <Stale name="Steps" />;
+  const steps = s.steps + (live?.steps ?? 0), pct = s.stepsTarget ? (steps / s.stepsTarget) * 100 : 0, hit = steps >= s.stepsTarget;
+  return (
+    <Card g={hit ? GRAD.done : GRAD.steps} uri="recomp:///" pad={10}>
+      <FlexWidget style={{ width: 'match_parent', flexDirection: 'row', alignItems: 'center', flexGap: 10 }}>
+        <SvgWidget svg={ring(pct, hit ? '✓' : `${Math.round(pct)}%`, '')} style={{ width: 54, height: 54 }} />
+        <FlexWidget style={{ flex: 1, flexDirection: 'column' }}>
+          {live ? <TextWidget text={live.running ? '● LIVE' : '❚❚ PAUSED'} style={{ fontSize: 10.5, fontWeight: '700', color: live.running ? '#FFF35C' : SOFT }} /> : <Label t="STEPS" />}
+          <TextWidget text={n(steps)} style={{ fontSize: 24, fontWeight: '700', color: W }} maxLines={1} />
+          <TextWidget text={live ? `+${n(live.steps)} this walk` : `of ${n(s.stepsTarget)}`} style={{ fontSize: 11, color: SOFT }} maxLines={1} />
+        </FlexWidget>
+      </FlexWidget>
+    </Card>
+  );
+}
+
+// ── Food: a ring of calories eaten, what's left, protein, and a quick add ──
+function FoodW({ s }: { s: Snapshot | null }) {
+  if (!isFresh(s) || !s) return <Stale name="Food" />;
+  const over = s.kcalLeft < 0, eaten = s.kcalTarget - s.kcalLeft, pct = s.kcalTarget ? (eaten / s.kcalTarget) * 100 : 0;
+  return (
+    <Card g={GRAD.food} uri="recomp:///food" gap={6}>
+      <FlexWidget style={{ width: 'match_parent', flexDirection: 'row', alignItems: 'center', flexGap: 8 }}>
+        <SvgWidget svg={ring(pct, n(Math.abs(s.kcalLeft)), over ? 'OVER' : 'LEFT', over ? '#FFF35C' : '#FFFFFF')} style={{ width: 70, height: 70 }} />
+        <FlexWidget style={{ flex: 1, flexDirection: 'column' }}>
+          <Label t="KCAL" />
+          <TextWidget text={s.proteinLeft > 0 ? `${n(s.proteinLeft)} g` : '✓'} style={{ fontSize: 18, fontWeight: '700', color: W }} maxLines={1} />
+          <TextWidget text={s.proteinLeft > 0 ? 'protein to go' : 'protein done'} style={{ fontSize: 10.5, color: SOFT }} maxLines={1} />
+        </FlexWidget>
+      </FlexWidget>
+      <Pill text="+ Add food" uri="recomp:///food?focus=1" solid={W} ink="#E2531F" />
+    </Card>
+  );
+}
+
+// ── Lift: today's lift, the 10-minute version, or the win ──
+function LiftW({ s }: { s: Snapshot | null }) {
+  if (!isFresh(s) || !s) return <Stale name="Lift" />;
+  const done = s.lift === 'done' || s.lift === 'warm', todo = s.lift === 'todo';
+  const head = done ? 'LIFTED' : todo ? 'LIFT DAY' : s.lift === 'rest' ? 'REST DAY' : s.lift === 'cardio' ? 'CARDIO DAY' : 'TRAIN';
+  return (
+    <Card g={done ? GRAD.done : GRAD.lift} uri="recomp:///train" pad={10}>
+      <FlexWidget style={{ width: 'match_parent', flexDirection: 'row', alignItems: 'center', flexGap: 10 }}>
+        <SvgWidget svg={dumbbell} style={{ width: 44, height: 44 }} />
+        <FlexWidget style={{ flex: 1, flexDirection: 'column' }}>
+          <Label t={head} />
+          <TextWidget text={done ? 'Done. That counts.' : s.liftLine || 'Nothing planned'} style={{ fontSize: 14, fontWeight: '700', color: W }} maxLines={2} truncate="END" />
+        </FlexWidget>
+        {todo && <Pill text="▶ 10 min" uri="recomp:///session?short=1" solid={W} ink="#7F00FF" />}
+      </FlexWidget>
+    </Card>
+  );
+}
+
+// ── Timer: the running habit in neon, or quick starts ──
+function TimerW({ s, timers, now, live }: { s: Snapshot | null; timers: Record<string, Timer>; now: number; live: Live }) {
   const id = Object.keys(timers).find((k) => timers[k]?.running) ?? Object.keys(timers).find((k) => timers[k]) ?? null;
   if (!id) {
     const timed = (s?.habits ?? []).filter((h) => h.timed).slice(0, 2);
     return (
-      <Frame p={p}>
-        <Title t="Habit timer" p={p} />
+      <Card g={GRAD.timer} pad={11}>
+        <Label t="HABIT TIMER" color={NEON} />
         {timed.length ? (
           <FlexWidget style={{ flexDirection: 'row', flexGap: 6 }}>
-            {timed.map((h) => <Btn key={h.id} p={p} text={`▶ ${h.name}`} action="TIMER_START" data={{ id: h.id }} />)}
+            {timed.map((h) => <Pill key={h.id} text={`▶ ${h.name}`} action="TIMER_START" data={{ id: h.id }} />)}
           </FlexWidget>
-        ) : <TextWidget text="Nothing running. Start a timed habit in the app." style={{ fontSize: 12, color: p.muted }} maxLines={2} />}
-      </Frame>
+        ) : <TextWidget text="Ready when you are" style={{ fontSize: 14, fontWeight: '700', color: W }} />}
+      </Card>
     );
   }
   const t = timers[id], ms = (t.accumMs || 0) + (t.running ? now - t.startedAt : 0), first = t.segs?.[0]?.s ?? t.startedAt;
+  const walkSteps = live && live.habitId === id ? live.steps : null;
   return (
-    <Frame p={p} uri={`recomp:///?habit=${id}`}>
-      <FlexWidget style={{ width: 'match_parent', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexGap: 8 }}>
+    <Card g={GRAD.timer} uri={`recomp:///?habit=${id}`} pad={11}>
+      <FlexWidget style={{ width: 'match_parent', flexDirection: 'row', alignItems: 'center', flexGap: 8 }}>
         <FlexWidget style={{ flex: 1, flexDirection: 'column' }}>
-          <TextWidget text={`${t.running ? '● ' : '❚❚ '}${s?.names[id] ?? 'Timer'}`} style={{ fontSize: 13, fontWeight: '700', color: t.running ? p.move : p.muted }} maxLines={1} truncate="END" />
-          <TextWidget text={dur(ms)} style={{ fontSize: 24, fontWeight: '700', color: p.ink }} maxLines={1} />
-          <TextWidget text={t.running ? `since ${clock(first)}` : 'paused'} style={{ fontSize: 11, color: p.muted }} maxLines={1} />
+          <TextWidget text={`${t.running ? '●' : '❚❚'} ${(s?.names[id] ?? 'Timer').toUpperCase()}`} style={{ fontSize: 11, fontWeight: '700', color: t.running ? NEON : SOFT }} maxLines={1} truncate="END" />
+          <FlexWidget style={{ flexDirection: 'row', alignItems: 'flex-end', flexGap: 4 }}>
+            <TextWidget text={mins(ms)} style={{ fontSize: 30, fontWeight: '700', color: t.running ? NEON : W }} maxLines={1} />
+            <TextWidget text={ms >= 3600000 ? 'h' : 'min'} style={{ fontSize: 13, fontWeight: '700', color: SOFT }} />
+          </FlexWidget>
+          <TextWidget text={walkSteps != null ? `${n(walkSteps)} steps · since ${clock(first)}` : t.running ? `since ${clock(first)}` : 'paused'} style={{ fontSize: 10.5, color: SOFT }} maxLines={1} />
         </FlexWidget>
         <FlexWidget style={{ flexDirection: 'column', flexGap: 6 }}>
-          <Btn p={p} text={t.running ? 'Pause' : 'Resume'} action={t.running ? 'TIMER_PAUSE' : 'TIMER_START'} data={{ id }} />
-          <Btn p={p} filled text="Stop" uri={`recomp:///?stop=${id}`} />
+          <Pill text={t.running ? 'Pause' : 'Resume'} action={t.running ? 'TIMER_PAUSE' : 'TIMER_START'} data={{ id }} />
+          <Pill text="Stop" uri={`recomp:///?stop=${id}`} solid={NEON} />
         </FlexWidget>
       </FlexWidget>
-    </Frame>
+    </Card>
   );
 }
 
-// ── Habits: today's value for up to six; a timed one starts its timer from here ──
-function HabitsW({ s, p, timers }: { s: Snapshot | null; p: Pal; timers: Record<string, Timer> }) {
-  if (!isFresh(s) || !s) return <Stale p={p} name="Habits" />;
+// ── Habits: a colourful tile per habit; timed ones start from here ──
+function HabitsW({ s, timers }: { s: Snapshot | null; timers: Record<string, Timer> }) {
+  if (!isFresh(s) || !s) return <Stale name="Habits" />;
   const hs = s.habits, rows = [hs.slice(0, 3), hs.slice(3, 6)].filter((r) => r.length);
   const done = hs.filter((h) => h.met).length;
   return (
-    <Frame p={p} uri="recomp:///" gap={5}>
-      <Title t="Habits" p={p} right={hs.length ? `${done} of ${hs.length} done` : undefined} />
-      {!hs.length && <TextWidget text="Add habits in the app." style={{ fontSize: 12, color: p.muted }} />}
-      {rows.map((r, i) => (
-        <FlexWidget key={i} style={{ width: 'match_parent', flexDirection: 'row', flexGap: 5 }}>
-          {r.map((h) => {
-            const on = !!timers[h.id]?.running;
+    <Card g={GRAD.habits} uri="recomp:///" gap={6} pad={11}>
+      <FlexWidget style={{ width: 'match_parent', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Label t="HABITS" color={W} />
+        <TextWidget text={hs.length ? `${done}/${hs.length} done` : ''} style={{ fontSize: 11, fontWeight: '700', color: done === hs.length && hs.length ? '#FFF35C' : SOFT }} />
+      </FlexWidget>
+      {!hs.length && <TextWidget text="Add habits in the app" style={{ fontSize: 13, fontWeight: '700', color: W }} />}
+      {rows.map((r, ri) => (
+        <FlexWidget key={ri} style={{ width: 'match_parent', flexDirection: 'row', flexGap: 6 }}>
+          {r.map((h, i) => {
+            const on = !!timers[h.id]?.running, col = TILE[(ri * 3 + i) % TILE.length];
             return (
               <FlexWidget key={h.id} clickAction={h.timed ? 'TIMER_START' : 'OPEN_URI'} clickActionData={h.timed ? { id: h.id } : { uri: `recomp:///?habit=${h.id}` }}
-                style={{ flex: 1, flexDirection: 'column', backgroundColor: on ? p.move : p.card, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 6 }}>
-                <TextWidget text={(h.met ? '✓ ' : h.timed && !on ? '▶ ' : '') + h.name} style={{ fontSize: 11.5, fontWeight: '700', color: on ? p.btnInk : h.met ? p.move : p.ink }} maxLines={1} truncate="END" />
-                <TextWidget text={on ? 'running' : h.val} style={{ fontSize: 10.5, color: on ? p.btnInk : p.muted }} maxLines={1} />
+                style={{ flex: 1, flexDirection: 'column', backgroundColor: h.met || on ? col : GLASS, borderRadius: 14, paddingHorizontal: 9, paddingVertical: 7 }}>
+                <TextWidget text={(h.met ? '✓ ' : on ? '● ' : h.timed ? '▶ ' : '') + h.name} style={{ fontSize: 11.5, fontWeight: '700', color: h.met || on ? '#101210' : W }} maxLines={1} truncate="END" />
+                <TextWidget text={on ? 'running' : h.val} style={{ fontSize: 10.5, color: h.met || on ? '#101210B0' : SOFT }} maxLines={1} />
               </FlexWidget>
             );
           })}
         </FlexWidget>
       ))}
-    </Frame>
+    </Card>
   );
 }
 
-// ── Food: calories and protein left, and a quick add ──
-function FoodW({ s, p }: { s: Snapshot | null; p: Pal }) {
-  if (!isFresh(s) || !s) return <Stale p={p} name="Food" />;
-  const over = s.kcalLeft < 0;
-  return (
-    <Frame p={p} uri="recomp:///food" gap={4}>
-      <Title t="Food" p={p} />
-      <TextWidget text={n(Math.abs(s.kcalLeft))} style={{ fontSize: 26, fontWeight: '700', color: over ? p.train : p.food }} maxLines={1} />
-      <TextWidget text={over ? 'kcal over' : 'kcal left'} style={{ fontSize: 11.5, color: p.muted }} />
-      <TextWidget text={s.proteinLeft > 0 ? `${n(s.proteinLeft)} g protein to go` : 'Protein done ✓'} style={{ fontSize: 12, fontWeight: '600', color: p.protein }} maxLines={1} />
-      <Btn p={p} filled text="+ Food" uri="recomp:///food?focus=1" />
-    </Frame>
-  );
-}
-
-// ── Lift: today's lift and the 10-minute version ──
-function LiftW({ s, p }: { s: Snapshot | null; p: Pal }) {
-  if (!isFresh(s) || !s) return <Stale p={p} name="Lift" />;
-  const done = s.lift === 'done' || s.lift === 'warm';
-  return (
-    <Frame p={p} uri="recomp:///train">
-      <FlexWidget style={{ width: 'match_parent', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexGap: 8 }}>
-        <FlexWidget style={{ flex: 1, flexDirection: 'column' }}>
-          <TextWidget text={s.lift === 'todo' ? 'Lift day' : done ? 'Lift day' : s.lift === 'rest' ? 'Rest day' : s.lift === 'cardio' ? 'Cardio day' : 'Train'} style={{ fontSize: 12, fontWeight: '700', color: p.muted }} />
-          <TextWidget text={s.liftLine || 'Nothing planned'} style={{ fontSize: 14, fontWeight: '700', color: done ? p.move : s.lift === 'todo' ? p.train : p.ink }} maxLines={2} truncate="END" />
-        </FlexWidget>
-        {s.lift === 'todo' && <Btn p={p} filled text="▶ 10 min" uri="recomp:///session?short=1" />}
-      </FlexWidget>
-    </Frame>
-  );
-}
-
-/** The rank's shield, as in the app. */
-const shield = (n: number, tint: string) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 8 L80 20 Q82 21 82 24 L82 50 Q82 74 50 92 Q18 74 18 50 L18 24 Q18 21 20 20 Z" fill="${tint}" stroke="#00000040" stroke-width="3"/><path d="M50 14 L76 24 L76 36 Q50 27 24 36 L24 24 Z" fill="#ffffff" fill-opacity="0.2"/><text x="50" y="62" font-size="${n >= 10 ? 30 : 36}" font-weight="700" font-family="sans-serif" text-anchor="middle" fill="#101210">${n}</text></svg>`;
-
-// ── Level: your rank, the streak, and how close the next one is ──
-function LevelW({ s, p }: { s: Snapshot | null; p: Pal }) {
+// ── Level: the rank's shield on its own colour, progress, streak ──
+function LevelW({ s }: { s: Snapshot | null }) {
   const r = s?.rank;
-  if (!r) return <Stale p={p} name="Level" />;
-  const tint = r.tint as Hex;
+  if (!r) return <Stale name="Level" />;
+  const g: [Hex, Hex] = [darken(r.tint, 0.85), darken(r.tint, 0.38)];
+  const pct = Math.max(0, Math.min(100, Math.round(r.pct)));
   return (
-    <Frame p={p} uri="recomp:///" gap={4}>
+    <Card g={g} uri="recomp:///" gap={5} pad={11}>
       <FlexWidget style={{ width: 'match_parent', flexDirection: 'row', alignItems: 'center', flexGap: 8 }}>
-        <SvgWidget svg={shield(r.i + 1, r.tint)} style={{ width: 44, height: 44 }} />
+        <SvgWidget svg={shield(r.i + 1, r.tint)} style={{ width: 50, height: 50 }} />
         <FlexWidget style={{ flex: 1, flexDirection: 'column' }}>
-          <TextWidget text={`LEVEL ${r.i + 1}`} style={{ fontSize: 10.5, fontWeight: '700', color: tint }} />
-          <TextWidget text={r.name} style={{ fontSize: 15, fontWeight: '700', color: p.ink }} maxLines={1} truncate="END" />
+          <Label t={`LEVEL ${r.i + 1}`} />
+          <TextWidget text={r.name} style={{ fontSize: 16, fontWeight: '700', color: W }} maxLines={1} truncate="END" />
+          {s && s.streak > 1 ? <TextWidget text={`🔥 ${s.streak} in a row`} style={{ fontSize: 10.5, fontWeight: '700', color: W }} maxLines={1} /> : null}
         </FlexWidget>
       </FlexWidget>
-      {/* Progress to the next rank: a filled and an empty bar side by side. */}
-      <FlexWidget style={{ width: 'match_parent', height: 7, flexDirection: 'row', backgroundColor: p.card, borderRadius: 4 }}>
-        <FlexWidget style={{ flex: Math.max(1, Math.round(r.pct)), height: 7, backgroundColor: tint, borderRadius: 4 }} />
-        <FlexWidget style={{ flex: Math.max(0, 100 - Math.round(r.pct)), height: 7 }} />
+      <FlexWidget style={{ width: 'match_parent', height: 8, flexDirection: 'row', backgroundColor: GLASS, borderRadius: 4 }}>
+        <FlexWidget style={{ flex: Math.max(1, pct), height: 8, backgroundColor: W, borderRadius: 4 }} />
+        <FlexWidget style={{ flex: Math.max(0, 100 - pct), height: 8 }} />
       </FlexWidget>
-      <TextWidget text={r.next ? `${r.need} day${r.need === 1 ? '' : 's'} won to ${r.next}` : 'Top rank'} style={{ fontSize: 11.5, color: p.ink }} maxLines={1} />
-      {s && s.streak > 1 && <TextWidget text={`🔥 ${s.streak}-day streak`} style={{ fontSize: 11.5, color: p.muted }} maxLines={1} />}
-    </Frame>
+      <TextWidget text={r.next ? `${r.need} day${r.need === 1 ? '' : 's'} won → ${r.next}` : 'Top rank. Keep it.'} style={{ fontSize: 11, fontWeight: '700', color: SOFT }} maxLines={1} />
+    </Card>
   );
 }
 
-// ── Steps: today's steps against the target ──
-function StepsW({ s, p }: { s: Snapshot | null; p: Pal }) {
-  if (!isFresh(s) || !s) return <Stale p={p} name="Steps" />;
-  const pct = s.stepsTarget ? Math.min(100, Math.round((s.steps / s.stepsTarget) * 100)) : 0, hit = s.steps >= s.stepsTarget;
-  return (
-    <Frame p={p} uri="recomp:///" gap={3}>
-      <Title t="Steps" p={p} right={hit ? '✓' : `${pct}%`} />
-      <TextWidget text={n(s.steps)} style={{ fontSize: 22, fontWeight: '700', color: hit ? p.move : p.ink }} maxLines={1} />
-      <TextWidget text={`of ${n(s.stepsTarget)}`} style={{ fontSize: 11, color: p.muted }} maxLines={1} />
-    </Frame>
-  );
-}
-
-export function renderWidget(name: string, s: Snapshot | null, timers: Record<string, Timer>, now = Date.now()) {
-  const one = (p: Pal) => {
-    switch (name as WidgetName) {
-      case 'Timer': return <TimerW s={s} p={p} timers={timers} now={now} />;
-      case 'Habits': return <HabitsW s={s} p={p} timers={timers} />;
-      case 'Food': return <FoodW s={s} p={p} />;
-      case 'Lift': return <LiftW s={s} p={p} />;
-      case 'Level': return <LevelW s={s} p={p} />;
-      default: return <StepsW s={s} p={p} />;
-    }
-  };
-  return { light: one(LIGHT), dark: one(DARK) };
+export function renderWidget(name: string, s: Snapshot | null, timers: Record<string, Timer>, live: Live = null, now = Date.now()) {
+  switch (name as WidgetName) {
+    case 'Timer': return <TimerW s={s} timers={timers} now={now} live={live} />;
+    case 'Habits': return <HabitsW s={s} timers={timers} />;
+    case 'Food': return <FoodW s={s} />;
+    case 'Lift': return <LiftW s={s} />;
+    case 'Level': return <LevelW s={s} />;
+    default: return <StepsW s={s} live={live} />;
+  }
 }

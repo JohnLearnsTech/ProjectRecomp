@@ -1,17 +1,19 @@
 import * as Notifications from 'expo-notifications';
 import { router, Stack } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Platform } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { AppState, Platform } from 'react-native';
 import { ToastHost } from '../../components/ToastHost';
 import { DaysProvider, useDays } from '../../lib/days';
 import { syncSteps } from '../../lib/steps';
 import { habitMet, isTimeUnit, tracksSteps } from '../../domain/days';
 import { trimNum } from '../../domain/dates';
-import { allTimers, useTimerStore } from '../../lib/habitTimers';
+import { allTimers, timerMs, useTimerStore } from '../../lib/habitTimers';
+import { dropWalk, pauseWalk, replayWalkEvents, resumeWalk, startWalk, walkPermissions, walkState, walkSupported } from '../../lib/walk';
 import { requestWidgetUpdate } from 'react-native-android-widget';
 import { useGame } from '../../lib/game';
 import { fmt12, loadCue } from '../../lib/workout';
 import { writeSnapshot, type Snapshot } from '../../widgets/snapshot';
+import { liveWalk } from '../../widgets/handler';
 import { renderWidget, WIDGETS } from '../../widgets/widgets';
 import { RecompProvider, useRecomp } from '../../lib/recomp';
 import { font, useTheme } from '../../lib/theme';
@@ -44,6 +46,43 @@ function StepSync() {
   return null;
 }
 
+// Keeps the live walk tracker in step with the walk habit's timer (Android).
+function WalkSync() {
+  const { habits, loaded } = useDays();
+  const { timers } = useTimerStore();
+  const asked = useRef(false);
+  const walkIds = habits.filter(tracksSteps).map((h) => h.id);
+  const id = walkIds.find((k) => timers[k]) ?? null;
+  const key = id ? `${id}:${timers[id]?.running ? 1 : 0}` : '-';
+  useEffect(() => {
+    if (!loaded) return;
+    const st = walkState();
+    // Discarded or stopped elsewhere: the app's Stop already took the steps (finishWalk).
+    if (!id) { if (st?.active) dropWalk(); return; }
+    const t = timers[id];
+    if (st?.active && st.habitId === id) {
+      // Notification taps first; replaying them changes the timer and brings us back here.
+      if (replayWalkEvents(id)) return;
+      if (t.running && !st.running) resumeWalk(); else if (!t.running && st.running) pauseWalk();
+      return;
+    }
+    if (!t.running) return;
+    const h = habits.find((x) => x.id === id)!;
+    (async () => {
+      if (!asked.current) { asked.current = true; await walkPermissions(); }
+      startWalk(id, h.name, timerMs(id));
+    })();
+  }, [key, loaded]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Coming back to the app: replay what was tapped on the notification meanwhile.
+  useEffect(() => {
+    const replay = () => { const st = walkState(); if (st?.active) replayWalkEvents(st.habitId); };
+    replay();
+    const sub = AppState.addEventListener('change', (s) => { if (s === 'active') replay(); });
+    return () => sub.remove();
+  }, []);
+  return null;
+}
+
 // Keeps the home screen widget in step with today's numbers.
 function WidgetSync() {
   const { engine, maxDay } = useRecomp();
@@ -51,6 +90,7 @@ function WidgetSync() {
   const game = useGame();
   const { timers } = useTimerStore();
   const running = Object.values(timers).some((t) => t?.running);
+  const timersKey = Object.keys(timers).map((k) => `${k}:${timers[k]?.running ? 1 : 0}`).join(',');
   // A running timer's minutes move on: redraw once a minute while the app is open.
   const [tick, setTick] = useState(0);
   useEffect(() => { if (!running) return; const t = setInterval(() => setTick((x) => x + 1), 60000); return () => clearInterval(t); }, [running]);
@@ -73,10 +113,11 @@ function WidgetSync() {
         return { id: h.id, name: h.name, timed: isTimeUnit(h.unit), met: habitMet(h, v), val: v == null ? 'not yet' : `${trimNum(v)}${h.unit ? ' ' + h.unit : ''}` };
       }),
       names: Object.fromEntries(habits.map((h) => [h.id, h.name])),
+      walkIds: habits.filter(tracksSteps).map((h) => h.id),
     };
     writeSnapshot(snap);
-    WIDGETS.forEach((w) => { requestWidgetUpdate({ widgetName: w, renderWidget: () => renderWidget(w, snap, allTimers()) }).catch(() => {}); });
-  }, [loaded, maxDay, entries, habits, game?.level.name, game?.streak, timers, tick]); // eslint-disable-line react-hooks/exhaustive-deps
+    WIDGETS.forEach((w) => { requestWidgetUpdate({ widgetName: w, renderWidget: () => renderWidget(w, snap, allTimers(), liveWalk()) }).catch(() => {}); });
+  }, [loaded, maxDay, entries, habits, game?.level.name, game?.streak, timersKey, tick]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }
 
@@ -104,6 +145,7 @@ export default function AppStack() {
       {Platform.OS !== 'web' && <NotificationTaps />}
       {Platform.OS === 'android' && <StepSync />}
       {Platform.OS === 'android' && <WidgetSync />}
+      {walkSupported && <WalkSync />}
       </DaysProvider>
     </RecompProvider>
   );

@@ -10,9 +10,11 @@ import { useDays } from '../lib/days';
 import {
   cancelTimer, pauseTimer, pomoBlocksToday, pomoPause, pomoRemain, pomoReset, pomoSettings, pomoStart, pomoStop, pomoTick, startTimer,
   timerMs, toggleClockMode, useNow, useTimerStore,
+  allTimers,
 } from '../lib/habitTimers';
 import { deleteSession, logFocus, pomoTarget, resetDay, setValue, setValue as setValueH, stopAndLog } from '../lib/habits';
 import { stepsConnected, syncSteps } from '../lib/steps';
+import { finishWalk } from '../lib/walk';
 import { toast } from '../lib/toast';
 import { useRecomp } from '../lib/recomp';
 import { font, useTheme, type Cat } from '../lib/theme';
@@ -60,9 +62,16 @@ export function Habits({ openId, stopId, onOpened }: { openId?: string | null; s
 
   const stop = async (h: HabitDef) => {
     try {
+      // The live tracker's count, taken before the timer goes, so its watcher doesn't drop it.
+      const tday = allTimers()[h.id]?.day ?? day;
+      const walked = tracksSteps(h) ? finishWalk(h.id, tday) : null;
       const r = await stopAndLog(h, (k) => valOn(k, h.id));
       touch();
-      if (r && tracksSteps(h)) {
+      if (r && walked != null) {
+        if (walked > 0) await db.saveDayFields(r.day, { steps: (entries[r.day]?.steps ?? 0) + walked });
+        touch();
+        toast(walked > 0 ? `Walk saved. ${walked.toLocaleString('en-IN')} steps on this walk.` : 'Walk saved. No steps were counted. Was the phone with you?');
+      } else if (r && tracksSteps(h)) {
         // With the step counter connected, this walk's steps come from the phone; otherwise ask.
         if (stepsConnected()) {
           const res = await syncSteps({ today: maxDay, start: engine.T.START, have: (k) => entries[k]?.steps ?? null, walkIds: habits.filter(tracksSteps).map((x) => x.id), days: 1, force: true });

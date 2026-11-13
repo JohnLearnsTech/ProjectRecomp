@@ -16,6 +16,8 @@ export type Snapshot = {
   rank: { i: number; name: string; tint: string; motto: string; next: string | null; need: number; pct: number } | null;
   /** Up to six habits for the widget's chips; timed ones start a timer from the widget. */
   habits: { id: string; name: string; timed: boolean; val: string; met: boolean }[];
+  /** Habits whose timer is a walk (the live step tracker follows those). */
+  walkIds: string[];
   /** Names of every habit, so a running timer can be labelled. */
   names: Record<string, string>;
 };
