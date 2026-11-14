@@ -5,6 +5,6 @@
   android:maxResizeWidth="530dp" android:maxResizeHeight="530dp"
   android:resizeMode="horizontal|vertical" android:widgetCategory="home_screen"
   android:updatePeriodMillis="1800000"
-  android:initialLayout="@layout/w_stale"
-  android:previewLayout="@layout/w_steps"
+  android:initialLayout="@layout/w_card"
+  android:previewLayout="@layout/w_card"
   android:description="@string/w_steps_d" />

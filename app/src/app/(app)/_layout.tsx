@@ -109,6 +109,7 @@ function WidgetSync() {
       }),
       names: Object.fromEntries(habits.map((h) => [h.id, h.name])),
       walkIds: habits.filter(tracksSteps).map((h) => h.id),
+      liftAt: cue ? fmt12(cue.at).replace(/ (am|pm)$/, '') : null,
       timer: (() => {
         const all = allTimers(), tid = Object.keys(all).find((k) => all[k]?.running) ?? Object.keys(all).find((k) => all[k]) ?? null;
         if (!tid) return null;

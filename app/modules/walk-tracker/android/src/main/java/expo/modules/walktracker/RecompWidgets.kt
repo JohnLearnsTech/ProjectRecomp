@@ -10,15 +10,14 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
-import android.text.Layout
-import android.text.StaticLayout
 import android.text.TextPaint
-import android.text.TextUtils
 import android.view.View
 import android.widget.RemoteViews
 import org.json.JSONObject
@@ -27,18 +26,25 @@ import java.time.LocalDate
 import java.util.Calendar
 import java.util.Locale
 import kotlin.math.ceil
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.pow
 
 /**
- * The six home screen widgets, drawn natively in the Dot Matrix style. Android widgets can't
- * use an app's own fonts in text views, so every piece of text is drawn here as an image in the
- * bundled Doto (numbers) and Space Grotesk (labels) fonts, sized to the space the launcher gives
- * the widget. The app writes today's numbers here (setWidgetData); the walk tracker adds live
- * steps and time, and redraws the walk clock every second while it runs.
+ * The six home screen widgets in the Dot Matrix style. Every widget is one card (w_card): a label
+ * row at the top, the content centred in the middle, and an optional row of one or two buttons at
+ * the bottom, with the same inset at top, bottom and sides. Android widgets can't use an app's
+ * fonts in text views, so every piece is drawn here as an image in the bundled Doto (numbers) and
+ * Space Grotesk (labels) fonts. Sizes follow the widget: k = min(height / base height,
+ * width / base width); big numbers scale by k, everything else by k^0.7. These are the same rules
+ * as the design previews.
  */
 object RecompWidgets {
   private const val PREFS = "recomp_widgets"
   private val WHITE = Color.WHITE
   private val GREY = Color.parseColor("#8C8C8C")
+  private val DIM = Color.parseColor("#484848")
+  private val OFF = Color.parseColor("#2B2B2B")
   private val RED = Color.parseColor("#FF2A1C")
   private val BLACK = Color.BLACK
 
@@ -61,94 +67,188 @@ object RecompWidgets {
     }
   }
 
-  /** The space this widget has, in dp: width and height as the launcher reports them. */
-  private class Box(val ctx: Context, opts: Bundle?, defW: Int, defH: Int, baseH: Int) {
-    val density = ctx.resources.displayMetrics.density
-    val wDp = (opts?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH) ?: 0).takeIf { it > 0 } ?: defW
-    val hDp = (opts?.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT) ?: 0).takeIf { it > 0 } ?: defH
-    /** How much bigger than the design size the content is drawn: grows with the widget. */
-    val k = (hDp.toFloat() / baseH).coerceIn(0.7f, 1.7f)
-    /** Usable width in px, inside the 16 dp side padding. */
-    val inner = ((wDp - 32) * density).toInt().coerceAtLeast(40)
-    fun px(dp: Float) = dp * density
-  }
-
   fun draw(ctx: Context, mgr: AppWidgetManager, cls: Class<out AppWidgetProvider>, id: Int) {
     val d = load(ctx)
     val opts = try { mgr.getAppWidgetOptions(id) } catch (e: Exception) { null }
-    val views = try {
+    val oneRow = cls == StepsWidget::class.java || cls == LiftWidget::class.java
+    val c = Card(ctx, opts, if (oneRow) 135 else 135, if (oneRow) 60 else 136)
+    try {
       when (cls) {
-        StepsWidget::class.java -> steps(Box(ctx, opts, 130, 57, 72), d)
-        FoodWidget::class.java -> food(Box(ctx, opts, 130, 130, 140), d)
-        LiftWidget::class.java -> lift(Box(ctx, opts, 130, 57, 72), d)
-        LevelWidget::class.java -> level(Box(ctx, opts, 130, 130, 140), d)
-        TimerWidget::class.java -> timer(Box(ctx, opts, 300, 57, 80), d)
-        else -> habits(Box(ctx, opts, 300, 130, 140), d)
+        StepsWidget::class.java -> steps(c, d)
+        FoodWidget::class.java -> food(c, d)
+        LiftWidget::class.java -> lift(c, d)
+        LevelWidget::class.java -> level(c, d)
+        TimerWidget::class.java -> timer(c, d)
+        else -> habits(c, d)
       }
-    } catch (e: Exception) { stale(Box(ctx, opts, 130, 57, 72), "Recomp") }
-    mgr.updateAppWidget(id, views)
+    } catch (e: Exception) { c.reset(); stale(c, "Recomp") }
+    mgr.updateAppWidget(id, c.v)
   }
 
-  // ── drawing text as images ──
+  // ── The card: sizes, padding, and the three parts ──
+  private class Card(val ctx: Context, opts: Bundle?, baseW: Int, baseH: Int) {
+    val density = ctx.resources.displayMetrics.density
+    val wDp = (opts?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH) ?: 0).takeIf { it > 0 } ?: baseW
+    val hDp = (opts?.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT) ?: 0).takeIf { it > 0 } ?: baseH
+    val k = min(hDp.toFloat() / baseH, wDp.toFloat() / baseW).coerceIn(0.75f, 2.6f)
+    val ks = k.toDouble().pow(0.7).toFloat()
+    val side = 16f * min(k, 1.6f)
+    val vert = if (hDp > 80) side else 12f * min(k, 1.6f)
+    val inner = ((wDp - 2 * side) * density).toInt().coerceAtLeast(40)
+    /** Height in px left for the middle once padding is taken. */
+    val heightPx = ((hDp - 2 * vert) * density).toInt().coerceAtLeast(20)
+    var v = RemoteViews(ctx.packageName, R.layout.w_card)
+    init { pad() }
+    fun reset() { v = RemoteViews(ctx.packageName, R.layout.w_card); pad() }
+    private fun pad() { val s = px(side); val t = px(vert); v.setViewPadding(R.id.root, s, t, s, t) }
+    fun px(dp: Float) = (dp * density).toInt()
+    fun g(dp: Float) = dp * ks * density
+  }
+
+  // ── Fonts and text ──
   private val fonts = HashMap<Int, Typeface>()
   private fun font(ctx: Context, res: Int): Typeface = fonts.getOrPut(res) { try { ctx.resources.getFont(res) } catch (e: Exception) { Typeface.DEFAULT_BOLD } }
-  private fun paint(b: Box, res: Int, sp: Float, color: Int, spacing: Float) = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-    typeface = font(b.ctx, res); textSize = sp * b.density * b.ctx.resources.configuration.fontScale.coerceIn(0.85f, 1.3f); this.color = color; letterSpacing = spacing
+  private fun paint(c: Card, res: Int, sp: Float, color: Int, spacing: Float = 0f) = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+    typeface = font(c.ctx, res); textSize = sp * c.density; this.color = color; letterSpacing = spacing
   }
-
-  /** One line of text as an image, shrunk (to 75%) then cut short with … to fit maxPx. */
-  private fun line(b: Box, s: String, res: Int, sp: Float, color: Int, maxPx: Int = b.inner, spacing: Float = 0f): Bitmap {
-    val p = paint(b, res, sp, color, spacing)
-    val start = p.textSize
-    while (p.measureText(s) > maxPx && p.textSize > start * 0.75f) p.textSize -= 1f
+  private fun capBox(p: Paint, s: String = "H"): Rect { val r = Rect(); p.getTextBounds(s, 0, s.length, r); return r }
+  private fun ellipsize(p: Paint, s: String, maxPx: Float): String {
     var t = s
-    while (p.measureText(t) > maxPx && t.length > 1) t = t.dropLast(2) + "…"
-    val fm = p.fontMetrics
-    val w = ceil(p.measureText(t)).toInt().coerceAtLeast(1) + 2
-    val h = ceil(fm.descent - fm.ascent).toInt().coerceAtLeast(1)
-    val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-    Canvas(bmp).drawText(t, 0f, -fm.ascent, p)
-    return bmp
-  }
-  /** Wrapped text, up to maxLines, as an image. */
-  private fun block(b: Box, s: String, res: Int, sp: Float, color: Int, maxPx: Int, maxLines: Int): Bitmap {
-    val p = paint(b, res, sp, color, 0f)
-    val sl = StaticLayout.Builder.obtain(s, 0, s.length, p, maxPx.coerceAtLeast(10)).setMaxLines(maxLines).setEllipsize(TextUtils.TruncateAt.END)
-      .setAlignment(Layout.Alignment.ALIGN_NORMAL).setIncludePad(false).build()
-    var w = 1f
-    for (i in 0 until sl.lineCount) w = maxOf(w, sl.getLineWidth(i))
-    val bmp = Bitmap.createBitmap(ceil(w).toInt() + 2, sl.height.coerceAtLeast(1), Bitmap.Config.ARGB_8888)
-    sl.draw(Canvas(bmp))
-    return bmp
-  }
-  /** A pill button: white filled with black text, or a white outline. */
-  private fun pill(b: Box, s: String, filled: Boolean, sp: Float = 11f): Bitmap {
-    val p = paint(b, R.font.space_grotesk_bold, maxOf(9f, sp * b.k.coerceAtMost(1.35f)), if (filled) BLACK else WHITE, 0.06f)
-    val t = s.uppercase(Locale.ROOT)
-    val fm = p.fontMetrics
-    val padH = b.px(11f * b.k.coerceIn(0.8f, 1.2f)); val padV = b.px(4f * b.k.coerceIn(0.8f, 1.2f)); val stroke = b.px(1.5f)
-    val w = ceil(p.measureText(t) + padH * 2).toInt(); val h = ceil(fm.descent - fm.ascent + padV * 2).toInt()
-    val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-    val c = Canvas(bmp)
-    val r = RectF(stroke / 2, stroke / 2, w - stroke / 2, h - stroke / 2)
-    val bg = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = WHITE; style = if (filled) Paint.Style.FILL else Paint.Style.STROKE; strokeWidth = stroke }
-    c.drawRoundRect(r, h / 2f, h / 2f, bg)
-    c.drawText(t, padH, padV - fm.ascent, p)
-    return bmp
-  }
-  private fun set(v: RemoteViews, id: Int, bmp: Bitmap?) {
-    if (bmp == null) { v.setViewVisibility(id, View.GONE); return }
-    v.setViewVisibility(id, View.VISIBLE); v.setImageViewBitmap(id, bmp)
-  }
-  /** The caps label row: grey small caps, red where it needs you. */
-  private fun label(b: Box, v: RemoteViews, left: String, right: String? = null, leftRed: Boolean = false, rightRed: Boolean = false) {
-    val sp = maxOf(8.5f, 10f * b.k.coerceAtMost(1.3f))
-    val r = right?.takeIf { it.isNotEmpty() }?.let { line(b, it.uppercase(Locale.ROOT), R.font.space_grotesk_medium, sp, if (rightRed) RED else GREY, b.inner / 2, 0.14f) }
-    set(v, R.id.lbl_r, r)
-    set(v, R.id.lbl_l, line(b, left.uppercase(Locale.ROOT), R.font.space_grotesk_medium, sp, if (leftRed) RED else GREY, b.inner - (r?.width ?: 0) - b.px(8f).toInt(), 0.14f))
+    while (p.measureText(t) > maxPx && t.length > 1) t = t.dropLast(2).trimEnd(' ', '·') + "…"
+    return t
   }
 
-  // ── helpers ──
+  // ── Dot-matrix icons (9 x 9), drawn as square dots like the Doto digits ──
+  private val ICONS = mapOf(
+    "clock" to arrayOf("..#####..", ".#.....#.", "#...#...#", "#...#...#", "#...###.#", "#.......#", "#.......#", ".#.....#.", "..#####.."),
+    "feet" to arrayOf(".##......", "####.....", "####.....", "####..##.", ".##..####", ".....####", ".##..####", ".##...##.", "......##."),
+    "flame" to arrayOf("....#....", "...##....", "...###...", "..####...", "..#####..", ".###.###.", ".##...##.", ".##...##.", "..#####.."),
+    "kettlebell" to arrayOf("...###...", "..#...#..", "..#...#..", ".#######.", "#########", "#########", "#########", ".#######.", "........."),
+    "check" to arrayOf(".........", "........#", ".......##", "......##.", "#....##..", "##..##...", ".####....", "..##.....", "........."),
+  )
+  private fun icon(cv: Canvas, kind: String, x: Float, y: Float, size: Float, color: Int) {
+    val rows = ICONS[kind] ?: return
+    val cell = size / rows.size; val dot = cell * 0.8f
+    val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = color }
+    rows.forEachIndexed { r, row -> row.forEachIndexed { col, ch -> if (ch == '#') cv.drawRect(x + col * cell, y + r * cell, x + col * cell + dot, y + r * cell + dot, p) } }
+  }
+
+  // ── The label row: left text, and a right text that shortens or drops when there's no room ──
+  private fun label(c: Card, left: String, right: String? = null, leftRed: Boolean = false, rightRed: Boolean = false, short: String? = null) {
+    val p = paint(c, R.font.space_grotesk_medium, 10f * c.ks, GREY, 0.14f)
+    val l = left.uppercase(Locale.ROOT)
+    val gap = 10f * c.density
+    fun fits(r: String?) = r == null || p.measureText(l) + gap + p.measureText(r.uppercase(Locale.ROOT)) <= c.inner
+    val r = (if (fits(right)) right else if (fits(short)) short else null)?.uppercase(Locale.ROOT)
+    val fm = p.fontMetrics
+    val bmp = Bitmap.createBitmap(c.inner, ceil(fm.descent - fm.ascent).toInt().coerceAtLeast(1), Bitmap.Config.ARGB_8888)
+    val cv = Canvas(bmp)
+    p.color = if (leftRed) RED else GREY
+    cv.drawText(ellipsize(p, l, c.inner.toFloat()), 0f, -fm.ascent, p)
+    if (r != null) { p.color = if (rightRed) RED else GREY; cv.drawText(r, c.inner - p.measureText(r), -fm.ascent, p) }
+    c.v.setImageViewBitmap(R.id.lbl, bmp)
+  }
+
+  // ── The middle: a stack of parts, each centred, with an even gap between them ──
+  private interface Part { val h: Float; fun draw(cv: Canvas, y: Float) }
+
+  /** A big Doto number with an optional dot icon in front, shrunk until it fits the width. */
+  private class Hero(val c: Card, val text: String, sp0: Float, val color: Int = WHITE, val ico: String? = null, val icoColor: Int = color, maxW: Float = c.inner.toFloat()) : Part {
+    val p: Paint
+    val cap: Rect
+    val width: Float
+    init {
+      var sp = sp0 * c.k
+      var pp = paint(c, R.font.doto_black, sp, color)
+      fun w(q: Paint): Float { val cb = capBox(q, "0"); return q.measureText(text) + if (ico != null) cb.height() * 1.24f else 0f }
+      while (w(pp) > maxW && sp > 10f) { sp -= 1f; pp = paint(c, R.font.doto_black, sp, color) }
+      p = pp; cap = capBox(p, "0"); width = w(p)
+    }
+    override val h get() = cap.height().toFloat()
+    fun drawAt(cv: Canvas, x0: Float, y: Float) {
+      var x = x0
+      if (ico != null) { val s = cap.height() * 0.92f; icon(cv, ico, x, y + (cap.height() - s) / 2, s, icoColor); x += s + cap.height() * 0.32f }
+      cv.drawText(text, x, y - cap.top, p)
+    }
+    override fun draw(cv: Canvas, y: Float) = drawAt(cv, (c.inner - width) / 2, y)
+  }
+
+  /** A centred line of text, cut short with … to fit. */
+  private class Line(val c: Card, text: String, val color: Int = GREY, res: Int = R.font.space_grotesk_medium, sp: Float = 11f * c.ks) : Part {
+    val p = paint(c, res, sp, color)
+    val t = ellipsize(p, text, c.inner.toFloat())
+    val top = capBox(p, "H").top
+    override val h get() = (capBox(p, "Hg").bottom - top).toFloat()
+    override fun draw(cv: Canvas, y: Float) { cv.drawText(t, (c.inner - p.measureText(t)) / 2, y - top, p) }
+  }
+
+  /** A row of pips: one per step of progress. */
+  private class Pips(val c: Card, val n: Int, val on: Int) : Part {
+    override val h get() = 6f * c.ks * c.density
+    override fun draw(cv: Canvas, y: Float) {
+      val gap = 3f * c.density; val w = (c.inner - gap * (n - 1)) / n
+      val p = Paint(Paint.ANTI_ALIAS_FLAG)
+      for (i in 0 until n) { p.color = if (i < on) WHITE else OFF; val x = i * (w + gap); cv.drawRoundRect(RectF(x, y, x + w, y + h), h / 2, h / 2, p) }
+    }
+  }
+
+  /** Any custom part (the walk timer's side-by-side numbers). */
+  private class Custom(override val h: Float, val fn: (Canvas, Float) -> Unit) : Part { override fun draw(cv: Canvas, y: Float) = fn(cv, y) }
+
+  /** Draw the parts into the middle image: centred, 12 dp apart, 10 dp clear of the label and buttons. */
+  private fun body(c: Card, parts: List<Part>) {
+    val gap = c.g(12f); val margin = c.g(10f)
+    val total = parts.sumOf { it.h.toDouble() }.toFloat() + gap * (parts.size - 1)
+    val bmp = Bitmap.createBitmap(c.inner, ceil(total + margin * 2).toInt().coerceAtLeast(1), Bitmap.Config.ARGB_8888)
+    val cv = Canvas(bmp)
+    var y = margin
+    for (pt in parts) { pt.draw(cv, y); y += pt.h + gap }
+    c.v.setImageViewBitmap(R.id.body, bmp)
+  }
+
+  // ── Buttons: one spans the row, two share it; text centred on its capitals ──
+  private class Btn(val text: String, val filled: Boolean, val icon: String?, val intent: PendingIntent)
+  private fun pillHeight(c: Card): Float { val p = paint(c, R.font.space_grotesk_bold, 11f * c.ks, BLACK, 0.06f); return capBox(p).height() + 2 * c.g(7.5f) }
+  private fun buttons(c: Card, items: List<Btn>) {
+    c.v.setViewVisibility(R.id.btns, View.VISIBLE)
+    val gap = 8f * c.density
+    val w = ((c.inner - gap * (items.size - 1)) / items.size).toInt()
+    listOf(R.id.b0, R.id.b1).forEachIndexed { i, id ->
+      if (i >= items.size) { c.v.setViewVisibility(id, View.GONE); return@forEachIndexed }
+      val b = items[i]
+      c.v.setViewVisibility(id, View.VISIBLE)
+      c.v.setImageViewBitmap(id, pill(c, b.text, b.filled, b.icon, w))
+      c.v.setOnClickPendingIntent(id, b.intent)
+    }
+    c.v.setViewVisibility(R.id.bgap, if (items.size > 1) View.VISIBLE else View.GONE)
+  }
+  private fun pill(c: Card, s: String, filled: Boolean, icon: String?, width: Int): Bitmap {
+    val p = paint(c, R.font.space_grotesk_bold, 11f * c.ks, if (filled) BLACK else WHITE, 0.06f)
+    val t = s.uppercase(Locale.ROOT)
+    val cap = capBox(p)
+    val h = ceil(cap.height() + 2 * c.g(7.5f)).toInt()
+    val ic = if (icon != null) cap.height() * 0.9f else 0f
+    val icGap = if (icon != null) c.g(5f) else 0f
+    val content = p.measureText(t) + ic + icGap
+    val bmp = Bitmap.createBitmap(width.coerceAtLeast(h), h, Bitmap.Config.ARGB_8888)
+    val cv = Canvas(bmp)
+    val stroke = 1.5f * c.density
+    val bg = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = WHITE; style = if (filled) Paint.Style.FILL else Paint.Style.STROKE; strokeWidth = stroke }
+    cv.drawRoundRect(RectF(stroke / 2, stroke / 2, bmp.width - stroke / 2, h - stroke / 2), h / 2f, h / 2f, bg)
+    val col = if (filled) BLACK else WHITE
+    val mid = h / 2f
+    var x = (bmp.width - content) / 2
+    val ip = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = col }
+    when (icon) {
+      "play" -> cv.drawPath(Path().apply { moveTo(x, mid - ic / 2); lineTo(x, mid + ic / 2); lineTo(x + ic * 0.87f, mid); close() }, ip)
+      "plus" -> { val th = max(2f, ic * 0.2f); cv.drawRect(x, mid - th / 2, x + ic, mid + th / 2, ip); cv.drawRect(x + ic / 2 - th / 2, mid - ic / 2, x + ic / 2 + th / 2, mid + ic / 2, ip) }
+    }
+    x += ic + icGap
+    cv.drawText(t, x, mid - cap.height() / 2f - cap.top, p)
+    return bmp
+  }
+
+  // ── Helpers ──
   private val fmt get() = NumberFormat.getIntegerInstance(Locale("en", "IN"))
   private fun n(x: Int) = fmt.format(x)
   private fun fresh(d: JSONObject?) = d != null && d.optString("day") == LocalDate.now().toString()
@@ -165,180 +265,154 @@ object RecompWidgets {
     val s = WalkStore(ctx)
     return if (s.active) Walk(s.habitId, s.steps(), s.elapsed(System.currentTimeMillis()), s.running) else null
   }
-  /** Which habit timer is running now: the walk tracker knows a walk best, else the app's timer. */
-  private fun runningId(ctx: Context, d: JSONObject?): String? {
-    val w = walk(ctx)
-    val t = d?.optJSONObject("timer")
-    if (w != null) return if (w.running) w.habitId else t?.takeIf { it.optBoolean("running") && it.optString("id") != w.habitId }?.optString("id")
-    return t?.takeIf { it.optBoolean("running") }?.optString("id")
-  }
-
-  private fun stale(b: Box, name: String): RemoteViews {
-    val v = RemoteViews(b.ctx.packageName, R.layout.w_stale)
-    label(b, v, name)
-    set(v, R.id.msg, line(b, "Tap to load today", R.font.space_grotesk_bold, 13f * b.k, WHITE))
-    v.setOnClickPendingIntent(R.id.root, link(b.ctx, "recomp:///"))
-    return v
-  }
-
-  // ── Steps ──
-  private fun steps(b: Box, d: JSONObject?): RemoteViews {
-    if (!fresh(d)) return stale(b, "Steps")
-    val w = walk(b.ctx)
-    val total = d!!.optInt("steps") + (w?.steps ?: 0)
-    val target = d.optInt("stepsTarget", 1).coerceAtLeast(1)
-    val v = RemoteViews(b.ctx.packageName, R.layout.w_steps)
-    label(b, v, when { w == null -> "Steps"; w.running -> "● Live"; else -> "❚❚ Paused" }, if (total >= target) "✓ Target" else "${total * 100 / target}%", leftRed = w?.running == true)
-    set(v, R.id.big, line(b, n(total), R.font.doto_black, 28f * b.k, WHITE))
-    v.setOnClickPendingIntent(R.id.root, link(b.ctx, "recomp:///"))
-    return v
-  }
-
-  // ── Food ──
-  private fun food(b: Box, d: JSONObject?): RemoteViews {
-    if (!fresh(d)) return stale(b, "Food")
-    val left = d!!.optInt("kcalLeft"); val over = left < 0; val p = d.optInt("proteinLeft")
-    val v = RemoteViews(b.ctx.packageName, R.layout.w_food)
-    label(b, v, "Food", if (over) "kcal over" else "kcal left", rightRed = over)
-    set(v, R.id.big, line(b, n(Math.abs(left)), R.font.doto_black, 36f * b.k, if (over) RED else WHITE))
-    set(v, R.id.sub, line(b, if (p > 0) "${n(p)} g protein to go" else "Protein done ✓", R.font.space_grotesk_medium, 11f * b.k.coerceAtMost(1.3f), GREY))
-    set(v, R.id.add, pill(b, "+ Add", true))
-    v.setOnClickPendingIntent(R.id.root, link(b.ctx, "recomp:///food"))
-    v.setOnClickPendingIntent(R.id.add, link(b.ctx, "recomp:///food?focus=1"))
-    return v
-  }
-
-  // ── Lift ──
-  private fun lift(b: Box, d: JSONObject?): RemoteViews {
-    if (!fresh(d)) return stale(b, "Lift")
-    val state = d!!.optString("lift"); val done = state == "done" || state == "warm"; val todo = state == "todo"
-    val v = RemoteViews(b.ctx.packageName, R.layout.w_lift)
-    val head = when { todo || done -> "Lift day"; state == "rest" -> "Rest day"; state == "cardio" -> "Cardio day"; else -> "Train" }
-    label(b, v, head, if (todo) "●" else if (done) "✓" else null, rightRed = todo)
-    val go = if (todo) pill(b, "10 min", true) else null
-    set(v, R.id.go, go)
-    val text = if (done) "Done. That counts." else d.optString("liftLine").ifEmpty { "Nothing planned" }
-    set(v, R.id.line, block(b, text, R.font.space_grotesk_bold, 13f * b.k.coerceAtMost(1.4f), WHITE, b.inner - (go?.width ?: 0) - b.px(10f).toInt(), 2))
-    v.setOnClickPendingIntent(R.id.go, link(b.ctx, "recomp:///session?short=1"))
-    v.setOnClickPendingIntent(R.id.root, link(b.ctx, "recomp:///train"))
-    return v
-  }
-
-  // ── Level ──
-  private val PIPS = intArrayOf(R.id.p0, R.id.p1, R.id.p2, R.id.p3, R.id.p4, R.id.p5, R.id.p6, R.id.p7, R.id.p8, R.id.p9,
-    R.id.p10, R.id.p11, R.id.p12, R.id.p13, R.id.p14, R.id.p15, R.id.p16, R.id.p17, R.id.p18, R.id.p19)
-  private fun level(b: Box, d: JSONObject?): RemoteViews {
-    val r = d?.optJSONObject("rank") ?: return stale(b, "Level")
-    val v = RemoteViews(b.ctx.packageName, R.layout.w_level)
-    val streak = d.optInt("streak")
-    label(b, v, "Level ${r.optInt("i") + 1}", if (streak > 0) "● $streak" else null, rightRed = true)
-    set(v, R.id.name, line(b, r.optString("name"), R.font.space_grotesk_bold, 19f * b.k, WHITE))
-    val span = r.optInt("span", 1).coerceIn(1, PIPS.size); val on = r.optInt("done", 0)
-    PIPS.forEachIndexed { i, id ->
-      v.setViewVisibility(id, if (i < span) View.VISIBLE else View.GONE)
-      v.setInt(id, "setBackgroundResource", if (i < on) R.drawable.w_pip_on else R.drawable.w_pip_off)
-    }
-    val next = r.optString("next", ""); val need = r.optInt("need")
-    set(v, R.id.sub, line(b, if (next.isNotEmpty() && next != "null") "$need day${if (need == 1) "" else "s"} to $next" else "Top rank. Keep it.", R.font.space_grotesk_medium, 11f * b.k.coerceAtMost(1.3f), GREY))
-    v.setOnClickPendingIntent(R.id.root, link(b.ctx, "recomp:///"))
-    return v
-  }
-
-  // ── Timer ──
-  private val STARTS = intArrayOf(R.id.s0, R.id.s1, R.id.s2)
   private fun clockText(ms: Long): String {
     val s = ms / 1000; val h = s / 3600; val m = (s % 3600) / 60; val sec = s % 60
     return if (h > 0) "$h:${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}" else "${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}"
   }
-  private fun since(ms: Long): String {
-    val c = Calendar.getInstance().apply { timeInMillis = ms }
-    val h = c.get(Calendar.HOUR_OF_DAY); val m = c.get(Calendar.MINUTE)
-    return "since ${(h + 11) % 12 + 1}:${m.toString().padStart(2, '0')} ${if (h < 12) "am" else "pm"}"
+  private fun hhmm(ms: Long): String {
+    val cal = Calendar.getInstance().apply { timeInMillis = ms }
+    val h = cal.get(Calendar.HOUR_OF_DAY); val m = cal.get(Calendar.MINUTE)
+    return "${(h + 11) % 12 + 1}:${m.toString().padStart(2, '0')}"
   }
-  private fun timer(b: Box, d: JSONObject?): RemoteViews {
-    val ctx = b.ctx
+
+  private fun stale(c: Card, name: String) {
+    label(c, name)
+    body(c, listOf(Line(c, "Tap to load today", WHITE, R.font.space_grotesk_bold, 13f * c.ks)))
+    c.v.setOnClickPendingIntent(R.id.root, link(c.ctx, "recomp:///"))
+  }
+
+  // ── Steps ──
+  private fun steps(c: Card, d: JSONObject?) {
+    if (!fresh(d)) return stale(c, "Steps")
+    val w = walk(c.ctx)
+    val total = d!!.optInt("steps") + (w?.steps ?: 0)
+    val target = d.optInt("stepsTarget", 1).coerceAtLeast(1)
+    label(c, when { w == null -> "Steps"; w.running -> "● Live"; else -> "❚❚ Paused" }, if (total >= target) "✓ Target" else "${total * 100 / target}%", leftRed = w?.running == true)
+    body(c, listOf(Hero(c, n(total), 28f, ico = "feet")))
+    c.v.setOnClickPendingIntent(R.id.root, link(c.ctx, "recomp:///"))
+  }
+
+  // ── Food ──
+  private fun food(c: Card, d: JSONObject?) {
+    if (!fresh(d)) return stale(c, "Food")
+    val left = d!!.optInt("kcalLeft"); val over = left < 0; val p = d.optInt("proteinLeft")
+    label(c, "Food", if (over) "kcal over" else "kcal left", rightRed = over)
+    body(c, listOf(Hero(c, n(Math.abs(left)), 36f, if (over) RED else WHITE, "flame"), Line(c, if (p > 0) "${n(p)} g protein to go" else "Protein done ✓")))
+    buttons(c, listOf(Btn("Add", true, "plus", link(c.ctx, "recomp:///food?focus=1"))))
+    c.v.setOnClickPendingIntent(R.id.root, link(c.ctx, "recomp:///food"))
+  }
+
+  // ── Lift ──
+  private fun lift(c: Card, d: JSONObject?) {
+    if (!fresh(d)) return stale(c, "Lift")
+    val state = d!!.optString("lift"); val done = state == "done" || state == "warm"; val todo = state == "todo"
+    when {
+      todo -> {
+        val at = d.optString("liftAt", "")
+        label(c, "Lift day", if (at.isNotEmpty()) "Before $at" else "10 min", rightRed = true, short = at.ifEmpty { null })
+        body(c, listOf(Hero(c, "10:00", 28f, ico = "kettlebell")))
+        c.v.setOnClickPendingIntent(R.id.root, link(c.ctx, "recomp:///session?short=1"))
+        return
+      }
+      done -> { label(c, "Lift day", "✓"); body(c, listOf(Hero(c, if (state == "warm") "WARM" else "DONE", 28f))) }
+      state == "rest" -> { label(c, "Rest day"); body(c, listOf(Hero(c, "REST", 28f))) }
+      state == "cardio" -> { label(c, "Cardio day"); body(c, listOf(Hero(c, "WALK", 28f, ico = "feet"))) }
+      else -> { label(c, "Train"); body(c, listOf(Hero(c, "--", 28f))) }
+    }
+    c.v.setOnClickPendingIntent(R.id.root, link(c.ctx, "recomp:///train"))
+  }
+
+  // ── Level ──
+  private fun level(c: Card, d: JSONObject?) {
+    val r = d?.optJSONObject("rank") ?: return stale(c, "Level")
+    val streak = d.optInt("streak")
+    label(c, "Level ${r.optInt("i") + 1}", if (streak > 0) "● $streak" else null, rightRed = true)
+    val span = r.optInt("span", 1).coerceIn(1, 20); val on = r.optInt("done", 0)
+    val next = r.optString("next", ""); val need = r.optInt("need")
+    body(c, listOf(
+      Line(c, r.optString("name"), WHITE, R.font.space_grotesk_bold, 19f * c.k),
+      Pips(c, span, on),
+      Line(c, if (next.isNotEmpty() && next != "null") "$need day${if (need == 1) "" else "s"} to $next" else "Top rank. Keep it."),
+    ))
+    c.v.setOnClickPendingIntent(R.id.root, link(c.ctx, "recomp:///"))
+  }
+
+  // ── Habits ──
+  private fun habits(c: Card, d: JSONObject?) {
+    if (!fresh(d)) return stale(c, "Habits")
+    val hs = d!!.optJSONArray("habits")
+    val count = hs?.length() ?: 0
+    var met = 0; val left = mutableListOf<String>()
+    for (i in 0 until count) { val h = hs!!.getJSONObject(i); if (h.optBoolean("met")) met++ else left.add(h.optString("name")) }
+    label(c, "Habits")
+    if (count == 0) body(c, listOf(Line(c, "Add habits in the app", WHITE)))
+    else body(c, listOf(Hero(c, "$met/$count", 36f, ico = "check"), Pips(c, count.coerceAtMost(20), met),
+      Line(c, if (left.isEmpty()) "All done today ✓" else "Left: " + left.joinToString(" · "))))
+    c.v.setOnClickPendingIntent(R.id.root, link(c.ctx, "recomp:///"))
+  }
+
+  // ── Habit timer ──
+  private fun timer(c: Card, d: JSONObject?) {
+    val ctx = c.ctx
     val t = d?.optJSONObject("timer")
     val w = walk(ctx)
     if (t == null && w == null) {
-      val v = RemoteViews(ctx.packageName, R.layout.w_timer_idle)
-      label(b, v, "Habit timer", "Ready")
+      label(c, "Habit timer", "Ready")
       val timed = mutableListOf<JSONObject>()
       val hs = d?.optJSONArray("habits")
       if (hs != null) for (i in 0 until hs.length()) { val h = hs.getJSONObject(i); if (h.optBoolean("timed")) timed.add(h) }
-      STARTS.forEachIndexed { i, id ->
-        if (i < timed.size) {
-          set(v, id, pill(b, "▶ " + timed[i].optString("name"), false))
-          v.setOnClickPendingIntent(id, link(ctx, "recomp:///?start=" + Uri.encode(timed[i].optString("id"))))
-        } else set(v, id, null)
-      }
-      set(v, R.id.none, if (timed.isEmpty()) line(b, "Start a timed habit in the app", R.font.space_grotesk_medium, 11f * b.k, WHITE) else null)
-      v.setOnClickPendingIntent(R.id.root, link(ctx, "recomp:///"))
-      return v
+      // The walk first if there is one: it's the timer this widget is mostly for.
+      val walkIds = d?.optJSONArray("walkIds")
+      val first = timed.firstOrNull { h -> walkIds != null && (0 until walkIds.length()).any { walkIds.optString(it) == h.optString("id") } } ?: timed.firstOrNull()
+      body(c, listOf(Hero(c, "00:00", 36f, DIM, "clock"), Line(c, if (timed.isEmpty()) "Add a timed habit in the app" else timed.joinToString(" · ") { it.optString("name") })))
+      if (first != null) buttons(c, listOf(Btn(first.optString("name"), true, "play", link(ctx, "recomp:///?start=" + Uri.encode(first.optString("id"))))))
+      c.v.setOnClickPendingIntent(R.id.root, link(ctx, "recomp:///"))
+      return
     }
     val id = w?.habitId ?: t!!.optString("id")
     val isWalk = w != null
     val running = if (isWalk) w!!.running else t!!.optBoolean("running")
     val elapsed = if (isWalk) w!!.elapsed else t!!.optLong("elapsedMs") + if (running) System.currentTimeMillis() - t.optLong("at") else 0L
     val name = if (t != null && t.optString("id") == id) t.optString("name") else d?.optJSONObject("names")?.optString(id)?.ifEmpty { null } ?: "Walk"
-    val start = if (t != null && t.optString("id") == id) t.optLong("since", 0L) else 0L
-    val v = RemoteViews(ctx.packageName, R.layout.w_timer)
-    val right = when { isWalk -> "${n(w!!.steps)} steps"; !running -> "Paused"; start > 0 -> since(start); else -> null }
-    label(b, v, (if (running) "● " else "❚❚ ") + name + if (isWalk && !running) " · paused" else "", right, leftRed = running)
-    val toggle = pill(b, if (running) "Pause" else "Resume", false)
-    val stop = pill(b, "Stop", true)
-    set(v, R.id.toggle, toggle); set(v, R.id.stop, stop)
-    val clockMax = b.inner - toggle.width - stop.width - b.px(18f).toInt()
-    // A walk's clock is redrawn every second by the walk tracker, in the dot font. Other
-    // timers use the system clock view, which ticks on its own.
-    if (isWalk || !running) {
-      set(v, R.id.clockimg, line(b, clockText(elapsed), R.font.doto_black, 34f * b.k, WHITE, clockMax))
-      v.setViewVisibility(R.id.clock, View.GONE)
-      v.setChronometer(R.id.clock, SystemClock.elapsedRealtime() - elapsed, null, false)
-    } else {
-      set(v, R.id.clockimg, null)
-      v.setViewVisibility(R.id.clock, View.VISIBLE)
-      v.setChronometer(R.id.clock, SystemClock.elapsedRealtime() - elapsed, null, true)
+    val since = if (t != null && t.optString("id") == id) t.optLong("since", 0L) else 0L
+    label(c, (if (running) "● " else "❚❚ ") + name, if (!running) "Paused" else if (since > 0) "Since ${hhmm(since)}" else null,
+      leftRed = running, short = if (!running) null else if (since > 0) hhmm(since) else null)
+    buttons(c, listOf(
+      Btn(if (running) "Pause" else "Resume", false, null,
+        if (isWalk) walkAction(ctx, if (running) WalkService.ACTION_PAUSE else WalkService.ACTION_RESUME)
+        else link(ctx, (if (running) "recomp:///?pause=" else "recomp:///?start=") + Uri.encode(id))),
+      Btn("Stop", true, null, link(ctx, "recomp:///?stop=" + Uri.encode(id))),
+    ))
+    c.v.setOnClickPendingIntent(R.id.root, link(ctx, "recomp:///?habit=" + Uri.encode(id)))
+    val timeCol = WHITE
+    if (!isWalk && running) {
+      // Only a walk has a service to redraw the dot clock each second; other timers tick on
+      // their own in the system clock view.
+      c.v.setViewVisibility(R.id.clock, View.VISIBLE)
+      c.v.setChronometer(R.id.clock, SystemClock.elapsedRealtime() - elapsed, null, true)
+      c.v.setImageViewBitmap(R.id.body, Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888))
+      return
     }
-    set(v, R.id.sub, null)
-    v.setOnClickPendingIntent(R.id.toggle,
-      if (isWalk) walkAction(ctx, if (running) WalkService.ACTION_PAUSE else WalkService.ACTION_RESUME)
-      else link(ctx, (if (running) "recomp:///?pause=" else "recomp:///?start=") + Uri.encode(id)))
-    v.setOnClickPendingIntent(R.id.stop, link(ctx, "recomp:///?stop=" + Uri.encode(id)))
-    v.setOnClickPendingIntent(R.id.root, link(ctx, "recomp:///?habit=" + Uri.encode(id)))
-    return v
-  }
-
-  // ── Habits ──
-  private val TILES = arrayOf(intArrayOf(R.id.h0, R.id.h0n, R.id.h0v), intArrayOf(R.id.h1, R.id.h1n, R.id.h1v), intArrayOf(R.id.h2, R.id.h2n, R.id.h2v),
-    intArrayOf(R.id.h3, R.id.h3n, R.id.h3v), intArrayOf(R.id.h4, R.id.h4n, R.id.h4v), intArrayOf(R.id.h5, R.id.h5n, R.id.h5v))
-  private fun habits(b: Box, d: JSONObject?): RemoteViews {
-    if (!fresh(d)) return stale(b, "Habits")
-    val hs = d!!.optJSONArray("habits")
-    val count = hs?.length()?.coerceAtMost(6) ?: 0
-    val runId = runningId(b.ctx, d)
-    val v = RemoteViews(b.ctx.packageName, R.layout.w_habits)
-    var met = 0
-    for (i in 0 until count) if (hs!!.getJSONObject(i).optBoolean("met")) met++
-    label(b, v, "Habits", if (count > 0) "$met / $count" else null)
-    // Three tiles a row, 8 dp apart, each with 18 dp of padding inside.
-    val tileText = ((b.inner - b.px(16f)) / 3 - b.px(18f)).toInt()
-    val kk = b.k.coerceAtMost(1.35f)
-    TILES.forEachIndexed { i, (box, nameId, valId) ->
-      if (i >= count) { v.setViewVisibility(box, View.INVISIBLE); return@forEachIndexed }
-      val h = hs!!.getJSONObject(i)
-      val on = h.optString("id") == runId; val ok = h.optBoolean("met")
-      v.setViewVisibility(box, View.VISIBLE)
-      v.setInt(box, "setBackgroundResource", when { on -> R.drawable.w_tile_on; ok -> R.drawable.w_tile_done; else -> R.drawable.w_tile })
-      set(v, nameId, line(b, (if (ok) "✓ " else if (on) "● " else "") + h.optString("name"), R.font.space_grotesk_bold, 11.5f * kk, if (on) RED else WHITE, tileText))
-      set(v, valId, line(b, if (on) "running" else h.optString("val"), R.font.space_grotesk_medium, 10.5f * kk, GREY, tileText))
-      val hid = Uri.encode(h.optString("id"))
-      v.setOnClickPendingIntent(box, link(b.ctx, if (h.optBoolean("timed") && !on) "recomp:///?start=$hid" else "recomp:///?habit=$hid"))
+    c.v.setViewVisibility(R.id.clock, View.GONE)
+    c.v.setChronometer(R.id.clock, SystemClock.elapsedRealtime(), null, false)
+    val time = clockText(elapsed)
+    if (!isWalk) { body(c, listOf(Hero(c, time, 30f, timeCol, "clock", if (running) RED else GREY))); return }
+    // A walk: time and steps at the same size, side by side when they fit, else stacked; both shrink
+    // to fit the space between the label and the buttons.
+    val steps = n(w!!.steps)
+    val room = c.heightPx - c.g(40f) - pillHeight(c) - c.g(20f)
+    var sp = 30f
+    fun pair(s: Float): Pair<Boolean, Float> {
+      val a = Hero(c, time, s, ico = "clock", maxW = Float.MAX_VALUE); val b = Hero(c, steps, s, ico = "feet", maxW = Float.MAX_VALUE)
+      return if (a.width + b.width + c.g(26f) <= c.inner) Pair(true, a.h) else Pair(false, a.h * 2 + c.g(12f))
     }
-    v.setViewVisibility(R.id.row0, if (count > 0) View.VISIBLE else View.GONE)
-    v.setViewVisibility(R.id.row1, if (count > 3) View.VISIBLE else View.GONE)
-    set(v, R.id.none, if (count == 0) line(b, "Add habits in the app", R.font.space_grotesk_medium, 11f * b.k, WHITE) else null)
-    v.setOnClickPendingIntent(R.id.root, link(b.ctx, "recomp:///"))
-    return v
+    while (sp > 14f && pair(sp).second > room) sp -= 1f
+    val (side, _) = pair(sp)
+    val clockColor = if (running) RED else GREY
+    if (side) {
+      val a = Hero(c, time, sp, ico = "clock", icoColor = clockColor, maxW = Float.MAX_VALUE); val b = Hero(c, steps, sp, ico = "feet", maxW = Float.MAX_VALUE)
+      body(c, listOf(Custom(a.h) { cv, y -> a.drawAt(cv, 0f, y); b.drawAt(cv, c.inner - b.width, y) }))
+    } else body(c, listOf(Hero(c, time, sp, ico = "clock", icoColor = clockColor), Hero(c, steps, sp, ico = "feet")))
   }
 }
 

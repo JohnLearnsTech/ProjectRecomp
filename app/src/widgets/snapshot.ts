@@ -18,6 +18,8 @@ export type Snapshot = {
   habits: { id: string; name: string; timed: boolean; val: string; met: boolean }[];
   /** Habits whose timer is a walk (the live step tracker follows those). */
   walkIds: string[];
+  /** The lift trigger's time, short ("10:30"), for the Lift widget's label. */
+  liftAt: string | null;
   /** Names of every habit, so a running timer can be labelled. */
   names: Record<string, string>;
   /** The habit timer as the app last saw it; the widget ticks it on from here. */

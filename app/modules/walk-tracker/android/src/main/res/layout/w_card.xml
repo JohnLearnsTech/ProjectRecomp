@@ -1,0 +1,19 @@
+<!-- Every widget uses this one card: a label row at the top, the content in the middle
+     (centred, scaled to fit), and an optional row of one or two buttons at the bottom. All of it
+     is drawn as images in the bundled fonts; padding is set from code to scale with size. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/root"
+  android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical"
+  android:background="@drawable/w_bg" android:padding="16dp">
+  <ImageView android:id="@+id/lbl" android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:adjustViewBounds="true" android:scaleType="fitStart" />
+  <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+    <ImageView android:id="@+id/body" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" />
+    <Chronometer android:id="@+id/clock" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center"
+      android:fontFamily="monospace" android:textStyle="bold" android:textSize="30sp" android:textColor="#FFFFFF" android:visibility="gone" />
+  </FrameLayout>
+  <LinearLayout android:id="@+id/btns" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:visibility="gone">
+    <ImageView android:id="@+id/b0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:adjustViewBounds="true" />
+    <TextView android:id="@+id/bgap" android:layout_width="8dp" android:layout_height="1dp" />
+    <ImageView android:id="@+id/b1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:adjustViewBounds="true" />
+  </LinearLayout>
+</LinearLayout>
