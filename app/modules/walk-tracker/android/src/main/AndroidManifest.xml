@@ -2,10 +2,16 @@
   <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
   <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
   <uses-feature android:name="android.hardware.sensor.stepcounter" android:required="false" />
   <application>
-    <receiver android:name="expo.modules.walktracker.TimerTickReceiver" android:exported="false" />
+    <service
+      android:name="expo.modules.walktracker.TimerService"
+      android:exported="false"
+      android:foregroundServiceType="specialUse">
+      <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="Live clock for a habit timer the user started" />
+    </service>
     <service
       android:name="expo.modules.walktracker.WalkService"
       android:exported="false"

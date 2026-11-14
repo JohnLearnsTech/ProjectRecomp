@@ -51,10 +51,11 @@ object RecompWidgets {
   fun save(ctx: Context, json: String) {
     ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString("data", json).apply()
     refresh(ctx, null)
-    // A running timer that isn't a walk: redraw its minutes about once a minute.
-    val t = try { JSONObject(json).optJSONObject("timer") } catch (e: Exception) { null }
-    TimerTicker.set(ctx, t != null && t.optBoolean("running") && !WalkStore(ctx).active)
+    // A running timer that isn't a walk gets its own small service, so its clock ticks live.
+    TimerService.sync(ctx, timer(ctx))
   }
+  /** The running or paused habit timer from the app's latest snapshot, if any. */
+  fun timer(ctx: Context): JSONObject? = load(ctx)?.optJSONObject("timer")
   private fun load(ctx: Context): JSONObject? = try {
     ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("data", null)?.let { JSONObject(it) }
   } catch (e: Exception) { null }
@@ -391,13 +392,8 @@ object RecompWidgets {
     c.v.setViewVisibility(R.id.clock, View.GONE)
     c.v.setChronometer(R.id.clock, SystemClock.elapsedRealtime(), null, false)
     if (!isWalk) {
-      // Other timers have no service to redraw a ticking clock each second, so while running they
-      // show hours:minutes in the dot font, redrawn about once a minute (TimerTicker). Paused,
-      // the exact time.
-      if (running) {
-        val m = elapsed / 60000
-        body(c, listOf(Hero(c, "${m / 60}:${(m % 60).toString().padStart(2, '0')}", 30f, WHITE, "clock", RED), Line(c, "hours : minutes")))
-      } else body(c, listOf(Hero(c, clockText(elapsed), 30f, WHITE, "clock", GREY)))
+      // Other timers tick every second while TimerService runs, in the same dot font as walks.
+      body(c, listOf(Hero(c, time, 30f, WHITE, "clock", if (running) RED else GREY)))
       return
     }
     // A walk: time and steps at the same size, side by side when they fit, else stacked; both shrink
@@ -416,22 +412,6 @@ object RecompWidgets {
       val a = Hero(c, time, sp, ico = "clock", icoColor = clockColor, maxW = Float.MAX_VALUE); val b = Hero(c, steps, sp, ico = "feet", maxW = Float.MAX_VALUE)
       body(c, listOf(Custom(a.h) { cv, y -> a.drawAt(cv, 0f, y); b.drawAt(cv, c.inner - b.width, y) }))
     } else body(c, listOf(Hero(c, time, sp, ico = "clock", icoColor = clockColor), Hero(c, steps, sp, ico = "feet")))
-  }
-}
-
-/** Redraws the Timer and Habits widgets about once a minute while a non-walk timer runs. Inexact
- *  and non-waking, so it costs nothing with the screen off. */
-object TimerTicker {
-  private fun pi(ctx: Context) = PendingIntent.getBroadcast(ctx, 7301, Intent(ctx, TimerTickReceiver::class.java), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-  fun set(ctx: Context, on: Boolean) {
-    val am = ctx.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
-    am.cancel(pi(ctx))
-    if (on) am.setRepeating(android.app.AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + 60000, 60000, pi(ctx))
-  }
-}
-class TimerTickReceiver : android.content.BroadcastReceiver() {
-  override fun onReceive(context: Context, intent: Intent?) {
-    RecompWidgets.refresh(context, listOf(TimerWidget::class.java, HabitsWidget::class.java))
   }
 }
 
