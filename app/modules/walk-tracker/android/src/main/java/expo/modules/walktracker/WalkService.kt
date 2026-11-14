@@ -16,7 +16,9 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -47,6 +49,15 @@ class WalkService : Service(), SensorEventListener {
   private var listening = false
   private var lastNotif = 0L
   private var lastWidget = 0L
+  // While a walk runs, the Timer widget's clock is redrawn every second (in the dot font).
+  private val tick = Handler(Looper.getMainLooper())
+  private val tickRun = object : Runnable {
+    override fun run() {
+      if (!WalkStore(this@WalkService).running) return
+      RecompWidgets.refresh(this@WalkService, listOf(TimerWidget::class.java))
+      tick.postDelayed(this, 1000)
+    }
+  }
 
   override fun onBind(intent: Intent?): IBinder? = null
 
@@ -81,6 +92,8 @@ class WalkService : Service(), SensorEventListener {
     val store = WalkStore(this)
     if (!store.active) { stopListening(); stopForegroundCompat(); stopSelf(); return }
     if (store.running) startListening() else stopListening()
+    tick.removeCallbacks(tickRun)
+    if (store.running) tick.postDelayed(tickRun, 1000)
     notifyNow(store)
     widgets(true)
   }
@@ -106,6 +119,7 @@ class WalkService : Service(), SensorEventListener {
   override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
 
   override fun onDestroy() {
+    tick.removeCallbacks(tickRun)
     stopListening()
     instance = null
     super.onDestroy()

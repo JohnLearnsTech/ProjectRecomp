@@ -93,7 +93,7 @@ function WidgetSync() {
     const P = engine.plan(maxDay), e = entries[maxDay] ?? {}, cue = loadCue();
     const trained = D.trainedOn(maxDay), warm = !!e.checks?.warmup;
     const lift: Snapshot['lift'] = !P.inRange ? 'off' : P.type !== 'lift' ? P.type : trained ? 'done' : warm ? 'warm' : 'todo';
-    const liftLine = lift === 'done' ? 'Lifted today ✓' : lift === 'warm' ? 'Warm-up done ✓' : lift === 'todo' ? (cue ? `Lift before your ${fmt12(cue.at)} ${cue.anchor}` : 'Lift day: two exercises')
+    const liftLine = lift === 'done' ? 'Lifted today ✓' : lift === 'warm' ? 'Warm-up done ✓' : lift === 'todo' ? (cue ? `Before your ${fmt12(cue.at)} ${cue.anchor}` : 'Two exercises, 10 minutes')
       : lift === 'rest' ? 'Rest day' : lift === 'cardio' ? 'Cardio day' : '';
     const snap: Snapshot = {
       day: maxDay, kcalTarget: P.kcal, kcalLeft: Math.round(P.kcal - (+(e.kcal ?? 0))), proteinTarget: P.protein,
