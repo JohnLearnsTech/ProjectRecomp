@@ -67,7 +67,7 @@ object RecompWidgets {
     val wDp = (opts?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH) ?: 0).takeIf { it > 0 } ?: defW
     val hDp = (opts?.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT) ?: 0).takeIf { it > 0 } ?: defH
     /** How much bigger than the design size the content is drawn: grows with the widget. */
-    val k = (hDp.toFloat() / baseH).coerceIn(1f, 1.7f)
+    val k = (hDp.toFloat() / baseH).coerceIn(0.7f, 1.7f)
     /** Usable width in px, inside the 16 dp side padding. */
     val inner = ((wDp - 32) * density).toInt().coerceAtLeast(40)
     fun px(dp: Float) = dp * density
@@ -78,14 +78,14 @@ object RecompWidgets {
     val opts = try { mgr.getAppWidgetOptions(id) } catch (e: Exception) { null }
     val views = try {
       when (cls) {
-        StepsWidget::class.java -> steps(Box(ctx, opts, 160, 80, 76), d)
-        FoodWidget::class.java -> food(Box(ctx, opts, 160, 160, 150), d)
-        LiftWidget::class.java -> lift(Box(ctx, opts, 250, 80, 76), d)
-        LevelWidget::class.java -> level(Box(ctx, opts, 160, 160, 150), d)
-        TimerWidget::class.java -> timer(Box(ctx, opts, 250, 90, 90), d)
-        else -> habits(Box(ctx, opts, 320, 160, 150), d)
+        StepsWidget::class.java -> steps(Box(ctx, opts, 130, 57, 72), d)
+        FoodWidget::class.java -> food(Box(ctx, opts, 130, 130, 140), d)
+        LiftWidget::class.java -> lift(Box(ctx, opts, 130, 57, 72), d)
+        LevelWidget::class.java -> level(Box(ctx, opts, 130, 130, 140), d)
+        TimerWidget::class.java -> timer(Box(ctx, opts, 300, 57, 80), d)
+        else -> habits(Box(ctx, opts, 300, 130, 140), d)
       }
-    } catch (e: Exception) { stale(Box(ctx, opts, 160, 80, 76), "Recomp") }
+    } catch (e: Exception) { stale(Box(ctx, opts, 130, 57, 72), "Recomp") }
     mgr.updateAppWidget(id, views)
   }
 
@@ -123,10 +123,10 @@ object RecompWidgets {
   }
   /** A pill button: white filled with black text, or a white outline. */
   private fun pill(b: Box, s: String, filled: Boolean, sp: Float = 11f): Bitmap {
-    val p = paint(b, R.font.space_grotesk_bold, sp * b.k.coerceAtMost(1.35f), if (filled) BLACK else WHITE, 0.06f)
+    val p = paint(b, R.font.space_grotesk_bold, maxOf(9f, sp * b.k.coerceAtMost(1.35f)), if (filled) BLACK else WHITE, 0.06f)
     val t = s.uppercase(Locale.ROOT)
     val fm = p.fontMetrics
-    val padH = b.px(12f); val padV = b.px(5f); val stroke = b.px(1.5f)
+    val padH = b.px(11f * b.k.coerceIn(0.8f, 1.2f)); val padV = b.px(4f * b.k.coerceIn(0.8f, 1.2f)); val stroke = b.px(1.5f)
     val w = ceil(p.measureText(t) + padH * 2).toInt(); val h = ceil(fm.descent - fm.ascent + padV * 2).toInt()
     val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
     val c = Canvas(bmp)
@@ -142,7 +142,7 @@ object RecompWidgets {
   }
   /** The caps label row: grey small caps, red where it needs you. */
   private fun label(b: Box, v: RemoteViews, left: String, right: String? = null, leftRed: Boolean = false, rightRed: Boolean = false) {
-    val sp = 10f * b.k.coerceAtMost(1.3f)
+    val sp = maxOf(8.5f, 10f * b.k.coerceAtMost(1.3f))
     val r = right?.takeIf { it.isNotEmpty() }?.let { line(b, it.uppercase(Locale.ROOT), R.font.space_grotesk_medium, sp, if (rightRed) RED else GREY, b.inner / 2, 0.14f) }
     set(v, R.id.lbl_r, r)
     set(v, R.id.lbl_l, line(b, left.uppercase(Locale.ROOT), R.font.space_grotesk_medium, sp, if (leftRed) RED else GREY, b.inner - (r?.width ?: 0) - b.px(8f).toInt(), 0.14f))
@@ -189,7 +189,7 @@ object RecompWidgets {
     val target = d.optInt("stepsTarget", 1).coerceAtLeast(1)
     val v = RemoteViews(b.ctx.packageName, R.layout.w_steps)
     label(b, v, when { w == null -> "Steps"; w.running -> "● Live"; else -> "❚❚ Paused" }, if (total >= target) "✓ Target" else "${total * 100 / target}%", leftRed = w?.running == true)
-    set(v, R.id.big, line(b, n(total), R.font.doto_black, 30f * b.k, WHITE))
+    set(v, R.id.big, line(b, n(total), R.font.doto_black, 28f * b.k, WHITE))
     v.setOnClickPendingIntent(R.id.root, link(b.ctx, "recomp:///"))
     return v
   }
@@ -200,7 +200,7 @@ object RecompWidgets {
     val left = d!!.optInt("kcalLeft"); val over = left < 0; val p = d.optInt("proteinLeft")
     val v = RemoteViews(b.ctx.packageName, R.layout.w_food)
     label(b, v, "Food", if (over) "kcal over" else "kcal left", rightRed = over)
-    set(v, R.id.big, line(b, n(Math.abs(left)), R.font.doto_black, 42f * b.k, if (over) RED else WHITE))
+    set(v, R.id.big, line(b, n(Math.abs(left)), R.font.doto_black, 36f * b.k, if (over) RED else WHITE))
     set(v, R.id.sub, line(b, if (p > 0) "${n(p)} g protein to go" else "Protein done ✓", R.font.space_grotesk_medium, 11f * b.k.coerceAtMost(1.3f), GREY))
     set(v, R.id.add, pill(b, "+ Add", true))
     v.setOnClickPendingIntent(R.id.root, link(b.ctx, "recomp:///food"))
@@ -282,15 +282,16 @@ object RecompWidgets {
     val name = if (t != null && t.optString("id") == id) t.optString("name") else d?.optJSONObject("names")?.optString(id)?.ifEmpty { null } ?: "Walk"
     val start = if (t != null && t.optString("id") == id) t.optLong("since", 0L) else 0L
     val v = RemoteViews(ctx.packageName, R.layout.w_timer)
-    label(b, v, (if (running) "● " else "❚❚ ") + name, if (!running) "Paused" else if (start > 0) since(start) else null, leftRed = running)
+    val right = when { isWalk -> "${n(w!!.steps)} steps"; !running -> "Paused"; start > 0 -> since(start); else -> null }
+    label(b, v, (if (running) "● " else "❚❚ ") + name + if (isWalk && !running) " · paused" else "", right, leftRed = running)
     val toggle = pill(b, if (running) "Pause" else "Resume", false)
     val stop = pill(b, "Stop", true)
     set(v, R.id.toggle, toggle); set(v, R.id.stop, stop)
-    val clockMax = b.inner - maxOf(toggle.width, stop.width) - b.px(12f).toInt()
+    val clockMax = b.inner - toggle.width - stop.width - b.px(18f).toInt()
     // A walk's clock is redrawn every second by the walk tracker, in the dot font. Other
     // timers use the system clock view, which ticks on its own.
     if (isWalk || !running) {
-      set(v, R.id.clockimg, line(b, clockText(elapsed), R.font.doto_black, 38f * b.k, WHITE, clockMax))
+      set(v, R.id.clockimg, line(b, clockText(elapsed), R.font.doto_black, 34f * b.k, WHITE, clockMax))
       v.setViewVisibility(R.id.clock, View.GONE)
       v.setChronometer(R.id.clock, SystemClock.elapsedRealtime() - elapsed, null, false)
     } else {
@@ -298,7 +299,7 @@ object RecompWidgets {
       v.setViewVisibility(R.id.clock, View.VISIBLE)
       v.setChronometer(R.id.clock, SystemClock.elapsedRealtime() - elapsed, null, true)
     }
-    set(v, R.id.sub, if (isWalk) line(b, "${n(w!!.steps)} steps", R.font.space_grotesk_medium, 11f * b.k.coerceAtMost(1.3f), GREY, clockMax) else null)
+    set(v, R.id.sub, null)
     v.setOnClickPendingIntent(R.id.toggle,
       if (isWalk) walkAction(ctx, if (running) WalkService.ACTION_PAUSE else WalkService.ACTION_RESUME)
       else link(ctx, (if (running) "recomp:///?pause=" else "recomp:///?start=") + Uri.encode(id)))
