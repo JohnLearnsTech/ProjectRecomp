@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Bar } from '../../../components/Bar';
 import { FoodChart } from '../../../components/FoodChart';
 import { Mini, PanelHead } from '../../../components/ui';
+import { Marquee } from '../../../components/Marquee';
 import { toast } from '../../../lib/toast';
 import { Guides } from '../../../components/Guides';
 import { Icon } from '../../../components/Icon';
@@ -322,6 +323,9 @@ function TRow({ head, subtotal, total, meal, mealSub, onMeal, item, tag, warn, c
                 <Text style={{ fontFamily: font.semibold, fontSize: 12, color: c.cat.food.ink }}>{action.label}</Text>
               </Pressable>
             </View>
+          ) : i === 1 && !head && !subtotal && !total ? (
+            // Food names longer than the column scroll sideways so the whole entry can be read.
+            <Marquee text={v} style={[s.body, { fontSize: 13.5 }]} />
           ) : (
             <Text style={[i < 2 ? s.body : [s.body, s.num], bold && { fontFamily: font.semibold }, head && s.label, subtotal && i === 1 && s.label,
               i === 0 && !head && { fontSize: 12, color: c.ink2, fontFamily: Platform.OS === 'web' ? 'ui-monospace, monospace' : 'monospace' }, i === 1 && !head && { flexShrink: 1, fontSize: 13.5 }, i >= 2 && !head && { fontSize: 13.5 }, fatFlag && i === 5 && { color: c.warn }]}
