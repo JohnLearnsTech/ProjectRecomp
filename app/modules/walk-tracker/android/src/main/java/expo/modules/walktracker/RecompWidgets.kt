@@ -387,7 +387,7 @@ object RecompWidgets {
       Btn("Stop", true, null, link(ctx, "recomp:///?stop=" + Uri.encode(id))),
     ))
     c.v.setOnClickPendingIntent(R.id.root, link(ctx, "recomp:///?habit=" + Uri.encode(id)))
-    val timeCol = WHITE
+    val time = clockText(elapsed)
     c.v.setViewVisibility(R.id.clock, View.GONE)
     c.v.setChronometer(R.id.clock, SystemClock.elapsedRealtime(), null, false)
     if (!isWalk) {
