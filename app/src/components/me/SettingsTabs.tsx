@@ -14,7 +14,7 @@ import { exportFile } from '../../lib/exportBackup';
 import { useRecomp } from '../../lib/recomp';
 import { connectSteps, disconnectSteps, openStepSources, stepsConnected, stepsSupported, syncSteps } from '../../lib/steps';
 import { clearReminders, remRows, scheduleReminders, scheduledCount } from '../../lib/reminders';
-import { ACCENTS, font, setPrefs, usePrefs, useTheme } from '../../lib/theme';
+import { ACCENTS, font, LOOKS, lookSwatch, setPrefs, usePrefs, useTheme } from '../../lib/theme';
 import { BackupImport } from '../BackupImport';
 import { ConnectClaude } from '../ConnectClaude';
 import { StepCalibration } from '../StepCalibration';
@@ -119,7 +119,7 @@ export function BackupTab({ toast }: { toast: (t: string) => void }) {
 }
 
 export function SettingsTab({ storedKey, setStoredKey, toast }: { storedKey: string | null; setStoredKey: (k: string | null) => void; toast: (t: string) => void }) {
-  const { c, s } = useTheme('move');
+  const { c, s, dark } = useTheme('move');
   const prefs = usePrefs();
   const { session } = useAuth();
   const { touch } = useRecomp();
@@ -142,14 +142,36 @@ export function SettingsTab({ storedKey, setStoredKey, toast }: { storedKey: str
           <Pressable onPress={cycleTheme} accessibilityLabel={`Theme: ${prefs.theme}. Tap to change.`} style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: c.line, alignItems: 'center', justifyContent: 'center' }}>
             <Icon name={prefs.theme === 'auto' ? 'auto' : prefs.theme === 'light' ? 'sun' : 'moon'} size={17} color={c.ink} />
           </Pressable>} />
-        {line('Theme', 'Auto follows your phone.', <Segmented items={[['auto', 'Auto'], ['light', 'Light'], ['dark', 'Dark']]} value={prefs.theme} onChange={(t) => setPrefs({ theme: t })} />)}
-        {line('Colour', 'The accent used for buttons, rings and progress.')}
+        {line('Theme', 'The look of the whole app. Mix any theme with any colour.')}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {LOOKS.map(([k, l, sub]) => {
+            const on = prefs.look === k;
+            const [paper, surface, ink] = lookSwatch(k, dark || k === 'amoled' ? 'dark' : 'light');
+            const dot = k === 'dotmatrix' ? '#FF2A1C' : c.cat.move.fill;
+            return (
+              <Pressable key={k} onPress={() => setPrefs({ look: k })} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={`${l}. ${sub}`}
+                style={{ width: '31.5%', flexGrow: 1, borderRadius: 14, borderWidth: on ? 2 : 1, borderColor: on ? c.ink : c.line, overflow: 'hidden', backgroundColor: c.surface }}>
+                {/* A tiny version of the theme: its background, a card and its text, with the accent. */}
+                <View style={{ height: 54, backgroundColor: paper, padding: 8, justifyContent: 'flex-end' }}>
+                  <View style={{ backgroundColor: surface, borderRadius: 7, height: 26, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 7, gap: 5 }}>
+                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dot }} />
+                    <View style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: ink, opacity: 0.85 }} />
+                  </View>
+                </View>
+                <Text style={{ fontFamily: font.semibold, fontSize: 13, color: c.ink, paddingHorizontal: 9, paddingVertical: 7 }} numberOfLines={1}>{on ? '✓ ' : ''}{l}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        {line('Light or dark', prefs.look === 'amoled' ? 'True Black is always dark.' : 'Auto follows your phone.',
+          <Segmented items={[['auto', 'Auto'], ['light', 'Light'], ['dark', 'Dark']]} value={prefs.theme} onChange={(t) => setPrefs({ theme: t })} />)}
+        {line('Colour', prefs.look === 'dotmatrix' ? 'Dot Matrix uses its own red. Pick another theme to choose a colour.' : 'The accent used for buttons, rings and progress.')}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {ACCENTS.map(([k, l, cols]) => {
             const on = prefs.accent === k;
             return (
-              <Pressable key={k} onPress={() => setPrefs({ accent: k })} accessibilityRole="button" accessibilityState={{ selected: on }}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 40, paddingHorizontal: 12, borderRadius: 999, borderWidth: on ? 2 : 1, borderColor: on ? c.ink : c.line, backgroundColor: c.surface }}>
+              <Pressable key={k} onPress={() => setPrefs({ accent: k })} accessibilityRole="button" accessibilityState={{ selected: on, disabled: prefs.look === 'dotmatrix' }} disabled={prefs.look === 'dotmatrix'}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 40, paddingHorizontal: 12, borderRadius: 999, borderWidth: on ? 2 : 1, borderColor: on ? c.ink : c.line, backgroundColor: c.surface, opacity: prefs.look === 'dotmatrix' ? 0.4 : 1 }}>
                 <View style={{ width: 20, height: 20, borderRadius: 10, overflow: 'hidden', flexDirection: 'row', flexWrap: 'wrap', borderWidth: 1, borderColor: c.lineSoft }}>
                   {cols.length === 1 ? <View style={{ width: '100%', height: '100%', backgroundColor: cols[0] }} /> : cols.map((x) => <View key={x} style={{ width: '33.4%', height: '50%', backgroundColor: x }} />)}
                 </View>
