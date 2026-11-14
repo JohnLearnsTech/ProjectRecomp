@@ -17,6 +17,7 @@ import { clearReminders, remRows, scheduleReminders, scheduledCount } from '../.
 import { ACCENTS, font, setPrefs, usePrefs, useTheme } from '../../lib/theme';
 import { BackupImport } from '../BackupImport';
 import { ConnectClaude } from '../ConnectClaude';
+import { StepCalibration } from '../StepCalibration';
 import { Icon } from '../Icon';
 import { Cue, Mini, PanelHead, Segmented } from '../ui';
 
@@ -134,6 +135,7 @@ export function SettingsTab({ storedKey, setStoredKey, toast }: { storedKey: str
   const cycleTheme = () => setPrefs({ theme: prefs.theme === 'auto' ? 'light' : prefs.theme === 'light' ? 'dark' : 'auto' });
   return (
     <View style={{ gap: 14 }}>
+      <StepCalibration toast={toast} />
       {stepsSupported && <StepsCard toast={toast} />}
       <View style={s.card}>
         <PanelHead title="Settings" right={

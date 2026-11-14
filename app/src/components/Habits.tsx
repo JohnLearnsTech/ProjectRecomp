@@ -14,7 +14,7 @@ import {
 } from '../lib/habitTimers';
 import { deleteSession, logFocus, pomoTarget, resetDay, setValue, setValue as setValueH, stopAndLog } from '../lib/habits';
 import { stepsConnected, syncSteps } from '../lib/steps';
-import { finishWalk } from '../lib/walk';
+import { finishWalk, stepFactor } from '../lib/walk';
 import { toast } from '../lib/toast';
 import { useRecomp } from '../lib/recomp';
 import { font, useTheme, type Cat } from '../lib/theme';
@@ -70,7 +70,7 @@ export function Habits({ openId, stopId, onOpened }: { openId?: string | null; s
       if (r && walked != null) {
         if (walked > 0) await db.saveDayFields(r.day, { steps: (entries[r.day]?.steps ?? 0) + walked });
         touch();
-        toast(walked > 0 ? `Walk saved. ${walked.toLocaleString('en-IN')} steps on this walk.` : 'Walk saved. No steps were counted. Was the phone with you?');
+        toast(walked > 0 ? `Walk saved. ${walked.toLocaleString('en-IN')} steps on this walk.${stepFactor() === 1 ? ' Count looks off? Calibrate under Me, Settings.' : ''}` : 'Walk saved. No steps were counted. Was the phone with you?');
       } else if (r && tracksSteps(h)) {
         // With the step counter connected, this walk's steps come from the phone; otherwise ask.
         if (stepsConnected()) {

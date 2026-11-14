@@ -51,3 +51,10 @@ export function replayWalkEvents(habitId: string) {
 
 /** Hands today's numbers to the native home screen widgets. */
 export const pushWidgets = (data: unknown) => { try { Walk?.setWidgetData(JSON.stringify(data)); } catch { /* ignore */ } };
+
+// ── Step calibration: your steps per sensor step ──
+export const calStart = () => { try { return !!Walk?.calStart(); } catch { return false; } };
+export const calSteps = () => { try { return Walk?.calSteps() ?? 0; } catch { return 0; } };
+export const calStop = () => { try { return Walk?.calStop() ?? 0; } catch { return 0; } };
+export const stepFactor = () => { try { return Walk?.getFactor() ?? 1; } catch { return 1; } };
+export const setStepFactor = (f: number) => { try { Walk?.setFactor(f); } catch { /* ignore */ } };

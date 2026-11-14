@@ -13,6 +13,12 @@ type WalkTrackerModule = {
   takeEvents(): string[];
   /** Today's numbers for the native home screen widgets, as JSON. */
   setWidgetData(json: string): void;
+  /** Calibration: count raw sensor steps while the person walks a counted number. */
+  calStart(): boolean;
+  calSteps(): number;
+  calStop(): number;
+  getFactor(): number;
+  setFactor(f: number): void;
 };
 
 export default requireOptionalNativeModule<WalkTrackerModule>('WalkTracker');

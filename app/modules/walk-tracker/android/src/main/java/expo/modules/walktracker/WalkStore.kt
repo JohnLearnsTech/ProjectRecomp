@@ -9,9 +9,11 @@ import android.content.Context
  */
 class WalkStore(ctx: Context) {
   companion object {
-    const val MIN_RUN = 10
-    const val GAP_NS = 3_000_000_000L
+    /** Your steps per sensor step, from calibration (1 until calibrated). */
+    fun factor(ctx: Context) = ctx.applicationContext.getSharedPreferences("recomp_walk_cal", Context.MODE_PRIVATE).getFloat("factor", 1f)
+    fun setFactor(ctx: Context, f: Float) { ctx.applicationContext.getSharedPreferences("recomp_walk_cal", Context.MODE_PRIVATE).edit().putFloat("factor", f).apply() }
   }
+  private val appCtx = ctx.applicationContext
   private val p = ctx.applicationContext.getSharedPreferences("recomp_walk", Context.MODE_PRIVATE)
 
   val active get() = p.getBoolean("active", false)
@@ -24,7 +26,8 @@ class WalkStore(ctx: Context) {
   val base get() = p.getFloat("base", -1f)
   private val live get() = p.getInt("live", 0)
 
-  fun steps() = stepsDone + live
+  /** Steps so far: raw sensor steps scaled by the calibration factor. */
+  fun steps() = Math.round((stepsDone + live) * factor(appCtx))
   fun elapsed(now: Long) = accumMs + if (running) (now - segStart) else 0L
 
   fun begin(habitId: String, name: String, accumMs: Long, steps: Int, now: Long) {
@@ -37,32 +40,11 @@ class WalkStore(ctx: Context) {
       .apply()
   }
 
-  /**
-   * A step-counter reading (cumulative since boot) with its time in nanoseconds. Fitness apps
-   * don't count stray steps (picking the phone up, pocketing it, tapping Stop), so neither do we:
-   * steps only count once they're part of a run of at least MIN_RUN, and a run ends after a pause
-   * of GAP_NS. A short burst that never reaches MIN_RUN is dropped.
-   */
+  /** A step-counter reading: the first in a stretch sets the base; after that, raw steps moved. */
   fun reading(value: Float, at: Long) {
     if (!running) return
-    if (base < 0f) {
-      p.edit().putFloat("base", value).putFloat("last", value).putLong("lastAt", at).putInt("pending", 0).putBoolean("inRun", false).apply()
-      return
-    }
-    val delta = (value - p.getFloat("last", value)).toInt()
-    if (delta <= 0) return
-    val gap = at - p.getLong("lastAt", at)
-    var pending = p.getInt("pending", 0)
-    var inRun = p.getBoolean("inRun", false)
-    var add = 0
-    if (gap > GAP_NS) { pending = 0; inRun = false }
-    if (inRun) add = delta
-    else {
-      pending += delta
-      if (pending >= MIN_RUN) { add = pending; pending = 0; inRun = true }
-    }
-    p.edit().putFloat("last", value).putLong("lastAt", at).putInt("pending", pending).putBoolean("inRun", inRun)
-      .putInt("live", live + add).apply()
+    if (base < 0f) p.edit().putFloat("base", value).apply()
+    else p.edit().putInt("live", (value - base).toInt().coerceAtLeast(0)).apply()
   }
 
   fun pause(now: Long, fromNotification: Boolean) {
