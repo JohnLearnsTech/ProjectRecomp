@@ -1,4 +1,6 @@
 import { Jost_400Regular, Jost_500Medium, Jost_600SemiBold, Jost_700Bold, useFonts } from '@expo-google-fonts/jost';
+import { SpaceGrotesk_400Regular, SpaceGrotesk_500Medium, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
+import { Doto_900Black } from '@expo-google-fonts/doto';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
@@ -8,7 +10,7 @@ import { useTheme } from '../lib/theme';
 function RootStack() {
   const { session, loading } = useAuth();
   const { c } = useTheme();
-  const [fontsLoaded, fontError] = useFonts({ Jost_400Regular, Jost_500Medium, Jost_600SemiBold, Jost_700Bold });
+  const [fontsLoaded, fontError] = useFonts({ Jost_400Regular, Jost_500Medium, Jost_600SemiBold, Jost_700Bold, SpaceGrotesk_400Regular, SpaceGrotesk_500Medium, SpaceGrotesk_700Bold, Doto_900Black });
   if (loading || (!fontsLoaded && !fontError)) {
     return (
       <View style={{ flex: 1, backgroundColor: c.paper, justifyContent: 'center' }}>

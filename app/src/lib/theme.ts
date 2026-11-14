@@ -37,6 +37,8 @@ const singles: Record<string, { light: Single; dark: Single }> = {
     dark: ['#A88BFF', '#221740', '#C4B0FF', '#120A2B', ...DARK_GROUND, '#221740'] },
   ember: { light: ['#FF6A2B', '#FFEDE3', '#B8430F', '#1A0C05', '#F5F4F2', '#FBFAF8', '#E3E0DB', '#EEECE8', '#2A140A'],
     dark: ['#FF7A3D', '#3A1C0E', '#FF9D6E', '#1A0C05', ...DARK_GROUND, '#3A1C0E'] },
+  dot: { light: ['#000000', '#EAEAEA', '#E5281B', '#FFFFFF', '#EFEFEF', '#F6F6F6', '#D8D8D8', '#E6E6E6', '#000000'],
+    dark: ['#FFFFFF', '#1C1C1C', '#FF3B2E', '#000000', '#000000', '#171717', '#2A2A2A', '#1B1B1B', '#0E0E0E'] },
   signal: { light: ['#E5281B', '#FDE3E0', '#B31D12', '#FFFFFF', '#F4F4F2', '#FAFAF9', '#E0E0DD', '#ECECEA', '#16181A'],
     dark: ['#FF3B2E', '#3A1210', '#FF6E64', '#1A0605', ...DARK_GROUND, '#2A0F0D'] },
   teal: { light: ['#0FA89A', '#DDF5F2', '#0B7A70', '#FFFFFF', '#F2F5F4', '#F9FBFA', '#DCE3E1', '#E9EFED', '#0B2421'],
@@ -106,21 +108,21 @@ export type Cat = { fill: string; on: string; ink: string; soft: string };
 function build(scheme: 'light' | 'dark', accent0: AccentPref, look: LookPref) {
   const cat = {} as Record<Category, Cat>;
   const ground = GROUNDS[look][scheme] ?? {};
-  const accent: AccentPref = look === 'dotmatrix' ? 'signal' : accent0;
+  const accent = (look === 'dotmatrix' ? 'dot' : accent0) as AccentPref;
   if (accent === 'multi') {
     const b = { ...base[scheme], ...(scheme === 'light' ? { paper: '#F4F4F2', surface2: '#FAFAF8', line: '#E1E1DC', lineSoft: '#EDEDE9', pauseBg: '#141618' } : { pauseBg: '#1A1C20' }), ...ground };
     (Object.keys(multi[scheme]) as Category[]).forEach((k) => {
       const [fill, on, ink] = multi[scheme][k];
       cat[k] = { fill, on, ink, soft: mix(fill, b.surface, scheme === 'dark' ? 0.22 : 0.16) };
     });
-    return { ...b, cat, multi: true };
+    return { ...b, cat, multi: true, look };
   }
   const [fill, soft, ink, on, paper, surface2, line, lineSoft, pauseBg] = singles[accent][scheme];
   const b = { ...base[scheme], paper, surface2, line, lineSoft, pauseBg, ...ground };
   // The soft tint follows the theme's card colour so it sits right on every ground.
-  const soft2 = look === 'standard' ? soft : mix(fill, b.surface, scheme === 'dark' ? 0.2 : 0.14);
+  const soft2 = look === 'standard' || look === 'dotmatrix' ? soft : mix(fill, b.surface, scheme === 'dark' ? 0.2 : 0.14);
   (Object.keys(multi.light) as Category[]).forEach((k) => { cat[k] = { fill, on, ink, soft: soft2 }; });
-  return { ...b, cat, multi: false };
+  return { ...b, cat, multi: false, look };
 }
 export type Palette = ReturnType<typeof build>;
 const cache = new Map<string, Palette>();
@@ -141,12 +143,19 @@ const subs = new Set<() => void>();
 export const getPrefs = () => prefs;
 export function setPrefs(p: Partial<typeof prefs>) {
   prefs = { ...prefs, ...p };
+  applyFonts(prefs.look);
   try { localStorage.setItem('recomp:theme', prefs.theme); localStorage.setItem('recomp:accent', prefs.accent); localStorage.setItem('recomp:look', prefs.look); } catch { /* ignore */ }
   subs.forEach((f) => f());
 }
 export const usePrefs = () => useSyncExternalStore((f) => { subs.add(f); return () => { subs.delete(f); }; }, getPrefs, getPrefs);
 
-export const font = { regular: 'Jost_400Regular', medium: 'Jost_500Medium', semibold: 'Jost_600SemiBold', bold: 'Jost_700Bold' };
+const JOST = { regular: 'Jost_400Regular', medium: 'Jost_500Medium', semibold: 'Jost_600SemiBold', bold: 'Jost_700Bold', num: 'Jost_700Bold' };
+const DOTFONTS = { regular: 'SpaceGrotesk_400Regular', medium: 'SpaceGrotesk_500Medium', semibold: 'SpaceGrotesk_700Bold', bold: 'SpaceGrotesk_700Bold', num: 'Doto_900Black' };
+/** The app's type. Screens read it as they render, so it follows the theme: Dot Matrix swaps in
+ *  Space Grotesk for text and Doto (dot-matrix) for big numbers. */
+export const font = { ...JOST };
+function applyFonts(look: LookPref) { Object.assign(font, look === 'dotmatrix' ? DOTFONTS : JOST); }
+applyFonts(prefs.look);
 
 const makeStyles = (c: Palette, accent: Cat) =>
   StyleSheet.create({
@@ -154,19 +163,19 @@ const makeStyles = (c: Palette, accent: Cat) =>
     title: { color: c.ink, fontSize: 32, fontFamily: font.bold },
     cardTitle: { color: c.ink, fontSize: 23, fontFamily: font.bold },
     section: { color: c.ink, fontSize: 19, fontFamily: font.semibold },
-    stat: { color: c.ink, fontSize: 23, fontFamily: font.semibold, fontVariant: ['tabular-nums'] },
+    stat: { color: c.ink, fontSize: 23, fontFamily: c.look === 'dotmatrix' ? font.num : font.semibold, fontVariant: ['tabular-nums'] },
     row16: { color: c.ink, fontSize: 16, fontFamily: font.regular },
     body: { color: c.ink, fontSize: 15, fontFamily: font.regular },
     body2: { color: c.ink2, fontSize: 15, fontFamily: font.regular },
     label: { color: c.muted, fontSize: 13, fontFamily: font.regular },
     num: { fontVariant: ['tabular-nums'] },
     error: { color: c.danger, fontSize: 13, fontFamily: font.regular },
-    card: { backgroundColor: c.surface, borderRadius: 16, padding: 18, gap: 12 },
+    card: { backgroundColor: c.surface, borderRadius: c.look === 'dotmatrix' ? 24 : 16, padding: 18, gap: 12, ...(c.look === 'dotmatrix' ? { borderWidth: 1, borderColor: c.line } : null) },
     input: {
       backgroundColor: c.surface2, color: c.ink, borderColor: c.lineSoft, borderWidth: 1, borderRadius: 12, minWidth: 0,
       paddingHorizontal: 14, minHeight: 48, fontSize: 16, fontFamily: font.regular, fontVariant: ['tabular-nums'],
     },
-    primary: { backgroundColor: accent.fill, borderRadius: 14, minHeight: 52, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 },
+    primary: { backgroundColor: accent.fill, borderRadius: c.look === 'dotmatrix' ? 999 : 14, minHeight: 52, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 },
     primaryText: { color: accent.on, fontFamily: font.bold, fontSize: 16 },
     outline: { borderColor: c.line, borderWidth: 1, borderRadius: 14, minHeight: 48, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' },
     outlineText: { color: c.ink, fontSize: 15, fontFamily: font.medium },
