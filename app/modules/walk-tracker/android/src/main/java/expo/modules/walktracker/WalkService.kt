@@ -111,7 +111,7 @@ class WalkService : Service(), SensorEventListener {
 
   override fun onSensorChanged(event: SensorEvent) {
     val store = WalkStore(this)
-    store.reading(event.values[0])
+    store.reading(event.values[0], event.timestamp)
     val now = System.currentTimeMillis()
     if (now - lastNotif > 2000) notifyNow(store)
     widgets(false)
