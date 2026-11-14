@@ -1,0 +1,29 @@
+# Keeps the free Supabase project from being paused, which happens after 7 days without
+# activity. Every 3 days it runs one tiny read through the API with the app's public key (the
+# same key every copy of the app carries). Row-level security returns nothing to an anonymous
+# caller, but the query still runs, which counts as activity. The run fails if Supabase doesn't
+# answer (for example if the project is already paused), so GitHub sends a failure notice.
+name: Supabase keep-alive
+
+on:
+  schedule:
+    - cron: '17 6 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: app/.env
+          sparse-checkout-cone-mode: false
+      - name: Ping the database
+        run: |
+          set -a; . app/.env; set +a
+          code=$(curl -sS -o /tmp/out -w '%{http_code}' \
+            "$EXPO_PUBLIC_SUPABASE_URL/rest/v1/profiles?select=user_id&limit=1" \
+            -H "apikey: $EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY")
+          echo "Supabase answered $code: $(head -c 200 /tmp/out)"
+          test "$code" = 200
