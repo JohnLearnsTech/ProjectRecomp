@@ -36,7 +36,7 @@ class WalkStore(ctx: Context) {
       .putString("habitId", habitId).putString("name", name)
       .putLong("segStart", now).putLong("accumMs", accumMs)
       .putInt("stepsDone", steps).putInt("live", 0).putFloat("base", -1f).putInt("pending", 0).putBoolean("inRun", false)
-      .putString("events", "")
+      .putString("events", "").putString("segs", "")
       .apply()
   }
 
@@ -49,6 +49,7 @@ class WalkStore(ctx: Context) {
 
   fun pause(now: Long, fromNotification: Boolean) {
     if (!active || !running) return
+    addSeg(segStart, now, live)
     p.edit()
       .putLong("accumMs", accumMs + (now - segStart))
       .putInt("stepsDone", stepsDone + live).putInt("live", 0).putFloat("base", -1f).putInt("pending", 0).putBoolean("inRun", false)
@@ -64,6 +65,20 @@ class WalkStore(ctx: Context) {
   }
 
   fun clear() { p.edit().clear().apply() }
+
+  // Each running stretch as "start:end:rawSteps", for steps per session.
+  private fun addSeg(s: Long, e: Long, n: Int) {
+    val cur = p.getString("segs", "") ?: ""
+    p.edit().putString("segs", (if (cur.isEmpty()) "" else "$cur,") + "$s:$e:$n").apply()
+  }
+  /** Every stretch so far, the running one included, with steps scaled by calibration. */
+  fun segments(now: Long): List<Triple<Long, Long, Int>> {
+    val f = factor(appCtx)
+    val done = (p.getString("segs", "") ?: "").split(",").filter { it.isNotEmpty() }.mapNotNull {
+      val q = it.split(":"); if (q.size == 3) Triple(q[0].toLong(), q[1].toLong(), Math.round(q[2].toInt() * f)) else null
+    }
+    return if (running) done + Triple(segStart, now, Math.round(live * f)) else done
+  }
 
   // Pauses and resumes tapped on the notification, for the app to replay on its own timer.
   private fun addEvent(e: String) {

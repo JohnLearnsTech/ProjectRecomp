@@ -41,6 +41,11 @@ class WalkTrackerModule : Module() {
       WalkService.sync(ctx)
     }
 
+    /** The walk's stretches so far as [start ms, end ms, steps], for steps per session. */
+    Function("segments") {
+      WalkStore(ctx).segments(System.currentTimeMillis()).map { listOf(it.first.toDouble(), it.second.toDouble(), it.third.toDouble()) }
+    }
+
     /** Ends tracking and returns the steps walked. */
     Function("stop") {
       val store = WalkStore(ctx)

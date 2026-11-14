@@ -64,8 +64,9 @@ export function Habits({ openId, stopId, onOpened }: { openId?: string | null; s
     try {
       // The live tracker's count, taken before the timer goes, so its watcher doesn't drop it.
       const tday = allTimers()[h.id]?.day ?? day;
-      const walked = tracksSteps(h) ? finishWalk(h.id, tday) : null;
-      const r = await stopAndLog(h, (k) => valOn(k, h.id));
+      const walk = tracksSteps(h) ? finishWalk(h.id, tday) : null;
+      const walked = walk?.steps ?? null;
+      const r = await stopAndLog(h, (k) => valOn(k, h.id), walk?.segs);
       touch();
       if (r && walked != null) {
         if (walked > 0) await db.saveDayFields(r.day, { steps: (entries[r.day]?.steps ?? 0) + walked });
@@ -426,7 +427,10 @@ function HabitSheet(p: {
               <Text style={{ fontFamily: font.bold, fontSize: 11, color: c.muted }}>Sessions</Text>
               {sessions.map((g) => (
                 <View key={g.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 }}>
-                  <Text style={[s.body, { flex: 1 }]}>{clock(g.started_at)} — {clock(g.ended_at)}{g.source === 'pomodoro' ? ' · focus' : ''}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.body}>{clock(g.started_at)} — {clock(g.ended_at)}{g.source === 'pomodoro' ? ' · focus' : ''}</Text>
+                    {g.steps != null && <Text style={s.label}>{g.steps.toLocaleString('en-IN')} steps</Text>}
+                  </View>
                   <Text style={[s.body, s.num, { fontFamily: font.bold }]}>{fmtHours((new Date(g.ended_at).getTime() - new Date(g.started_at).getTime()) / 3600000)}</Text>
                   <Pressable hitSlop={8} accessibilityLabel="Delete this session" onPress={() => { const before = cur;
                     // Gone from the list at once; back again if the delete fails.

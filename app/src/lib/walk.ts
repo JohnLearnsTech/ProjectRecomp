@@ -32,11 +32,13 @@ export function startWalk(habitId: string, name: string, accumMs: number) {
 export const pauseWalk = () => { try { Walk?.pause(); } catch { /* ignore */ } };
 export const resumeWalk = () => { try { Walk?.resume(); } catch { /* ignore */ } };
 
-/** Ends tracking for this habit and returns its steps (null when it wasn't being tracked). */
-export function finishWalk(habitId: string, day: string): number | null {
+/** Ends tracking for this habit and returns its steps and stretches (null when it wasn't being tracked). */
+export function finishWalk(habitId: string, day: string): { steps: number; segs: [number, number, number][] } | null {
   const st = walkState();
   if (!st?.active || st.habitId !== habitId) return null;
-  try { const n = Walk!.stop(); markSensorDay(day); return n; } catch { return null; }
+  let segs: [number, number, number][] = [];
+  try { segs = Walk!.segments?.() ?? []; } catch { /* an older build without per-session steps */ }
+  try { const n = Walk!.stop(); markSensorDay(day); return { steps: n, segs }; } catch { return null; }
 }
 /** Drops tracking without keeping the steps (the timer was discarded). */
 export const dropWalk = () => { try { if (walkState()?.active) Walk?.stop(); } catch { /* ignore */ } };

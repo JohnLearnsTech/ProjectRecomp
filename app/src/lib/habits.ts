@@ -12,11 +12,25 @@ const sessionsRows = (h: HabitDef, day: string, segs: Seg[], source: 'timer' | '
   segs.filter((g) => g.e > g.s).map((g) => ({ habit_id: h.id, date: day, started_at: new Date(g.s).toISOString(), ended_at: new Date(g.e).toISOString(), source }));
 
 /** Stop & log: the elapsed time goes to the timer's own day, with its segments as sessions. */
-export async function stopAndLog(h: HabitDef, current: (day: string) => number | null) {
+export async function stopAndLog(h: HabitDef, current: (day: string) => number | null, walkSegs?: [number, number, number][]) {
   const r = stopTimer(h.id); if (!r) return null;
   const dec = unitMs(h.unit) === 3600000 ? 2 : 0;
   const nv = round((current(r.day) ?? 0) + r.ms / unitMs(h.unit), dec);
-  await db.addHabitSessions(sessionsRows(h, r.day, r.segs, 'timer'));
+  const added = await db.addHabitSessions(sessionsRows(h, r.day, r.segs, 'timer'));
+  // A walk's steps per session: each stretch the walk tracker counted goes to the session it
+  // overlaps most.
+  if (walkSegs?.length && added.length) {
+    const steps = new Map<string, number>();
+    for (const [s, e, n] of walkSegs) {
+      let best: string | null = null, most = 0;
+      for (const a of added) {
+        const ov = Math.min(e, +new Date(a.ended_at)) - Math.max(s, +new Date(a.started_at));
+        if (ov > most) { most = ov; best = a.id; }
+      }
+      if (best) steps.set(best, (steps.get(best) ?? 0) + n);
+    }
+    await db.setSessionSteps([...steps].map(([id, n]) => ({ id, steps: n })));
+  }
   await setValue(h, r.day, nv);
   return { day: r.day, ms: r.ms };
 }

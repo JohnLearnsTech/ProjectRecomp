@@ -290,14 +290,21 @@ export const updateHabit = async (id: string, patch: Partial<Pick<Habit, 'name' 
 };
 export const setKeystone = async (id: string | null) => updateProfile({ keystone_habit_id: id });
 
-export type HabitSession = { id: string; habit_id: string; date: string; started_at: string; ended_at: string; source: 'timer' | 'pomodoro' };
-export const listHabitSessions = async (date: string) =>
-  must(await supabase.from('habit_sessions').select('id, habit_id, date, started_at, ended_at, source').eq('date', date).order('started_at')) as HabitSession[];
+export type HabitSession = { id: string; habit_id: string; date: string; started_at: string; ended_at: string; source: 'timer' | 'pomodoro'; steps?: number | null };
+/** A day's sessions, with each walk's steps once the steps column exists (0008); without it, the list still loads. */
+export const listHabitSessions = async (date: string) => {
+  const withSteps = await supabase.from('habit_sessions').select('id, habit_id, date, started_at, ended_at, source, steps').eq('date', date).order('started_at');
+  if (!withSteps.error) return withSteps.data as HabitSession[];
+  return must(await supabase.from('habit_sessions').select('id, habit_id, date, started_at, ended_at, source').eq('date', date).order('started_at')) as HabitSession[];
+};
+/** Steps for sessions just logged; quietly skipped if the steps column isn't there yet. */
+export const setSessionSteps = async (rows: { id: string; steps: number }[]) => {
+  for (const r of rows) await supabase.from('habit_sessions').update({ steps: r.steps }).eq('id', r.id).then(() => {}, () => {});
+};
 export const listHabitSessionsRange = async (from: string, to: string, habitIds: string[]) =>
   habitIds.length ? must(await supabase.from('habit_sessions').select('id, habit_id, date, started_at, ended_at, source').gte('date', from).lte('date', to).in('habit_id', habitIds).eq('source', 'timer').order('started_at')) as HabitSession[] : [];
-export const addHabitSessions = async (rows: { habit_id: string; date: string; started_at: string; ended_at: string; source: 'timer' | 'pomodoro' }[]) => {
-  if (rows.length) must(await supabase.from('habit_sessions').insert(rows));
-};
+export const addHabitSessions = async (rows: { habit_id: string; date: string; started_at: string; ended_at: string; source: 'timer' | 'pomodoro' }[]) =>
+  rows.length ? must(await supabase.from('habit_sessions').insert(rows).select('id, started_at, ended_at')) as { id: string; started_at: string; ended_at: string }[] : [];
 /** Deletes one session; throws when nothing was deleted, so a silent no-op can't look like success. */
 export const deleteHabitSession = async (id: string) => {
   const gone = must(await supabase.from('habit_sessions').delete().eq('id', id).select('id')) as { id: string }[];

@@ -9,6 +9,8 @@ type WalkTrackerModule = {
   pause(): void;
   resume(): void;
   stop(): number;
+  /** The walk's stretches so far: [start ms, end ms, steps]. */
+  segments(): [number, number, number][];
   state(): WalkState;
   takeEvents(): string[];
   /** Today's numbers for the native home screen widgets, as JSON. */
