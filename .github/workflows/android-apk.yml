@@ -12,13 +12,13 @@ on:
 permissions:
   contents: write
 
-concurrency:
-  group: android-apk
-  cancel-in-progress: true
-
 jobs:
   build:
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[apk]')
+    # Only runs that actually build take part, so a push without [apk] can't cancel a build.
+    concurrency:
+      group: android-apk
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 60
     defaults:
