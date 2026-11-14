@@ -58,6 +58,12 @@
         "projectId": "191b9cdd-4a1b-4ddc-a571-e835119174c1"
       }
     },
-    "owner": "johnlearnstech"
+    "owner": "johnlearnstech",
+    "updates": {
+      "url": "https://u.expo.dev/191b9cdd-4a1b-4ddc-a571-e835119174c1"
+    },
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    }
   }
 }
