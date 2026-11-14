@@ -8,13 +8,10 @@ import { syncSteps } from '../../lib/steps';
 import { habitMet, isTimeUnit, tracksSteps } from '../../domain/days';
 import { trimNum } from '../../domain/dates';
 import { allTimers, timerMs, useTimerStore } from '../../lib/habitTimers';
-import { dropWalk, pauseWalk, replayWalkEvents, resumeWalk, startWalk, walkPermissions, walkState, walkSupported } from '../../lib/walk';
-import { requestWidgetUpdate } from 'react-native-android-widget';
+import { dropWalk, pauseWalk, pushWidgets, replayWalkEvents, resumeWalk, startWalk, walkPermissions, walkState, walkSupported } from '../../lib/walk';
 import { useGame } from '../../lib/game';
 import { fmt12, loadCue } from '../../lib/workout';
 import { writeSnapshot, type Snapshot } from '../../widgets/snapshot';
-import { liveWalk } from '../../widgets/handler';
-import { renderWidget, WIDGETS } from '../../widgets/widgets';
 import { RecompProvider, useRecomp } from '../../lib/recomp';
 import { font, useTheme } from '../../lib/theme';
 
@@ -89,11 +86,8 @@ function WidgetSync() {
   const { D, entries, habits, keystone, loaded } = useDays();
   const game = useGame();
   const { timers } = useTimerStore();
-  const running = Object.values(timers).some((t) => t?.running);
   const timersKey = Object.keys(timers).map((k) => `${k}:${timers[k]?.running ? 1 : 0}`).join(',');
-  // A running timer's minutes move on: redraw once a minute while the app is open.
-  const [tick, setTick] = useState(0);
-  useEffect(() => { if (!running) return; const t = setInterval(() => setTick((x) => x + 1), 60000); return () => clearInterval(t); }, [running]);
+
   useEffect(() => {
     if (!loaded) return;
     const P = engine.plan(maxDay), e = entries[maxDay] ?? {}, cue = loadCue();
@@ -115,10 +109,16 @@ function WidgetSync() {
       }),
       names: Object.fromEntries(habits.map((h) => [h.id, h.name])),
       walkIds: habits.filter(tracksSteps).map((h) => h.id),
+      timer: (() => {
+        const all = allTimers(), tid = Object.keys(all).find((k) => all[k]?.running) ?? Object.keys(all).find((k) => all[k]) ?? null;
+        if (!tid) return null;
+        const t = all[tid];
+        return { id: tid, name: habits.find((h) => h.id === tid)?.name ?? 'Timer', running: !!t.running, elapsedMs: timerMs(tid), at: Date.now(), since: t.segs?.[0]?.s ?? t.startedAt };
+      })(),
     };
     writeSnapshot(snap);
-    WIDGETS.forEach((w) => { requestWidgetUpdate({ widgetName: w, renderWidget: () => renderWidget(w, snap, allTimers(), liveWalk()) }).catch(() => {}); });
-  }, [loaded, maxDay, entries, habits, game?.level.name, game?.streak, timersKey, tick]); // eslint-disable-line react-hooks/exhaustive-deps
+    pushWidgets(snap);
+  }, [loaded, maxDay, entries, habits, game?.level.name, game?.streak, timersKey]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }
 
@@ -145,7 +145,7 @@ export default function AppStack() {
       <ToastHost />
       {Platform.OS !== 'web' && <NotificationTaps />}
       {Platform.OS === 'android' && <StepSync />}
-      {Platform.OS === 'android' && <WidgetSync />}
+      {walkSupported && <WidgetSync />}
       {walkSupported && <WalkSync />}
       </DaysProvider>
     </RecompProvider>

@@ -1,7 +1,7 @@
 {
   "name": "recomp",
   "version": "1.0.0",
-  "main": "index.ts",
+  "main": "expo-router/entry",
   "dependencies": {
     "@anthropic-ai/sdk": "^1.4.0",
     "@expo-google-fonts/jost": "^0.4.2",
@@ -27,7 +27,6 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-native": "0.88.1",
-    "react-native-android-widget": "^0.26.0",
     "react-native-health-connect": "^4.1.3",
     "react-native-safe-area-context": "~5.11.1",
     "react-native-screens": "~4.30.1",

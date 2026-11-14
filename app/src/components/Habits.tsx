@@ -346,7 +346,8 @@ function HabitSheet(p: {
   const [sessions, setSessions] = useState<db.HabitSession[]>([]);
   useEffect(() => setV(cur ?? 0), [cur]);
   useEffect(() => setSteps(p.steps ?? 0), [p.steps]);
-  useEffect(() => { if (timed) db.listHabitSessions(day).then((r) => setSessions(r.filter((x) => x.habit_id === h.id))).catch(() => {}); }, [timed, day, h.id, cur]);
+  const reloadSessions = () => { if (timed) db.listHabitSessions(day).then((r) => setSessions(r.filter((x) => x.habit_id === h.id))).catch(() => {}); };
+  useEffect(reloadSessions, [timed, day, h.id, cur]); // eslint-disable-line react-hooks/exhaustive-deps
   const fq = (x: number) => (isHr ? fmtHours(x) : trimNum(x));
   const sState = p.strength >= 70 ? tint.fill : p.strength >= 40 ? c.warn : c.danger;
   const commit = (x: number) => { const n = Math.max(0, +x.toFixed(4)); setV(n); p.onSetValue(n); };
@@ -427,13 +428,16 @@ function HabitSheet(p: {
                 <View key={g.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 }}>
                   <Text style={[s.body, { flex: 1 }]}>{clock(g.started_at)} — {clock(g.ended_at)}{g.source === 'pomodoro' ? ' · focus' : ''}</Text>
                   <Text style={[s.body, s.num, { fontFamily: font.bold }]}>{fmtHours((new Date(g.ended_at).getTime() - new Date(g.started_at).getTime()) / 3600000)}</Text>
-                  <Pressable hitSlop={8} accessibilityLabel="Delete this session" onPress={() => { const before = cur; deleteSession(h, g, cur).then(() => {
+                  <Pressable hitSlop={8} accessibilityLabel="Delete this session" onPress={() => { const before = cur;
+                    // Gone from the list at once; back again if the delete fails.
+                    setSessions((xs) => xs.filter((x) => x.id !== g.id));
+                    deleteSession(h, g, cur).then(() => {
                     p.onChanged();
                     toast(`Session removed (${fmtHours((new Date(g.ended_at).getTime() - new Date(g.started_at).getTime()) / 3600000)})`, async () => {
                       await db.addHabitSessions([{ habit_id: g.habit_id, date: g.date, started_at: g.started_at, ended_at: g.ended_at, source: g.source }]);
-                      await setValueH(h, g.date, before); p.onChanged();
+                      await setValueH(h, g.date, before); p.onChanged(); reloadSessions();
                     });
-                  }); }}><Icon name="trash" size={16} color={c.muted} /></Pressable>
+                  }).catch((e) => { reloadSessions(); toast((e as Error).message); }); }}><Icon name="trash" size={16} color={c.muted} /></Pressable>
                 </View>
               ))}
               {byHand >= 60000 && <Text style={s.label}>Entered by hand +{fmtHours(byHand / 3600000)}</Text>}

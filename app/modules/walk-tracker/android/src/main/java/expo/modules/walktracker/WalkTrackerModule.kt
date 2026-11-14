@@ -39,6 +39,7 @@ class WalkTrackerModule : Module() {
       val n = store.steps()
       store.clear()
       WalkService.instance?.refresh()
+      RecompWidgets.refresh(ctx, null)
       n
     }
 
@@ -48,6 +49,11 @@ class WalkTrackerModule : Module() {
         "active" to s.active, "running" to s.running, "habitId" to s.habitId,
         "steps" to s.steps(), "elapsedMs" to s.elapsed(System.currentTimeMillis()).toDouble(),
       )
+    }
+
+    /** Today's numbers for the home screen widgets (JSON), redrawn at once. */
+    Function("setWidgetData") { json: String ->
+      RecompWidgets.save(ctx, json)
     }
 
     /** Pauses and resumes tapped on the notification since last asked: "p:<ms>" or "r:<ms>". */

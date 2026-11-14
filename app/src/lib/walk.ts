@@ -48,3 +48,6 @@ export function replayWalkEvents(habitId: string) {
   ev.forEach((e) => { const [k, ms] = e.split(':'); if (k === 'p') pauseTimerAt(habitId, +ms); else if (k === 'r') resumeTimerAt(habitId, +ms); });
   return ev.length;
 }
+
+/** Hands today's numbers to the native home screen widgets. */
+export const pushWidgets = (data: unknown) => { try { Walk?.setWidgetData(JSON.stringify(data)); } catch { /* ignore */ } };

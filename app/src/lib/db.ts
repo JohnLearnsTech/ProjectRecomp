@@ -298,7 +298,11 @@ export const listHabitSessionsRange = async (from: string, to: string, habitIds:
 export const addHabitSessions = async (rows: { habit_id: string; date: string; started_at: string; ended_at: string; source: 'timer' | 'pomodoro' }[]) => {
   if (rows.length) must(await supabase.from('habit_sessions').insert(rows));
 };
-export const deleteHabitSession = async (id: string) => { must(await supabase.from('habit_sessions').delete().eq('id', id)); };
+/** Deletes one session; throws when nothing was deleted, so a silent no-op can't look like success. */
+export const deleteHabitSession = async (id: string) => {
+  const gone = must(await supabase.from('habit_sessions').delete().eq('id', id).select('id')) as { id: string }[];
+  if (!gone.length) throw new Error('That session could not be deleted. Pull down to refresh and try again.');
+};
 export const deleteHabitSessionsFor = async (habit_id: string, date: string) => { must(await supabase.from('habit_sessions').delete().match({ habit_id, date })); };
 
 export const listHabitLogsRange = (from: string, to: string) =>

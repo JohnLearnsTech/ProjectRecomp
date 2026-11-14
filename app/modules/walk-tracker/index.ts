@@ -11,6 +11,8 @@ type WalkTrackerModule = {
   stop(): number;
   state(): WalkState;
   takeEvents(): string[];
+  /** Today's numbers for the native home screen widgets, as JSON. */
+  setWidgetData(json: string): void;
 };
 
 export default requireOptionalNativeModule<WalkTrackerModule>('WalkTracker');

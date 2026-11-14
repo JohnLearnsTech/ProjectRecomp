@@ -9,5 +9,29 @@
       android:name="expo.modules.walktracker.WalkService"
       android:exported="false"
       android:foregroundServiceType="health" />
+    <receiver android:name="expo.modules.walktracker.TimerWidget" android:exported="false" android:label="@string/w_timer">
+      <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/w_info_timer" />
+    </receiver>
+    <receiver android:name="expo.modules.walktracker.HabitsWidget" android:exported="false" android:label="@string/w_habits">
+      <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/w_info_habits" />
+    </receiver>
+    <receiver android:name="expo.modules.walktracker.FoodWidget" android:exported="false" android:label="@string/w_food">
+      <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/w_info_food" />
+    </receiver>
+    <receiver android:name="expo.modules.walktracker.LiftWidget" android:exported="false" android:label="@string/w_lift">
+      <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/w_info_lift" />
+    </receiver>
+    <receiver android:name="expo.modules.walktracker.LevelWidget" android:exported="false" android:label="@string/w_level">
+      <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/w_info_level" />
+    </receiver>
+    <receiver android:name="expo.modules.walktracker.StepsWidget" android:exported="false" android:label="@string/w_steps">
+      <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/w_info_steps" />
+    </receiver>
   </application>
 </manifest>

@@ -20,6 +20,8 @@ export type Snapshot = {
   walkIds: string[];
   /** Names of every habit, so a running timer can be labelled. */
   names: Record<string, string>;
+  /** The habit timer as the app last saw it; the widget ticks it on from here. */
+  timer: { id: string; name: string; running: boolean; elapsedMs: number; at: number; since: number } | null;
 };
 
 const KEY = 'recomp:widget';

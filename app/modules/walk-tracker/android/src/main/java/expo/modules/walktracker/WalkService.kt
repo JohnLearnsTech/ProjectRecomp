@@ -23,7 +23,7 @@ import java.util.Locale
 /**
  * Runs only while a walk timer runs: counts steps from the phone's step counter, keeps a live
  * notification (a ticking timer, the steps, Pause/Resume and Stop) and nudges the Steps and
- * Timer widgets to redraw every so often. Stopping and logging happen in the app.
+ * Timer widgets live. Stopping and logging happen in the app.
  */
 class WalkService : Service(), SensorEventListener {
   companion object {
@@ -120,18 +120,12 @@ class WalkService : Service(), SensorEventListener {
     (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).notify(NOTIF_ID, build(store))
   }
 
-  /** The Steps and Timer widgets redraw through their own update; at most every 15 seconds. */
+  /** The Steps, Timer and Habits widgets redraw natively; at most every 3 seconds while counting. */
   private fun widgets(force: Boolean) {
     val now = System.currentTimeMillis()
-    if (!force && now - lastWidget < 15000) return
+    if (!force && now - lastWidget < 3000) return
     lastWidget = now
-    val mgr = AppWidgetManager.getInstance(this)
-    for (name in listOf("Steps", "Timer")) {
-      val cn = ComponentName(packageName, "$packageName.widget.$name")
-      val ids = try { mgr.getAppWidgetIds(cn) } catch (e: Exception) { IntArray(0) }
-      if (ids.isEmpty()) continue
-      sendBroadcast(Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE).setComponent(cn).putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids))
-    }
+    RecompWidgets.refresh(this, listOf(StepsWidget::class.java, TimerWidget::class.java, HabitsWidget::class.java))
   }
 
   private fun link(uri: String, code: Int): PendingIntent {

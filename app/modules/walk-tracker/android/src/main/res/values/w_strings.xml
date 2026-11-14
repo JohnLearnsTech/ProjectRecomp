@@ -1,0 +1,14 @@
+<resources>
+  <string name="w_timer">Recomp · Habit timer</string>
+  <string name="w_habits">Recomp · Habits</string>
+  <string name="w_food">Recomp · Food</string>
+  <string name="w_lift">Recomp · Lift day</string>
+  <string name="w_level">Recomp · Level</string>
+  <string name="w_steps">Recomp · Steps</string>
+  <string name="w_timer_d">Your habit timer, ticking live, with pause and stop.</string>
+  <string name="w_habits_d">Today\'s habits at a glance.</string>
+  <string name="w_food_d">Calories and protein left, with a quick add.</string>
+  <string name="w_lift_d">Today\'s lift and the 10-minute version.</string>
+  <string name="w_level_d">Your level, streak and days to the next.</string>
+  <string name="w_steps_d">Steps today, live while you walk.</string>
+</resources>

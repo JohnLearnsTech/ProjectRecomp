@@ -9,7 +9,7 @@ import { LiftPlan } from '../../../components/LiftPlan';
 import { Ring } from '../../../components/Ring';
 import { ScreenHeader } from '../../../components/ScreenHeader';
 import floors from '../../../domain/data/floors.json';
-import { d, diffDays, shortDate } from '../../../domain/dates';
+import { d, diffDays, localKey, shortDate } from '../../../domain/dates';
 import { currentQuote, nextQuote } from '../../../domain/quotes';
 import { Icon } from '../../../components/Icon';
 import { WeekCard } from '../../../components/WeekCard';
@@ -19,6 +19,7 @@ import { Celebrate, GameBar } from '../../../components/Game';
 import * as db from '../../../lib/db';
 import { evidence, latestWeight, trainedOn, useHistory } from '../../../lib/history';
 import { useRecomp } from '../../../lib/recomp';
+import { allTimers, pauseTimer, startTimer } from '../../../lib/habitTimers';
 import { stepsConnected, stepsSupported } from '../../../lib/steps';
 import { font, useTheme } from '../../../lib/theme';
 
@@ -28,7 +29,13 @@ export default function Today() {
   const { engine, day, maxDay, rev, refresh, error } = useRecomp();
   const { c, s } = useTheme('move');
   const h = useHistory();
-  const { habit, stop } = useLocalSearchParams<{ habit?: string; stop?: string }>();
+  const { habit, stop, start, pause } = useLocalSearchParams<{ habit?: string; stop?: string; start?: string; pause?: string }>();
+  // The widget's Start and Pause for a habit timer (a walk's live tracker follows the timer).
+  useEffect(() => {
+    if (start) startTimer(start, allTimers()[start]?.day ?? localKey());
+    if (pause) pauseTimer(pause);
+    if (start || pause) router.setParams({ start: undefined, pause: undefined });
+  }, [start, pause]);
   const [log, setLog] = useState<db.DayLog | null>(null);
   const [quote, setQuote] = useState(currentQuote());
 
