@@ -3,6 +3,7 @@ import { router, Stack } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Platform } from 'react-native';
 import { ToastHost } from '../../components/ToastHost';
+import { watchAppUpdates } from '../../lib/appUpdates';
 import { DaysProvider, useDays } from '../../lib/days';
 import { syncSteps } from '../../lib/steps';
 import { habitMet, isTimeUnit, tracksSteps } from '../../domain/days';
@@ -125,6 +126,7 @@ function WidgetSync() {
 
 export default function AppStack() {
   const { c } = useTheme();
+  useEffect(() => watchAppUpdates(), []);
   return (
     <RecompProvider>
       <DaysProvider>

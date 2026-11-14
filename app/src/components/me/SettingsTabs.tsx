@@ -17,6 +17,7 @@ import { clearReminders, remRows, scheduleReminders, scheduledCount } from '../.
 import { ACCENTS, font, LOOKS, lookSwatch, setPrefs, usePrefs, useTheme } from '../../lib/theme';
 import { BackupImport } from '../BackupImport';
 import { ConnectClaude } from '../ConnectClaude';
+import { checkForAppUpdate, runningUpdate } from '../../lib/appUpdates';
 import { StepCalibration } from '../StepCalibration';
 import { Icon } from '../Icon';
 import { Cue, Mini, PanelHead, Segmented } from '../ui';
@@ -180,7 +181,8 @@ export function SettingsTab({ storedKey, setStoredKey, toast }: { storedKey: str
             );
           })}
         </View>
-        {line('Version', `${Constants.expoConfig?.version ?? '1.0.0'} · Android port of 2026-11-03 r19`)}
+        {line('Version', `${Constants.expoConfig?.version ?? '1.0.0'} · ${runningUpdate()}`,
+          Platform.OS !== 'web' ? <Mini label="Check for update" onPress={() => { checkForAppUpdate(true); }} /> : undefined)}
         {line('Setup', 'Answer the setup questions again for a fresh goal, targets and plan. Your logs stay.',
           <Mini label="Run setup" onPress={() => router.push({ pathname: '/onboarding', params: { again: '1' } })} />)}
       </View>

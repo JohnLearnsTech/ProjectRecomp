@@ -14,9 +14,9 @@ export function ToastHost() {
       <View accessibilityRole="alert" style={{ flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: c.ink, borderRadius: 999, paddingLeft: 18, paddingRight: t.undo ? 6 : 18, minHeight: 46, maxWidth: 520 }}>
         <Text style={{ color: c.paper, fontFamily: font.semibold, fontSize: 14, flexShrink: 1 }} numberOfLines={2}>{t.text}</Text>
         {t.undo && (
-          <Pressable onPress={() => { const u = t.undo!; dismissToast(); Promise.resolve(u()).catch(() => {}); }} accessibilityLabel="Undo"
+          <Pressable onPress={() => { const u = t.undo!; dismissToast(); Promise.resolve(u()).catch(() => {}); }} accessibilityLabel={t.label ?? "Undo"}
             style={{ minHeight: 36, paddingHorizontal: 14, borderRadius: 999, backgroundColor: c.cat.move.fill, justifyContent: 'center' }}>
-            <Text style={{ color: c.cat.move.on, fontFamily: font.bold, fontSize: 14 }}>Undo</Text>
+            <Text style={{ color: c.cat.move.on, fontFamily: font.bold, fontSize: 14 }}>{t.label ?? 'Undo'}</Text>
           </Pressable>
         )}
       </View>
