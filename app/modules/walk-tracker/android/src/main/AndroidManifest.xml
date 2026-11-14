@@ -5,6 +5,7 @@
   <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
   <uses-feature android:name="android.hardware.sensor.stepcounter" android:required="false" />
   <application>
+    <receiver android:name="expo.modules.walktracker.TimerTickReceiver" android:exported="false" />
     <service
       android:name="expo.modules.walktracker.WalkService"
       android:exported="false"
