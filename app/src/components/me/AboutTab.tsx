@@ -115,10 +115,12 @@ function History({ toast }: { toast: (t: string) => void }) {
   const { c, s } = useTheme();
   const [rows, setRows] = useState<db.WeighIn[]>([]);
   const [dk, setDk] = useState(''), [kg, setKg] = useState(''), [nt, setNt] = useState('');
+  const [all, setAll] = useState(false);
+  const SHOW = 8;
   const load = () => db.listWeightHistory().then(setRows).catch(() => {});
   useEffect(() => { load(); }, []);
   const hcm = +(profileRow?.height_cm ?? 0);
-  const tip = rows.length ? `From ${shortDate(d(rows[0].date))} to ${shortDate(d(rows[rows.length - 1].date))}: ${trimNum(+rows[0].kg)} to ${trimNum(+rows[rows.length - 1].kg)} kg over ${diffDays(d(rows[0].date), d(rows[rows.length - 1].date))} days. They show as a faded line on the weight chart's Goal range.`
+  const tip = rows.length ? `From ${shortDate(d(rows[0].date))} to ${shortDate(d(rows[rows.length - 1].date))}: ${trimNum(+rows[0].kg)} to ${trimNum(+rows[rows.length - 1].kg)} kg over ${diffDays(d(rows[0].date), d(rows[rows.length - 1].date))} days. The last six months of them show as a faded line on the weight chart's Goal range.`
     : 'Weigh-ins from before you started tracking.';
   const add = async () => {
     const w = +kg.replace(',', '.');
@@ -132,10 +134,14 @@ function History({ toast }: { toast: (t: string) => void }) {
       {rows.length ? (
         <View style={{ borderWidth: 1, borderColor: c.lineSoft, borderRadius: 12, overflow: 'hidden' }}>
           {rows.map((x, i) => {
+            if (!all && i < rows.length - SHOW) return null;
             const dl = i ? +rows[i - 1].kg - +x.kg : 0;
             return (
-              <View key={x.date} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 12, paddingVertical: 9, borderTopWidth: i ? 1 : 0, borderTopColor: c.lineSoft }}>
-                <Text style={{ width: 52, fontFamily: font.regular, fontSize: 13, color: c.ink2 }}>{shortDate(d(x.date))}</Text>
+              <View key={x.date} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 12, paddingVertical: 9, borderTopWidth: i > (all ? 0 : rows.length - SHOW) ? 1 : 0, borderTopColor: c.lineSoft }}>
+                <View style={{ width: 52 }}>
+                  <Text style={{ fontFamily: font.regular, fontSize: 13, color: c.ink2 }}>{shortDate(d(x.date))}</Text>
+                  <Text style={{ fontFamily: font.regular, fontSize: 10.5, color: c.muted }}>{x.date.slice(0, 4)}</Text>
+                </View>
                 <View style={{ width: 62 }}>
                   <Text style={{ fontFamily: font.bold, fontSize: 15, color: c.ink }}>{trimNum(+x.kg)}</Text>
                   {!!hcm && <Text style={{ fontFamily: font.regular, fontSize: 10.5, color: c.muted }}>BMI {trimNum(+x.kg / Math.pow(hcm / 100, 2))}</Text>}
@@ -146,6 +152,11 @@ function History({ toast }: { toast: (t: string) => void }) {
               </View>
             );
           })}
+          {rows.length > SHOW && (
+            <Pressable onPress={() => setAll(!all)} style={{ paddingVertical: 11, alignItems: 'center', borderTopWidth: 1, borderTopColor: c.lineSoft }}>
+              <Text style={{ fontFamily: font.medium, fontSize: 13.5, color: c.ink }}>{all ? 'Show the latest only' : `Show all ${rows.length}`}</Text>
+            </Pressable>
+          )}
         </View>
       ) : <Cue>Weigh-ins from before you started tracking. Add them and they show as a faded line on the weight chart.</Cue>}
       <View style={s.row}>

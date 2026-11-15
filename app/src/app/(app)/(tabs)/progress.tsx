@@ -80,7 +80,8 @@ function WeightChart() {
   const { START, TOTAL, TARGET_KG } = engine.T;
   const isW = metric === 'weight';
   const tIdx = Math.max(0, Math.min(TOTAL - 1, diffDays(d(START), d(maxDay))));
-  const histPts = isW ? hist.filter((h) => h.date < START).map((h) => ({ i: diffDays(d(START), d(h.date)), w: +h.kg })) : [];
+  // Earlier weigh-ins: only the last six months before the start, so years of history don't squash the plan.
+  const histPts = isW ? hist.filter((h) => h.date < START && diffDays(d(h.date), d(START)) <= 183).map((h) => ({ i: diffDays(d(START), d(h.date)), w: +h.kg })) : [];
   const lowB = histPts.length ? histPts[0].i : 0;
   let i0: number, i1: number;
   if (range > 0) { i1 = tIdx; i0 = Math.max(lowB, tIdx - range + 1); if (i1 - i0 < 2) i1 = Math.min(TOTAL - 1, i0 + 2); } else { i0 = lowB; i1 = TOTAL - 1; }
