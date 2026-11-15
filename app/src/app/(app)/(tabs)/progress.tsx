@@ -113,12 +113,7 @@ function WeightChart() {
         {isW ? <>{sw(col, 'Your weight')}{sw(c.muted, 'Projection', 0.65)}{showHist && sw(col, 'Before tracking', 0.4)}</> : sw(col, 'Waist at the navel')}
       </View>
       <Segmented cat="body" items={[[7, '1W'], [30, '1M'], [90, '3M'], [0, 'Goal']]} value={range} onChange={(r) => { setRange(r); try { localStorage.setItem('recomp:range', String(r)); } catch { /* ignore */ } }} />
-      <Pressable onPress={(e) => {
-        if (!pts.length) return;
-        const x = e.nativeEvent.locationX;
-        const near = pts.reduce((a, p) => (Math.abs(p.x - x) < Math.abs(a.x - x) ? p : a));
-        setSel(sel === near.i || Math.abs(near.x - x) > 28 ? null : near.i);
-      }}>
+      <View>
       <Svg width={f.W} height={f.H}>
         {yGrid(f, c, (v, dec) => v.toFixed(dec))}
         {xTicks(f, c, START)}
@@ -149,7 +144,16 @@ function WeightChart() {
         {!pts.length && <SvgText x={f.mL + f.iw / 2} y={f.mT + f.ih / 2} textAnchor="middle" fill={c.muted} fontSize={13} fontFamily={font.regular}>
           {isW ? 'Log a weight to start the line' : 'Log a waist reading on a ' + WEEKDAY_NAMES[waistWeekday(engine.PROFILE)]}</SvgText>}
       </Svg>
-      </Pressable>
+      {/* A clear layer over the chart takes the tap: react-native-svg on Android keeps touches
+          for itself, so a Pressable wrapped around the Svg never hears them. */}
+      <View style={{ position: 'absolute', left: 0, top: 0, width: f.W, height: f.H }}
+        onStartShouldSetResponder={() => pts.length > 0}
+        onResponderRelease={(e) => {
+          const x = e.nativeEvent.locationX;
+          const near = pts.reduce((a, p) => (Math.abs(p.x - x) < Math.abs(a.x - x) ? p : a));
+          setSel((cur) => (cur === near.i || Math.abs(near.x - x) > 28 ? null : near.i));
+        }} />
+      </View>
       {pts.length > 1 && <Text style={[s.label, { marginTop: -4 }]}>Tap a point to see its date and value. Gaps are days without a weigh-in.</Text>}
       <Text style={[s.body2, { fontSize: 13.5, lineHeight: 20 }]}>
         {isW
