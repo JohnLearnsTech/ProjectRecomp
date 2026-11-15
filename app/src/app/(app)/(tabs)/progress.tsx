@@ -2,7 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import { type LayoutChangeEvent, PanResponder, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Circle, G, Line, Polyline, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, G, Line, Polyline, Rect, Text as SvgText } from 'react-native-svg';
 import { ReviewCard } from '../../../components/Review';
 import { ScreenHeader } from '../../../components/ScreenHeader';
 import { addDays, d, diffDays, fmt, key, shortDate, trimNum, WEEKDAY_NAMES } from '../../../domain/dates';
@@ -73,6 +73,9 @@ function WeightChart() {
   const [metric, setMetric] = useState<'weight' | 'waist'>(() => { try { return localStorage.getItem('recomp:metric') === 'waist' ? 'waist' : 'weight'; } catch { return 'weight'; } });
   const [range, setRange] = useState<number>(() => { try { const r = localStorage.getItem('recomp:range'); return r == null ? 30 : +r; } catch { return 30; } });
   const [hist, setHist] = useState<db.WeighIn[]>([]);
+  // A tapped point: its date and value in a callout, since crowded labels are skipped.
+  const [sel, setSel] = useState<number | null>(null);
+  useEffect(() => { setSel(null); }, [metric, range]);
   useEffect(() => { db.listWeightHistory().then(setHist).catch(() => {}); }, [rev]);
   const { START, TOTAL, TARGET_KG } = engine.T;
   const isW = metric === 'weight';
@@ -110,6 +113,12 @@ function WeightChart() {
         {isW ? <>{sw(col, 'Your weight')}{sw(c.muted, 'Projection', 0.65)}{showHist && sw(col, 'Before tracking', 0.4)}</> : sw(col, 'Waist at the navel')}
       </View>
       <Segmented cat="body" items={[[7, '1W'], [30, '1M'], [90, '3M'], [0, 'Goal']]} value={range} onChange={(r) => { setRange(r); try { localStorage.setItem('recomp:range', String(r)); } catch { /* ignore */ } }} />
+      <Pressable onPress={(e) => {
+        if (!pts.length) return;
+        const x = e.nativeEvent.locationX;
+        const near = pts.reduce((a, p) => (Math.abs(p.x - x) < Math.abs(a.x - x) ? p : a));
+        setSel(sel === near.i || Math.abs(near.x - x) > 28 ? null : near.i);
+      }}>
       <Svg width={f.W} height={f.H}>
         {yGrid(f, c, (v, dec) => v.toFixed(dec))}
         {xTicks(f, c, START)}
@@ -121,9 +130,27 @@ function WeightChart() {
         {pts.map((p) => <Circle key={p.i} cx={p.x} cy={p.y} r={3.2} fill={col} />)}
         {valueLabels(pts.slice(0, -1), f, 30, (v) => v.toFixed(1), c, last)}
         {last && endPoint(f, c, last, last.v.toFixed(1), col, c.cat.body.ink, endTy)}
+        {(() => {
+          const p = pts.find((q) => q.i === sel);
+          if (!p) return null;
+          const txt = `${shortDate(addDays(d(START), p.i))} · ${p.v.toFixed(1)}${isW ? ' kg' : ' cm'}`;
+          const w = txt.length * 6.6 + 18, h = 24;
+          const bx = Math.max(f.mL, Math.min(f.W - f.mR - w, p.x - w / 2));
+          const by = p.y - h - 12 >= f.mT ? p.y - h - 12 : p.y + 12;
+          return (
+            <G key="sel">
+              <Line x1={p.x} x2={p.x} y1={f.mT} y2={f.mT + f.ih} stroke={c.ink2} strokeWidth={1} strokeDasharray="3 4" opacity={0.6} />
+              <Circle cx={p.x} cy={p.y} r={6} fill={c.surface} stroke={col} strokeWidth={2.5} />
+              <Rect x={bx} y={by} width={w} height={h} rx={h / 2} fill={c.ink} />
+              <SvgText x={bx + w / 2} y={by + 16} textAnchor="middle" fill={c.surface} fontSize={12} fontFamily={font.semibold}>{txt}</SvgText>
+            </G>
+          );
+        })()}
         {!pts.length && <SvgText x={f.mL + f.iw / 2} y={f.mT + f.ih / 2} textAnchor="middle" fill={c.muted} fontSize={13} fontFamily={font.regular}>
           {isW ? 'Log a weight to start the line' : 'Log a waist reading on a ' + WEEKDAY_NAMES[waistWeekday(engine.PROFILE)]}</SvgText>}
       </Svg>
+      </Pressable>
+      {pts.length > 1 && <Text style={[s.label, { marginTop: -4 }]}>Tap a point to see its date and value. Gaps are days without a weigh-in.</Text>}
       <Text style={[s.body2, { fontSize: 13.5, lineHeight: 20 }]}>
         {isW
           ? <>The dashed line is the plan: faster for the first fortnight (mostly water and glycogen), then steady{(engine.G.type || 'lose') === 'lose' ? ', with one flat maintenance week' : ''}. A landing between <Text style={{ fontFamily: font.bold, color: c.ink }}>{trimNum(TARGET_KG - 1.5)} and {trimNum(TARGET_KG + 3.5)} kg</Text> is the honest range.</>
