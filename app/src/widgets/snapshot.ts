@@ -20,6 +20,8 @@ export type Snapshot = {
   walkIds: string[];
   /** The lift trigger's time, short ("10:30"), for the Lift widget's label. */
   liftAt: string | null;
+  /** This week's first open non-negotiable from the last review, and how many are still open. */
+  quest: string | null; questLeft: number;
   /** Names of every habit, so a running timer can be labelled. */
   names: Record<string, string>;
   /** The habit timer as the app last saw it; the widget ticks it on from here. */

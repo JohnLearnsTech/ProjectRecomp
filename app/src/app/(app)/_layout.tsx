@@ -10,7 +10,8 @@ import { habitMet, isTimeUnit, tracksSteps } from '../../domain/days';
 import { trimNum } from '../../domain/dates';
 import { allTimers, timerMs, useTimerStore } from '../../lib/habitTimers';
 import { dropWalk, pauseWalk, pushWidgets, replayWalkEvents, resumeWalk, startWalk, walkPermissions, walkState, walkSupported } from '../../lib/walk';
-import { useGame } from '../../lib/game';
+import { useGame, useQuests } from '../../lib/game';
+import { cancelAfterWalk, syncProteinNudge } from '../../lib/nudges';
 import { fmt12, loadCue } from '../../lib/workout';
 import { writeSnapshot, type Snapshot } from '../../widgets/snapshot';
 import { RecompProvider, useRecomp } from '../../lib/recomp';
@@ -81,11 +82,27 @@ function WalkSync() {
   return null;
 }
 
+// The 4 pm protein check follows the food log; the after-walk ask goes once the day is trained.
+function NudgeSync() {
+  const { engine, maxDay } = useRecomp();
+  const { D, entries, loaded, current } = useDays();
+  const protein = +(entries[maxDay]?.protein ?? 0), trained = loaded && D.trainedOn(maxDay);
+  useEffect(() => {
+    if (!loaded || !current) return;
+    const P = engine.plan(maxDay);
+    if (P.inRange) syncProteinNudge(maxDay, protein, P.protein).catch(() => {});
+  }, [loaded, current, maxDay, protein]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (trained) cancelAfterWalk(maxDay).catch(() => {}); }, [trained, maxDay]);
+  return null;
+}
+
 // Keeps the home screen widget in step with today's numbers.
 function WidgetSync() {
   const { engine, maxDay } = useRecomp();
   const { D, entries, habits, keystone, loaded } = useDays();
   const game = useGame();
+  const quests = useQuests();
+  const questLeft = quests.live ? quests.list.filter((_, i) => !quests.done[i]) : [];
   const { timers } = useTimerStore();
   const timersKey = Object.keys(timers).map((k) => `${k}:${timers[k]?.running ? 1 : 0}`).join(',');
 
@@ -111,6 +128,7 @@ function WidgetSync() {
       names: Object.fromEntries(habits.map((h) => [h.id, h.name])),
       walkIds: habits.filter(tracksSteps).map((h) => h.id),
       liftAt: cue ? fmt12(cue.at).replace(/ (am|pm)$/, '') : null,
+      quest: questLeft[0] ?? null, questLeft: questLeft.length,
       timer: (() => {
         const all = allTimers(), tid = Object.keys(all).find((k) => all[k]?.running) ?? Object.keys(all).find((k) => all[k]) ?? null;
         if (!tid) return null;
@@ -120,7 +138,7 @@ function WidgetSync() {
     };
     writeSnapshot(snap);
     pushWidgets(snap);
-  }, [loaded, maxDay, entries, habits, game?.level.name, game?.streak, timersKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loaded, maxDay, entries, habits, game?.level.name, game?.streak, timersKey, questLeft.join('|')]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }
 
@@ -147,6 +165,7 @@ export default function AppStack() {
       </Stack>
       <ToastHost />
       {Platform.OS !== 'web' && <NotificationTaps />}
+      {Platform.OS !== 'web' && <NudgeSync />}
       {Platform.OS === 'android' && <StepSync />}
       {walkSupported && <WidgetSync />}
       {walkSupported && <WalkSync />}

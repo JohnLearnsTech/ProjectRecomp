@@ -16,6 +16,8 @@ import { deleteSession, logFocus, pomoTarget, resetDay, setValue, setValue as se
 import { stepsConnected, syncSteps } from '../lib/steps';
 import { finishWalk, stepFactor } from '../lib/walk';
 import { toast } from '../lib/toast';
+import { scheduleAfterWalk } from '../lib/nudges';
+import { router } from 'expo-router';
 import { useRecomp } from '../lib/recomp';
 import { font, useTheme, type Cat } from '../lib/theme';
 import { Icon } from './Icon';
@@ -60,6 +62,14 @@ export function Habits({ openId, stopId, onOpened }: { openId?: string | null; s
     }
   }, [now]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // A walk that ends on a lift day not yet trained: offer the 10-minute session now, and ask
+  // once more in 20 minutes for when the walk leaves you too tired to go straight in.
+  const walkDone = (dayOf: string, text: string, short = text) => {
+    const P = engine.plan(maxDay);
+    if (dayOf !== maxDay || P.type !== 'lift' || !P.session || D.trainedOn(maxDay)) { if (text) toast(text); return; }
+    toast(`${short} Two exercises now? 10 minutes.`.trim(), () => router.push('/session?short=1'), 'Start', 20000);
+    scheduleAfterWalk(maxDay, engine.NAMES[P.session]).catch(() => {});
+  };
   const stop = async (h: HabitDef) => {
     try {
       // The live tracker's count, taken before the timer goes, so its watcher doesn't drop it.
@@ -71,15 +81,16 @@ export function Habits({ openId, stopId, onOpened }: { openId?: string | null; s
       if (r && walked != null) {
         if (walked > 0) await db.saveDayFields(r.day, { steps: (entries[r.day]?.steps ?? 0) + walked });
         touch();
-        toast(walked > 0 ? `Walk saved. ${walked.toLocaleString('en-IN')} steps on this walk.${stepFactor() === 1 ? ' Count looks off? Calibrate under Me, Settings.' : ''}` : 'Walk saved. No steps were counted. Was the phone with you?');
+        walkDone(r.day, walked > 0 ? `Walk saved. ${walked.toLocaleString('en-IN')} steps on this walk.${stepFactor() === 1 ? ' Count looks off? Calibrate under Me, Settings.' : ''}` : 'Walk saved. No steps were counted. Was the phone with you?',
+          walked > 0 ? `Walk saved, ${walked.toLocaleString('en-IN')} steps.` : 'Walk saved.');
       } else if (r && tracksSteps(h)) {
         // With the step counter connected, this walk's steps come from the phone; otherwise ask.
         if (stepsConnected()) {
           const res = await syncSteps({ today: maxDay, start: engine.T.START, have: (k) => entries[k]?.steps ?? null, walkIds: habits.filter(tracksSteps).map((x) => x.id), days: 1, force: true });
           if (res.changed.length) touch();
           const n = res.totals[r.day];
-          toast(n ? `Walk saved. ${n.toLocaleString('en-IN')} steps on timed walks today.` : 'Walk saved. Steps can take a few minutes to reach Health Connect; they’ll fill in next time you open Recomp.');
-        } else setWalkAsk({ h, day: r.day, ms: r.ms });
+          walkDone(r.day, n ? `Walk saved. ${n.toLocaleString('en-IN')} steps on timed walks today.` : 'Walk saved. Steps can take a few minutes to reach Health Connect; they’ll fill in next time you open Recomp.', 'Walk saved.');
+        } else { setWalkAsk({ h, day: r.day, ms: r.ms }); walkDone(r.day, '', ''); }
       }
     } catch (e) { setErr((e as Error).message); }
   };

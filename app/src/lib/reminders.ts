@@ -84,7 +84,7 @@ export async function scheduleReminders(engine: Engine, maxDay: string, rows: Re
 /** The day's training reminders are moot once the person has trained. */
 export async function cancelTrainDay(k: string) {
   if (Platform.OS === 'web') return;
-  await Promise.all(['train:', 'train2:'].map((p) => Notifications.cancelScheduledNotificationAsync(p + k).catch(() => {})));
+  await Promise.all(['train:', 'train2:', 'afterwalk:'].map((p) => Notifications.cancelScheduledNotificationAsync(p + k).catch(() => {})));
 }
 
 /** Rebuild every reminder from what is saved, as Me > Reminders > Update does. */

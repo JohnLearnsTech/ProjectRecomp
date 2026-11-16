@@ -14,6 +14,8 @@ import { exportFile } from '../../lib/exportBackup';
 import { useRecomp } from '../../lib/recomp';
 import { connectSteps, disconnectSteps, openStepSources, stepsConnected, stepsSupported, syncSteps } from '../../lib/steps';
 import { clearReminders, remRows, scheduleReminders, scheduledCount } from '../../lib/reminders';
+import * as Notifications from 'expo-notifications';
+import { proteinNudgeOn, setProteinNudge, syncProteinNudge } from '../../lib/nudges';
 import { ACCENTS, font, LOOKS, lookSwatch, setPrefs, usePrefs, useTheme } from '../../lib/theme';
 import { BackupImport } from '../BackupImport';
 import { ConnectClaude } from '../ConnectClaude';
@@ -33,6 +35,16 @@ export function RemindersTab({ toast }: { toast: (t: string) => void }) {
   const [count, setCount] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
+  const { entries } = useDays();
+  const [pNudge, setPNudge] = useState(proteinNudgeOn());
+  // The protein check is worked out from the food log, so it re-syncs itself; this only turns it on or off.
+  const proteinSync = () => { const P = engine.plan(maxDay); return P.inRange ? syncProteinNudge(maxDay, +(entries[maxDay]?.protein ?? 0), P.protein).catch(() => {}) : Promise.resolve(); };
+  const toggleProtein = async () => {
+    const on = !pNudge;
+    if (on && Platform.OS !== 'web' && !(await Notifications.requestPermissionsAsync()).granted) return toast('Notifications are off for Recomp. Turn them on in Android settings.');
+    setProteinNudge(on); setPNudge(on); await proteinSync();
+    toast(on ? 'Protein check on, at 4 pm' : 'Protein check off');
+  };
   useEffect(() => {
     Promise.all([db.listUserChecks(), db.listHiddenChecks(), db.listReminders()]).then(([u, h, r]) => {
       setUc(u); setHidden(Object.fromEntries(h.map((x) => [x.check_id, x.label === x.check_id ? true : x.label])));
@@ -50,7 +62,7 @@ export function RemindersTab({ toast }: { toast: (t: string) => void }) {
     setBusy(true); setMsg('');
     try {
       const all = Object.fromEntries(rows.map((r) => [r.k, item(r.k, r.dflt)]));
-      const n = await scheduleReminders(engine, maxDay, rows, all); setCount(n); setMsg(n ? `${n} reminders set for the next eight weeks.` : 'Nothing to remind you of in the next eight weeks.');
+      const n = await scheduleReminders(engine, maxDay, rows, all); await proteinSync(); setCount(n); setMsg(n ? `${n} reminders set for the next eight weeks.` : 'Nothing to remind you of in the next eight weeks.');
     } catch (e) { setMsg((e as Error).message); } finally { setBusy(false); }
   };
   return (
@@ -80,6 +92,18 @@ export function RemindersTab({ toast }: { toast: (t: string) => void }) {
           );
         })}
       </View>
+      {Platform.OS !== 'web' && (
+        <Pressable onPress={toggleProtein} accessibilityRole="checkbox" accessibilityState={{ checked: pNudge }} accessibilityLabel="Protein check at 4 pm"
+          style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start', borderWidth: 1, borderColor: c.lineSoft, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 11 }}>
+          <View style={{ width: 22, height: 22, borderRadius: 5, borderWidth: 2, borderColor: pNudge ? c.cat.move.fill : c.muted, backgroundColor: pNudge ? c.cat.move.fill : 'transparent', alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
+            {pNudge && <Icon name="check" size={14} color={c.cat.move.on} stroke={3} />}
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: font.bold, fontSize: 14.5, color: c.ink }}>Protein check at 4 pm</Text>
+            <Text style={{ fontFamily: font.regular, fontSize: 12, color: c.muted }}>Only when you are under half your target. Names two foods you already eat that would close the gap. Follows your food log by itself.</Text>
+          </View>
+        </Pressable>
+      )}
       {Platform.OS === 'web' ? <Cue>Reminders are set from the Android app.</Cue> : (
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <Pressable style={[s.primary, { flex: 1 }, busy && { opacity: 0.5 }]} disabled={busy} onPress={sync}><Text style={s.primaryText}>{busy ? 'Working…' : count ? 'Update reminders' : 'Turn on reminders'}</Text></Pressable>
