@@ -1,4 +1,5 @@
 import { useKeepAwake } from 'expo-keep-awake';
+import { ExerciseGuide } from '../../components/ExerciseGuide';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import { Linking, Pressable, ScrollView, Text, TextInput, Vibration, View } from 'react-native';
@@ -159,12 +160,13 @@ export default function Session() {
             </Pressable>
             {lp && <Text style={s.body2}>Last time ({shortDate(d(lp.k))}): <Text style={{ fontFamily: font.semibold, color: c.ink }}>{lp.sets.map((x) => setTxt(x, timed, bands)).join(', ')}</Text></Text>}
             <View style={{ backgroundColor: c.cat.train.soft, borderRadius: 14, padding: 14 }}><Text style={s.body}>{sug.msg}</Text></View>
-            {R.cue ? (
+            <View style={{ gap: 10 }}>
               <Pressable onPress={() => setCueOpen(!cueOpen)} accessibilityState={{ expanded: cueOpen }}>
-                <Text style={[s.body, { fontFamily: font.semibold, color: c.ink2 }]}>{cueOpen ? '▾' : '▸'} How to do it</Text>
-                {cueOpen && <Text style={[s.body2, { marginTop: 6 }]}>{R.cue}</Text>}
+                <Text style={[s.body, { fontFamily: font.semibold, color: c.ink2 }]}>{cueOpen ? '▾' : '▸'} How to do it and what it works</Text>
               </Pressable>
-            ) : null}
+              {cueOpen && <ExerciseGuide name={R.name} />}
+              {cueOpen && !!R.cue && <Text style={s.body2}>{R.cue}</Text>}
+            </View>
 
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }} accessibilityLabel="Sets">
               {Array.from({ length: n }, (_, i) => {

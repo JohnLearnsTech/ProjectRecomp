@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { ExerciseGuide, ExerciseThumb, prefetchExercises } from '../../../components/ExerciseGuide';
 import { Linking, Modal, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Nudge } from '../../../components/Consistency';
@@ -39,6 +40,9 @@ export default function Train() {
   const [note, setNote] = useState('');
   const [steps, setSteps] = useState('');
   const [err, setErr] = useState<string | null>(null);
+  // The session's photos are fetched as the tab opens, so they are ready without signal later.
+  const listKey = list.map((R) => R.name).join('|');
+  useEffect(() => { prefetchExercises(list.map((R) => R.name)); }, [listKey]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { setNote(log?.note ?? ''); setSteps(log?.steps != null ? String(log.steps) : ''); }, [log?.note, log?.steps, day]);
 
   const future = day > maxDay;
@@ -98,6 +102,9 @@ export default function Train() {
             return (
               <View key={R.def} style={{ borderTopWidth: 1, borderTopColor: c.lineSoft, paddingTop: 12, gap: 8 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Pressable onPress={() => setTips((o) => ({ ...o, [R.name]: !o[R.name] }))} accessibilityLabel={`Show how to do ${R.name}`} accessibilityState={{ expanded: !!tips[R.name] }}>
+                    <ExerciseThumb name={R.name} />
+                  </Pressable>
                   <Pressable style={{ flex: 1, minHeight: 44, justifyContent: 'center' }} onPress={() => setOpen((o) => ({ ...o, [R.name]: !isOpen }))}
                     accessibilityRole="button" accessibilityState={{ expanded: isOpen }} accessibilityLabel={R.name}>
                     <Text style={[s.row16, { fontFamily: font.medium }]}>
@@ -107,10 +114,15 @@ export default function Train() {
                     <Text style={s.label}>{summary || R.sch}</Text>
                   </Pressable>
                   {R.pool.length > 0 && <Tool label={`Swap ${R.def}`} icon="swap" onPress={() => setSwapFor(R)} />}
-                  {!!R.cue && <Tool label={`How to do ${R.name}`} glyph="i" on={tips[R.name]} onPress={() => setTips((o) => ({ ...o, [R.name]: !o[R.name] }))} />}
+                  <Tool label={`How to do ${R.name}`} glyph="i" on={tips[R.name]} onPress={() => setTips((o) => ({ ...o, [R.name]: !o[R.name] }))} />
                   <Tool label={`Watch ${R.name} on YouTube`} icon="play" onPress={() => Linking.openURL(ytHref(R.name))} />
                 </View>
-                {tips[R.name] && !isOpen && !!R.cue && <Text style={[s.body2, { fontSize: 13.5, lineHeight: 20 }]}>{R.cue}</Text>}
+                {tips[R.name] && (
+                  <View style={{ gap: 10 }}>
+                    <ExerciseGuide name={R.name} />
+                    {!isOpen && !!R.cue && <Text style={[s.body2, { fontSize: 13.5, lineHeight: 20 }]}>{R.cue}</Text>}
+                  </View>
+                )}
                 {isOpen && (
                   <View style={{ gap: 10 }}>
                     <Text style={s.body2}>
