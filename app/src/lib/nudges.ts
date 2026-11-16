@@ -75,3 +75,39 @@ export async function scheduleAfterWalk(day: string, sessionName: string, minute
   await schedule('afterwalk:' + day, new Date(Date.now() + minutes * 60000), 'Rested? Two exercises, 10 minutes', `${sessionName}. The warm-up and the first two. Tap to start.`, '/session?short=1');
 }
 export const cancelAfterWalk = (day: string) => (Platform.OS === 'web' ? Promise.resolve() : cancel('afterwalk:' + day));
+
+// ── Morning weigh-in and evening wind-down ──
+// Both hang off one wake time. Bed is wake minus the sleep target minus half an hour to fall
+// asleep; the wind-down comes 45 minutes before that.
+const hhmm = (v: string | null, dflt: string) => (v && /^([01]\d|2[0-3]):[0-5]\d$/.test(v) ? v : dflt);
+export const wakeTime = () => hhmm(read('recomp:wake'), '08:00');
+export const setWakeTime = (t: string) => write('recomp:wake', t);
+export const weighNudgeOn = () => read('recomp:nudge:weigh') !== '0';
+export const setWeighNudge = (on: boolean) => write('recomp:nudge:weigh', on ? '1' : '0');
+export const windNudgeOn = () => read('recomp:nudge:wind') !== '0';
+export const setWindNudge = (on: boolean) => write('recomp:nudge:wind', on ? '1' : '0');
+const mins = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+const clock = (m: number) => { const x = ((m % 1440) + 1440) % 1440, h = Math.floor(x / 60), mm = x % 60; return `${((h + 11) % 12) + 1}:${String(mm).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`; };
+/** Lights-out and the wind-down before it, as minutes after midnight of the evening they fall on (may pass 1440). */
+export function bedPlan(sleepTarget = 7) {
+  const wake = mins(wakeTime()), bed = wake - Math.round(sleepTarget * 60) - 30;
+  const bedEve = bed <= 0 ? bed + 1440 : bed, wind = bedEve - 45;
+  return { wind, bed: bedEve, bedText: clock(bedEve), windText: clock(wind), wakeText: clock(wake) };
+}
+const DAYS_AHEAD = 6;
+
+/** A week of morning weigh-in prompts (today's dropped once the weight is in) and wind-downs. */
+export async function syncDailyNudges(day: string, weighedToday: boolean, sleepTarget = 7) {
+  if (Platform.OS === 'web') return;
+  const ok = await ready(), now = Date.now() + 60000;
+  const [wh, wm] = wakeTime().split(':').map(Number), bp = bedPlan(sleepTarget);
+  for (let i = 0; i <= DAYS_AHEAD; i++) {
+    const k = key(addDays(d(day), i)), wid = 'weigh:' + k, did = 'wind:' + k;
+    const w = at(k, wh, wm + 10);
+    if (ok && weighNudgeOn() && w.getTime() > now && !(i === 0 && weighedToday)) await schedule(wid, w, 'Morning weigh-in', 'Before food or water. Tap to log your weight and last night’s sleep.', '/quick');
+    else await cancel(wid);
+    const e = new Date(at(k, 0, 0).getTime() + bp.wind * 60000);
+    if (ok && windNudgeOn() && e.getTime() > now) await schedule(did, e, `Wind down: lights out at ${bp.bedText}`, `That gives you ${sleepTarget} hours before your ${bp.wakeText} alarm. Screens down, phone on charge.`, '/');
+    else await cancel(did);
+  }
+}

@@ -15,7 +15,8 @@ import { useRecomp } from '../../lib/recomp';
 import { connectSteps, disconnectSteps, openStepSources, stepsConnected, stepsSupported, syncSteps } from '../../lib/steps';
 import { clearReminders, remRows, scheduleReminders, scheduledCount } from '../../lib/reminders';
 import * as Notifications from 'expo-notifications';
-import { proteinNudgeOn, setProteinNudge, syncProteinNudge } from '../../lib/nudges';
+import { bedPlan, proteinNudgeOn, setProteinNudge, setWakeTime, setWeighNudge, setWindNudge, syncDailyNudges, syncProteinNudge, wakeTime, weighNudgeOn, windNudgeOn } from '../../lib/nudges';
+import { connectSleep, disconnectSleep, sleepConnected, syncSleep } from '../../lib/sleep';
 import { ACCENTS, font, LOOKS, lookSwatch, setPrefs, usePrefs, useTheme } from '../../lib/theme';
 import { BackupImport } from '../BackupImport';
 import { ConnectClaude } from '../ConnectClaude';
@@ -39,6 +40,16 @@ export function RemindersTab({ toast }: { toast: (t: string) => void }) {
   const [pNudge, setPNudge] = useState(proteinNudgeOn());
   // The protein check is worked out from the food log, so it re-syncs itself; this only turns it on or off.
   const proteinSync = () => { const P = engine.plan(maxDay); return P.inRange ? syncProteinNudge(maxDay, +(entries[maxDay]?.protein ?? 0), P.protein).catch(() => {}) : Promise.resolve(); };
+  const [wNudge, setWNudge] = useState(weighNudgeOn()), [dNudge, setDNudge] = useState(windNudgeOn()), [wake, setWake] = useState(wakeTime());
+  const dailySync = () => syncDailyNudges(maxDay, entries[maxDay]?.w != null).catch(() => {});
+  const allow = async () => Platform.OS === 'web' || (await Notifications.requestPermissionsAsync()).granted || (toast('Notifications are off for Recomp. Turn them on in Android settings.'), false);
+  const toggleDaily = async (which: 'weigh' | 'wind') => {
+    const on = which === 'weigh' ? !wNudge : !dNudge;
+    if (on && !(await allow())) return;
+    if (which === 'weigh') { setWeighNudge(on); setWNudge(on); } else { setWindNudge(on); setDNudge(on); }
+    await dailySync();
+  };
+  const changeWake = (t: string) => { setWake(t); if (/^([01]\d|2[0-3]):[0-5]\d$/.test(t)) { setWakeTime(t); dailySync(); } };
   const toggleProtein = async () => {
     const on = !pNudge;
     if (on && Platform.OS !== 'web' && !(await Notifications.requestPermissionsAsync()).granted) return toast('Notifications are off for Recomp. Turn them on in Android settings.');
@@ -62,7 +73,7 @@ export function RemindersTab({ toast }: { toast: (t: string) => void }) {
     setBusy(true); setMsg('');
     try {
       const all = Object.fromEntries(rows.map((r) => [r.k, item(r.k, r.dflt)]));
-      const n = await scheduleReminders(engine, maxDay, rows, all); await proteinSync(); setCount(n); setMsg(n ? `${n} reminders set for the next eight weeks.` : 'Nothing to remind you of in the next eight weeks.');
+      const n = await scheduleReminders(engine, maxDay, rows, all); await proteinSync(); await dailySync(); setCount(n); setMsg(n ? `${n} reminders set for the next eight weeks.` : 'Nothing to remind you of in the next eight weeks.');
     } catch (e) { setMsg((e as Error).message); } finally { setBusy(false); }
   };
   return (
@@ -93,17 +104,33 @@ export function RemindersTab({ toast }: { toast: (t: string) => void }) {
         })}
       </View>
       {Platform.OS !== 'web' && (
-        <Pressable onPress={toggleProtein} accessibilityRole="checkbox" accessibilityState={{ checked: pNudge }} accessibilityLabel="Protein check at 4 pm"
-          style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start', borderWidth: 1, borderColor: c.lineSoft, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 11 }}>
-          <View style={{ width: 22, height: 22, borderRadius: 5, borderWidth: 2, borderColor: pNudge ? c.cat.move.fill : c.muted, backgroundColor: pNudge ? c.cat.move.fill : 'transparent', alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
-            {pNudge && <Icon name="check" size={14} color={c.cat.move.on} stroke={3} />}
+        <View style={{ borderWidth: 1, borderColor: c.lineSoft, borderRadius: 12, overflow: 'hidden' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 12, paddingVertical: 11 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: font.bold, fontSize: 14.5, color: c.ink }}>I wake up at</Text>
+              <Text style={{ fontFamily: font.regular, fontSize: 12, color: c.muted }}>Sets the two reminders below. 24-hour time.</Text>
+            </View>
+            <TextInput style={[s.input, { width: 82, minHeight: 40, textAlign: 'center' }]} value={wake} maxLength={5} keyboardType="numbers-and-punctuation" onChangeText={changeWake} accessibilityLabel="Wake time" />
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: font.bold, fontSize: 14.5, color: c.ink }}>Protein check at 4 pm</Text>
-            <Text style={{ fontFamily: font.regular, fontSize: 12, color: c.muted }}>Only when you are under half your target. Names two foods you already eat that would close the gap. Follows your food log by itself.</Text>
-          </View>
-        </Pressable>
+          {([
+            ['Morning weigh-in', 'Ten minutes after you wake, on days you have not weighed in yet. Opens the weight and sleep entry.', wNudge, () => toggleDaily('weigh')],
+            ['Wind down for bed', `At ${bedPlan().windText}, 45 minutes before lights out at ${bedPlan().bedText}, which gives you 7 hours.`, dNudge, () => toggleDaily('wind')],
+            ['Protein check at 4 pm', 'Only when you are under half your target. Names two foods you already eat that would close the gap.', pNudge, toggleProtein],
+          ] as [string, string, boolean, () => void][]).map(([t, sub, on, fn]) => (
+            <Pressable key={t} onPress={fn} accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={t}
+              style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start', paddingHorizontal: 12, paddingVertical: 11, borderTopWidth: 1, borderTopColor: c.lineSoft }}>
+              <View style={{ width: 22, height: 22, borderRadius: 5, borderWidth: 2, borderColor: on ? c.cat.move.fill : c.muted, backgroundColor: on ? c.cat.move.fill : 'transparent', alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
+                {on && <Icon name="check" size={14} color={c.cat.move.on} stroke={3} />}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: font.bold, fontSize: 14.5, color: c.ink }}>{t}</Text>
+                <Text style={{ fontFamily: font.regular, fontSize: 12, color: c.muted }}>{sub}</Text>
+              </View>
+            </Pressable>
+          ))}
+        </View>
       )}
+      {Platform.OS !== 'web' && <Text style={[s.label, { marginTop: -4 }]}>These three follow your log by themselves. They do not need Update reminders.</Text>}
       {Platform.OS === 'web' ? <Cue>Reminders are set from the Android app.</Cue> : (
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <Pressable style={[s.primary, { flex: 1 }, busy && { opacity: 0.5 }]} disabled={busy} onPress={sync}><Text style={s.primaryText}>{busy ? 'Working…' : count ? 'Update reminders' : 'Turn on reminders'}</Text></Pressable>
@@ -281,6 +308,40 @@ function StepsCard({ toast }: { toast: (t: string) => void }) {
         )}
       </View>
       {on && <Text style={[s.label, { color: c.muted }]}>No steps showing? Open Step sources and check an app or your phone is allowed to write steps to Health Connect.</Text>}
+      <View style={s.hairline} />
+      <SleepSync toast={toast} />
     </View>
+  );
+}
+
+/** Sleep hours from Health Connect, under the steps card. */
+function SleepSync({ toast }: { toast: (t: string) => void }) {
+  const { s } = useTheme('move');
+  const { engine, maxDay, touch } = useRecomp();
+  const { entries } = useDays();
+  const [on, setOn] = useState(sleepConnected());
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const connect = async () => {
+    setBusy(true); setErr(null);
+    try {
+      await connectSleep(); setOn(true);
+      const r = await syncSleep({ today: maxDay, start: engine.T.START, have: (k) => entries[k]?.sleep ?? null, days: 14, force: true });
+      if (r.changed.length) touch();
+      toast(r.changed.length ? `Connected. Sleep filled in for ${r.changed.length} night${r.changed.length > 1 ? 's' : ''}.` : r.found ? 'Connected. Your nights are already logged.' : 'Connected, but Health Connect has no sleep yet.');
+    } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
+  };
+  return (
+    <>
+      <Text style={[s.body, { fontFamily: font.bold }]}>Sleep from your phone</Text>
+      <Text style={s.body2}>{on
+        ? 'On. Each night is read from Health Connect when you open the app and filed under the day you woke up. Hours you type yourself are kept.'
+        : 'Fill in sleep hours automatically. This needs something that tracks sleep and shares it with Health Connect: a watch or band’s app, or a sleep app. A phone alone does not record sleep.'}</Text>
+      {err && <Cue>{err}</Cue>}
+      <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+        {!on ? <Pressable style={[s.primary, { flex: 1 }, busy && { opacity: 0.5 }]} disabled={busy} onPress={connect}><Text style={s.primaryText}>{busy ? 'Connecting…' : 'Connect sleep'}</Text></Pressable>
+          : <><Mini label="Sleep sources" onPress={openStepSources} /><Mini label="Stop syncing" onPress={() => { disconnectSleep(); setOn(false); toast('Sleep syncing off'); }} /></>}
+      </View>
+    </>
   );
 }

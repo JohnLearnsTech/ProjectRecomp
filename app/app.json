@@ -19,7 +19,8 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.johnlearnstech.recomp",
       "permissions": [
-        "android.permission.health.READ_STEPS"
+        "android.permission.health.READ_STEPS",
+        "android.permission.health.READ_SLEEP"
       ]
     },
     "web": {

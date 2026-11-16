@@ -11,7 +11,8 @@ import { trimNum } from '../../domain/dates';
 import { allTimers, timerMs, useTimerStore } from '../../lib/habitTimers';
 import { dropWalk, pauseWalk, pushWidgets, replayWalkEvents, resumeWalk, startWalk, walkPermissions, walkState, walkSupported } from '../../lib/walk';
 import { useGame, useQuests } from '../../lib/game';
-import { cancelAfterWalk, syncProteinNudge } from '../../lib/nudges';
+import { cancelAfterWalk, syncDailyNudges, syncProteinNudge } from '../../lib/nudges';
+import { syncSleep } from '../../lib/sleep';
 import { fmt12, loadCue } from '../../lib/workout';
 import { writeSnapshot, type Snapshot } from '../../widgets/snapshot';
 import { RecompProvider, useRecomp } from '../../lib/recomp';
@@ -41,6 +42,7 @@ function StepSync() {
     if (!ready || !loaded) return;
     syncSteps({ today: maxDay, start: engine.T.START, have: (k) => entries[k]?.steps ?? null, walkIds: habits.filter(tracksSteps).map((h) => h.id) })
       .then((r) => { if (r.changed.length) touch(); }).catch(() => {});
+    syncSleep({ today: maxDay, start: engine.T.START, have: (k) => entries[k]?.sleep ?? null }).then((r) => { if (r.changed.length) touch(); }).catch(() => {});
   }, [rev, ready, loaded, maxDay]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }
@@ -93,6 +95,8 @@ function NudgeSync() {
     if (P.inRange) syncProteinNudge(maxDay, protein, P.protein).catch(() => {});
   }, [loaded, current, maxDay, protein]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (trained) cancelAfterWalk(maxDay).catch(() => {}); }, [trained, maxDay]);
+  const weighed = entries[maxDay]?.w != null;
+  useEffect(() => { if (loaded && current) syncDailyNudges(maxDay, weighed).catch(() => {}); }, [loaded, current, maxDay, weighed]);
   return null;
 }
 

@@ -13,6 +13,7 @@ import { d, diffDays, localKey, shortDate } from '../../../domain/dates';
 import { currentQuote, nextQuote } from '../../../domain/quotes';
 import { Icon } from '../../../components/Icon';
 import { WeekCard } from '../../../components/WeekCard';
+import { HabitResize, WeekBudget } from '../../../components/Coach';
 import { useQuests } from '../../../lib/game';
 import { reviewDue } from '../../../domain/ai';
 import { Celebrate, GameBar } from '../../../components/Game';
@@ -149,7 +150,9 @@ export default function Today() {
           </Pressable>
         </Pressable>
 
+        <WeekBudget />
         <WeekCard />
+        <HabitResize />
         <Habits openId={habit} stopId={stop} onOpened={() => router.setParams({ habit: undefined, stop: undefined })} />
         <ConsistencyCard />
 
