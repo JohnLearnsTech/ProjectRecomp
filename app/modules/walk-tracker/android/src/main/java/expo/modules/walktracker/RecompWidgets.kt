@@ -350,8 +350,16 @@ object RecompWidgets {
     for (i in 0 until count) { val h = hs!!.getJSONObject(i); if (h.optBoolean("met")) met++ else left.add(h.optString("name")) }
     label(c, "Habits")
     if (count == 0) body(c, listOf(Line(c, "Add habits in the app", WHITE)))
-    else body(c, listOf(Hero(c, "$met/$count", 36f, ico = "check"), Pips(c, count.coerceAtMost(20), met),
-      Line(c, if (left.isEmpty()) "All done today ✓" else "Left: " + left.joinToString(" · "))))
+    else {
+      // This week's open non-negotiable from the last review stays here until it's ticked in the
+      // app. A tall widget shows it under the habits line; a small one shows it in its place.
+      val quest = d.optString("quest", "").takeIf { it.isNotEmpty() && it != "null" }
+      val leftLine = Line(c, if (left.isEmpty()) "All done today ✓" else "Left: " + left.joinToString(" · "))
+      val parts = mutableListOf<Part>(Hero(c, "$met/$count", 36f, ico = "check"), Pips(c, count.coerceAtMost(20), met))
+      if (quest == null || c.hDp >= 170) parts.add(leftLine)
+      if (quest != null) parts.add(Line(c, if (c.wDp >= 200) "This week: $quest" else quest, WHITE))
+      body(c, parts)
+    }
     c.v.setOnClickPendingIntent(R.id.root, link(c.ctx, "recomp:///"))
   }
 
