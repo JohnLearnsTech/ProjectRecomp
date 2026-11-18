@@ -16,16 +16,17 @@ const recOf = (r: db.CacheRow): CacheRec => ({
   per100: { kcal: +r.kcal_100g, p: +r.protein_100g, c: +r.carbs_100g, f: +r.fat_100g, fib: +r.fiber_100g },
 });
 
-export type AddResult = { table: number; cached: number; pending: number };
+export type AddResult = { table: number; cached: number; pending: number; ids: string[] };
 
 /**
  * r19 addFood(): split the text, match each item against your foods and the built-in table,
  * then the estimate cache (what r19's estimate() checks before calling Claude). Anything left
  * is saved with no numbers (needs_estimate) so it shows in the log at once and is never dropped.
  */
-export async function addFoodText(date: string, raw: string, index: ReturnType<typeof buildFoodIndex>): Promise<AddResult> {
-  const parts = splitFoodInput(raw.trim());
-  if (!parts.length) return { table: 0, cached: 0, pending: 0 };
+export async function addFoodText(date: string, raw: string, index: ReturnType<typeof buildFoodIndex>, whole = false): Promise<AddResult> {
+  // whole: the text is one food, as typed ("Keep as one" after a split the person didn't want).
+  const parts = whole ? [raw.trim().replace(/\s+/g, ' ')].filter(Boolean) : splitFoodInput(raw.trim());
+  if (!parts.length) return { table: 0, cached: 0, pending: 0, ids: [] };
   const rows: db.NewFood[] = new Array(parts.length);
   const unknown: number[] = [];
   parts.forEach((p, i) => {
@@ -47,8 +48,8 @@ export async function addFoodText(date: string, raw: string, index: ReturnType<t
       rows[i] = { label: p, raw_text: p, grams: parseGrams(p), kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fiber_g: 0, source: 'none', cache_key: isDish(p) ? null : k };
     }
   });
-  await db.addMeal(date, rows);
-  return { table: parts.length - unknown.length, cached, pending: unknown.length - cached };
+  const added = await db.addMeal(date, rows);
+  return { table: parts.length - unknown.length, cached, pending: unknown.length - cached, ids: added.map((r) => r.id) };
 }
 
 const round1 = (x: number) => Math.round(x * 10) / 10;

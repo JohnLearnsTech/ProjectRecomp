@@ -80,9 +80,14 @@ export default function Food() {
     try { await fn(); await load(); touch(); } catch (e) { setStatus((e as Error).message); } finally { setBusy(false); }
   };
 
-  const add = () => run(async () => {
-    const r = await addFoodText(day, text, foodIndex);
+  const add = (raw = text, whole = false) => run(async () => {
+    const r = await addFoodText(day, raw, foodIndex, whole);
     setText('');
+    // One line read as several foods: offer to undo the split, in case it was one dish.
+    if (!whole && r.ids.length > 1 && !raw.trim().includes('\n')) {
+      const ids = r.ids;
+      toast(`Logged as ${ids.length} items`, () => run(async () => { for (const id of ids) await db.deleteFood(id); add(raw, true); }), 'Keep as one', 9000);
+    }
     const bits = [];
     if (r.table) bits.push(`${r.table} from the built-in table`);
     if (r.cached) bits.push(`${r.cached} from your earlier estimates`);
@@ -157,7 +162,7 @@ export default function Food() {
               editable={!future}
             />
             <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-              <Pressable style={[s.primary, { flex: 1, minHeight: 46 }, (busy || future || !text.trim()) && { opacity: 0.5 }]} disabled={busy || future || !text.trim()} onPress={add}>
+              <Pressable style={[s.primary, { flex: 1, minHeight: 46 }, (busy || future || !text.trim()) && { opacity: 0.5 }]} disabled={busy || future || !text.trim()} onPress={() => add()}>
                 <Text style={s.primaryText}>{busy ? 'Adding…' : day === maxDay ? 'Add to today' : `Add to ${shortDate(d(day))}`}</Text>
               </Pressable>
               <PhotoButtons day={day} disabled={busy || future || !!aiBusy} keyed={keyed} cuisine={profileRow?.cuisine}
