@@ -100,9 +100,19 @@ export function joinDish(parts: string[]): string[] {
   return parts;
 }
 
+/** Foods whose name has "and" in it: never split. */
+const AND_NAMES = /^(mac|macaroni|fish|bread|peanut butter|salt|sweet|hot|sour|surf|bangers|rice|dal|chole|rajma|biscuits|cookies|strawberries|pav|puri|idli|vada|curd|roti|cheese|ham|chicken)\s+and\s+(cheese|chips|butter|jelly|jam|pepper|sour|spicy|turf|mash|beans|rice|bhature|chawal|gravy|cream|bacon|toast|bhaji|sambar|chutney|onion|pickle|sabzi|waffles)\b/i;
+
+/**
+ * Items are split on commas, semicolons, new lines, full stops and "and". An "and" stays inside
+ * an item in two cases: the item names its ingredients ("egg with tomato and oil"), or the
+ * words around it make one food ("mac and cheese", "bread and butter").
+ */
 export function splitItems(raw: string): string[] {
   const out: string[] = []; let buf = '', depth = 0, i = 0; const n = raw.length;
   const word = (c: string) => /[A-Za-z0-9]/.test(c);
+  const keepAnd = (at: number) => /\bwith\b|\bmade (?:with|of)\b|\bcontain(?:s|ing)\b|\bincluding\b/i.test(buf)
+    || AND_NAMES.test((buf.match(/[A-Za-z]+(?: butter)?\s*$/)?.[0] ?? '').trim() + ' ' + raw.slice(at));
   while (i < n) {
     const ch = raw[i];
     if (ch === '(' || ch === '[') { depth++; buf += ch; i++; continue; }
@@ -112,7 +122,7 @@ export function splitItems(raw: string): string[] {
       if (ch === '.' && /\s/.test(raw.charAt(i + 1) || ' ')) { out.push(buf); buf = ''; i++; continue; }
       if ((ch === 'a' || ch === 'A') && /^and$/i.test(raw.substr(i, 3))) {
         const before = i === 0 ? ' ' : raw[i - 1], after = i + 3 < n ? raw[i + 3] : ' ';
-        if (!word(before) && !word(after)) { out.push(buf); buf = ''; i += 3; continue; }
+        if (!word(before) && !word(after) && !keepAnd(i)) { out.push(buf); buf = ''; i += 3; continue; }
       }
     }
     buf += ch; i++;
@@ -123,7 +133,23 @@ export function splitItems(raw: string): string[] {
 
 /** addFood's split: a dish only absorbs the items on its own line. */
 export const splitFoodInput = (raw: string) =>
-  raw.split(/\n+/).filter((l) => l.trim()).flatMap((line) => joinDish(splitItems(line)));
+  raw.split(/\n+/).filter((l) => l.trim()).flatMap((line) => joinDish(withList(line, splitItems(line))));
+
+/**
+ * "egg fried with tomato, curry leaves and oil": the last item names what it was made with as a
+ * list ending in "and", with no quantities, so the list stays one food. A quantity anywhere after
+ * "with" ("oats with milk, banana, 10 g honey") means separate foods, and is left alone.
+ */
+function withList(line: string, parts: string[]): string[] {
+  const m = /\bwith\b/i.exec(line);
+  if (!m) return parts;
+  const tail = line.slice(m.index + 4);
+  if (/\d/.test(tail) || !/\band\b/i.test(tail) || !/[,;]/.test(tail)) return parts;
+  const at = parts.findIndex((p) => /\bwith\b/i.test(p));
+  if (at < 0 || at === parts.length - 1) return parts;
+  const from = line.indexOf(parts[at]);
+  return from < 0 ? parts : parts.slice(0, at).concat([line.slice(from).trim().replace(/[.,;]+$/, '')]);
+}
 
 export function parseGrams(desc: string) {
   const m = String(desc || '').match(/(\d+(?:\.\d+)?)\s*(kg|kgs|g|gm|gms|grams?|ml|l|litres?|liters?)\b/i);

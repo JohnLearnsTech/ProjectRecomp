@@ -10,7 +10,21 @@ import { addDays, d, diffDays, key, mondayOf } from './dates.ts';
 import { habitMet, isTimeUnit, tracksSteps, unitMs, type DayEntry, type Entries, type HabitDef } from './days.ts';
 import type { Engine } from './plan.ts';
 
-export const LEVELS: [number, string][] = [[0, 'Day One'], [3, 'Showing Up'], [10, 'Building'], [25, 'Consistent'], [50, 'Hardworking'], [100, 'Unstoppable']];
+// Ten ranks, never more than 20 days won apart, so the next one is always within reach. Each has
+// an identity line and its own colour, cool to warm to gold.
+export const RANKS: { at: number; name: string; motto: string; tint: string }[] = [
+  { at: 0, name: 'Day One', motto: 'Every streak starts with one day.', tint: '#8A94A6' },
+  { at: 3, name: 'Showing Up', motto: 'You came back. Most people don’t.', tint: '#3FB8AF' },
+  { at: 7, name: 'First Week', motto: 'A week of proof that you can.', tint: '#4CB86A' },
+  { at: 14, name: 'Building', motto: 'It’s turning into a routine.', tint: '#8CC63F' },
+  { at: 21, name: 'Steady', motto: 'Three weeks in. This isn’t luck.', tint: '#E3C23A' },
+  { at: 30, name: 'Consistent', motto: 'A month of keeping your word to yourself.', tint: '#F2994A' },
+  { at: 45, name: 'Committed', motto: 'This is who you are now.', tint: '#EB5757' },
+  { at: 60, name: 'Hardworking', motto: 'Two months. People notice.', tint: '#D65DB1' },
+  { at: 80, name: 'Relentless', motto: 'Bad days don’t stop you any more.', tint: '#9B6BFF' },
+  { at: 100, name: 'Unstoppable', motto: 'A hundred days won. Rare air.', tint: '#FFC83D' },
+];
+export const LEVELS: [number, string][] = RANKS.map((r) => [r.at, r.name]);
 export const DAY_CAP = 100;
 
 export type DayResult = { k: string; won: boolean; pending: boolean; pts: number; comeback: boolean; type: string };
@@ -31,7 +45,8 @@ export function floorFor(engine: Engine, k: string, e: DayEntry | undefined, hab
   const p = engine.plan(k), steps = +(e?.steps ?? 0), walk = walkMin(e, habits);
   const exercises = e?.sets ? Object.values(e.sets).filter((a) => filledSets(a) > 0).length : 0;
   if (!p.inRange) return { met: false, text: '', type: 'off' };
-  if (p.type === 'lift') return { met: trained || exercises >= 2, text: 'The warm-up plus the first two exercises.', type: 'lift' };
+  // A wiped day's fallback (the 'warmup' tick) keeps the day: showing up is the habit being built.
+  if (p.type === 'lift') return { met: trained || exercises >= 2 || !!e?.checks?.warmup, text: 'The warm-up plus the first two exercises. On a wiped day, the warm-up alone.', type: 'lift' };
   if (p.type === 'cardio') return { met: walk >= 10 || steps >= 2000 || !!e?.checks?.train, text: 'Ten minutes of walking.', type: 'cardio' };
   const water = !!e?.checks?.water, protein = !!e?.checks?.protein || (e?.protein != null && +e.protein >= pFloor), moved = walk >= 10 || steps >= 3000;
   return { met: [water, protein, moved].filter(Boolean).length >= 2, text: 'Water, protein, a short walk. Two of the three.', type: 'rest' };
@@ -107,7 +122,7 @@ export function gameState(g: GameInput) {
   ];
   return {
     days, today, totalWon, points, streak, best, badges,
-    level: { i: li, name: LEVELS[li][1], next: next ? { name: next[1], need: next[0] - totalWon, at: next[0] } : null, from: LEVELS[li][0] },
+    level: { i: li, name: LEVELS[li][1], motto: RANKS[li].motto, tint: RANKS[li].tint, next: next ? { name: next[1], need: next[0] - totalWon, at: next[0], tint: RANKS[li + 1].tint } : null, from: LEVELS[li][0] },
     daysIn: diffDays(d(START), d(maxDay)) + 1,
   };
 }
