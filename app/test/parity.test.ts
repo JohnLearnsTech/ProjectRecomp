@@ -105,10 +105,13 @@ test('food parsing, matching and scaling match on a phrase corpus', () => {
   ctx.setup(clone(goal({})), { myFoods: [{ n: 'Mom curry', k: ['special curry'], per: '100g', g: 200, v: [150, 8, 10, 7, 2] }] }, null, {});
   const idx = F.buildFoodIndex([{ n: 'Mom curry', k: ['special curry'], per: '100g', g: 200, v: [150, 8, 10, 7, 2] }]);
   for (const raw of FOOD_INPUTS) {
-    assert.deepEqual(F.splitItems(raw), clone(ctx.splitItems(raw)), 'split ' + raw);
+    // "and" splits differently on purpose (only before an amount): see the test below.
     const parts = F.splitFoodInput(raw);
-    const webParts: string[] = []; raw.split(/\n+/).forEach((l) => { if (l.trim()) webParts.push(...ctx.joinDish(ctx.splitItems(l))); });
-    assert.deepEqual(parts, clone(webParts), 'parts ' + raw);
+    if (!/\band\b/i.test(raw)) {
+      assert.deepEqual(F.splitItems(raw), clone(ctx.splitItems(raw)), 'split ' + raw);
+      const webParts: string[] = []; raw.split(/\n+/).forEach((l) => { if (l.trim()) webParts.push(...ctx.joinDish(ctx.splitItems(l))); });
+      assert.deepEqual(parts, clone(webParts), 'parts ' + raw);
+    }
     assert.equal(F.isDish(raw), ctx.isDish(raw));
     assert.equal(F.canonName(raw), ctx.canonName(raw), 'canon ' + raw);
     assert.equal(F.parseGrams(raw), ctx.parseGrams(raw));
@@ -382,4 +385,19 @@ test('Claude prompts are word for word r19, and their checks agree', () => {
     }
     for (const nm of ['Box squat', 'Goblet squat to box', 'Band pull-apart', 'Nope']) assert.equal(AI.cueFor(nm, engine.PL, P.makePlan(g, pf, engine.T.TMAINT_W)), ctx.cueFor(nm));
   }
+});
+
+test('"and" joins words in one food unless an amount follows it', () => {
+  const cases: [string, string[]][] = [
+    ['160 grams liver and gizzard, 300 grams veggies and cheese omlette', ['160 grams liver and gizzard', '300 grams veggies and cheese omlette']],
+    ['470 grams chicken and veggies omlette', ['470 grams chicken and veggies omlette']],
+    ['2 eggs and 1 roti', ['2 eggs', '1 roti']],
+    ['tea and 2 biscuits', ['tea', '2 biscuits']],
+    ['2 eggs and a bowl of dal', ['2 eggs', 'a bowl of dal']],
+    ['upma, boiled egg, papaya and banana', ['upma', 'boiled egg', 'papaya and banana']],
+    ['2 rotis, egg fried with tomato, curry leaves and oil', ['2 rotis', 'egg fried with tomato, curry leaves and oil']],
+    ['paratha (aloo and paneer), curd', ['paratha (aloo and paneer)', 'curd']],
+    ['andand and', ['andand and']],
+  ];
+  for (const [raw, want] of cases) assert.deepEqual(F.splitFoodInput(raw), want, raw);
 });

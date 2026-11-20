@@ -99,24 +99,17 @@ export function joinDish(parts: string[]): string[] {
   return parts;
 }
 
-/** Foods whose name has "and" in it: never split. */
-const AND_NAMES = /^(mac|macaroni|fish|bread|peanut butter|salt|sweet|hot|sour|surf|bangers|rice|dal|chole|rajma|biscuits|cookies|strawberries|pav|puri|idli|vada|curd|roti|cheese|ham|chicken)\s+and\s+(cheese|chips|butter|jelly|jam|pepper|sour|spicy|turf|mash|beans|rice|bhature|chawal|gravy|cream|bacon|toast|bhaji|sambar|chutney|onion|pickle|sabzi|waffles)\b/i;
-
-/** "chicken and veggies omelette", "egg and cheese sandwich": what follows "and" is the rest of a
- *  dish's name, so the two words before it describe one food. No quantity may follow the "and". */
-const AND_DISH = /^[^\d]*?\b(omelettes?|omlettes?|omelets?|sandwich(?:es)?|curry|salad|wraps?|rolls?|soup|stew|bowl|pasta|fried rice|biryani|pulao|burgers?|pizza|smoothie|shake|sabzi|subzi|stir.?fry|masala|frankie|dosa|parathas?|bhurji|kebabs?|tikka|noodles|momos?|quesadilla|tacos?|burrito|poriyal|kurma|korma|gravy|fry|sukka)\s*$/i;
+/** An amount at the start of the text: a number, a fraction or a counting word. */
+const QTY = /^\s*(?:\d|½|¼|¾|(?:a|one|two|three|four|five|six|half|quarter)\s+(?:\w+\s+)?(?:of\s+)?\w)/i;
 
 /**
- * Items are split on commas, semicolons, new lines, full stops and "and". An "and" stays inside
- * an item in two cases: the item names its ingredients ("egg with tomato and oil"), or the
- * words around it make one food ("mac and cheese", "bread and butter").
+ * Items are split on commas, semicolons, new lines and full stops. "and" splits only when an
+ * amount follows it ("2 eggs and 1 toast"); otherwise it joins words inside one food, the way
+ * people write ("160 g liver and gizzard", "veggies and cheese omelette", "rice and dal").
  */
 export function splitItems(raw: string): string[] {
   const out: string[] = []; let buf = '', depth = 0, i = 0; const n = raw.length;
   const word = (c: string) => /[A-Za-z0-9]/.test(c);
-  const keepAnd = (at: number) => /\bwith\b|\bmade (?:with|of)\b|\bcontain(?:s|ing)\b|\bincluding\b/i.test(buf)
-    || AND_NAMES.test((buf.match(/[A-Za-z]+(?: butter)?\s*$/)?.[0] ?? '').trim() + ' ' + raw.slice(at))
-    || AND_DISH.test(raw.slice(at + 3).split(/[,;\n]|\.\s|\band\b/i)[0]);
   while (i < n) {
     const ch = raw[i];
     if (ch === '(' || ch === '[') { depth++; buf += ch; i++; continue; }
@@ -126,7 +119,7 @@ export function splitItems(raw: string): string[] {
       if (ch === '.' && /\s/.test(raw.charAt(i + 1) || ' ')) { out.push(buf); buf = ''; i++; continue; }
       if ((ch === 'a' || ch === 'A') && /^and$/i.test(raw.substr(i, 3))) {
         const before = i === 0 ? ' ' : raw[i - 1], after = i + 3 < n ? raw[i + 3] : ' ';
-        if (!word(before) && !word(after) && !keepAnd(i)) { out.push(buf); buf = ''; i += 3; continue; }
+        if (!word(before) && !word(after) && QTY.test(raw.slice(i + 3))) { out.push(buf); buf = ''; i += 3; continue; }
       }
     }
     buf += ch; i++;
