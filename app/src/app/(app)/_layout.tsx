@@ -13,6 +13,8 @@ import { dropWalk, pauseWalk, pushWidgets, replayWalkEvents, resumeWalk, startWa
 import { useGame, useQuests } from '../../lib/game';
 import { cancelAfterWalk, syncDailyNudges, syncProteinNudge } from '../../lib/nudges';
 import { syncSleep } from '../../lib/sleep';
+import { routinesChanged, setRoutineLog, syncRoutineReminders } from '../../lib/routines';
+import { toast } from '../../lib/toast';
 import { fmt12, loadCue } from '../../lib/workout';
 import { writeSnapshot, type Snapshot } from '../../widgets/snapshot';
 import { RecompProvider, useRecomp } from '../../lib/recomp';
@@ -24,9 +26,17 @@ let handled: string | null = null;
 function NotificationTaps() {
   const last = Notifications.useLastNotificationResponse();
   useEffect(() => {
-    if (!last || last.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return;
-    const id = last.notification.request.identifier, url = last.notification.request.content.data?.url;
-    if (id === handled || typeof url !== 'string' || !url.startsWith('/')) return;
+    if (!last) return;
+    const id = last.notification.request.identifier, data = last.notification.request.content.data ?? {}, url = data.url;
+    if (id === handled) return;
+    // A routine's Done button: tick that slot, without leaving where the person is.
+    if (last.actionIdentifier === 'done' && typeof data.routine === 'string') {
+      handled = id;
+      Notifications.clearLastNotificationResponseAsync().catch(() => {});
+      setRoutineLog(data.routine, String(data.date), Number(data.slot) || 0, { done: true, steps: [] }).then(() => { routinesChanged(); toast('Marked done'); }).catch(() => {});
+      return;
+    }
+    if (last.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER || typeof url !== 'string' || !url.startsWith('/')) return;
     handled = id;
     Notifications.clearLastNotificationResponseAsync().catch(() => {});
     setTimeout(() => router.push(url as never), 300);
@@ -97,6 +107,8 @@ function NudgeSync() {
   useEffect(() => { if (trained) cancelAfterWalk(maxDay).catch(() => {}); }, [trained, maxDay]);
   const weighed = entries[maxDay]?.w != null;
   useEffect(() => { if (loaded && current) syncDailyNudges(maxDay, weighed).catch(() => {}); }, [loaded, current, maxDay, weighed]);
+  // Routine reminders: rebuilt once a day on opening the app (and whenever a routine changes).
+  useEffect(() => { syncRoutineReminders(); }, [maxDay]);
   return null;
 }
 

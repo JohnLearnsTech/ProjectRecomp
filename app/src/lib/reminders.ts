@@ -40,7 +40,7 @@ export async function scheduleReminders(engine: Engine, maxDay: string, rows: Re
   const perm = await Notifications.requestPermissionsAsync();
   if (!perm.granted) throw new Error('Notifications are off for Recomp. Turn them on in Android settings, then try again.');
   if (Platform.OS === 'android') await Notifications.setNotificationChannelAsync('reminders', { name: 'Reminders', importance: Notifications.AndroidImportance.HIGH });
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  await clearReminders();
   const { PL, T, G } = engine;
   const now = Date.now(), horizon = key(addDays(d(maxDay), 56)), end = T.END < horizon ? T.END : horizon;
   const out: { title: string; body: string; when: Date; id?: string; url?: string }[] = [];
@@ -98,5 +98,11 @@ export async function rescheduleSaved(engine: Engine, maxDay: string) {
   return scheduleReminders(engine, maxDay, rows, items);
 }
 
-export const clearReminders = () => Notifications.cancelAllScheduledNotificationsAsync();
-export const scheduledCount = async () => (await Notifications.getAllScheduledNotificationsAsync()).length;
+// Routines and the nudges (protein, weigh-in, wind-down, after-walk) keep their own schedules.
+const OWN = /^(rt|protein|weigh|wind|afterwalk):/;
+/** Removes the plan's reminders, leaving routines and nudges alone. */
+export async function clearReminders() {
+  const all = await Notifications.getAllScheduledNotificationsAsync();
+  await Promise.all(all.filter((n) => !OWN.test(n.identifier)).map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier).catch(() => {})));
+}
+export const scheduledCount = async () => (await Notifications.getAllScheduledNotificationsAsync()).filter((n) => !OWN.test(n.identifier)).length;

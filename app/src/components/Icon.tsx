@@ -30,6 +30,7 @@ const P: Record<string, string> = {
  "nav-home": "<path d=\"M4 11 12 4l8 7M6 10v9h12v-9\"/>",
  "nav-food": "<path d=\"M7 4v7a3 3 0 0 0 6 0V4M10 11v9M17 4c-1.5 2-2 4-2 6h4c0-2-.5-4-2-6zM17 10v10\"/>",
  "nav-workout": "<path d=\"M5 9v6M19 9v6M8 7v10M16 7v10M8 12h8\"/>",
+ "nav-routines": "<path d=\"M9 6h11M9 12h11M9 18h11\"/><path d=\"M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2\"/>",
  "nav-progress": "<path d=\"M4 19V5M4 19h16M8 14l3-4 3 2 5-7\"/>"
 };
 export type IconName = keyof typeof P;

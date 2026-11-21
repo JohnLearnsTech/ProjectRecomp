@@ -15,6 +15,7 @@ export default function TabsLayout() {
     <Tabs tabBar={(p) => <BottomBar {...p} />} screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: c.paper } }}>
       <Tabs.Screen name="index" />
       <Tabs.Screen name="food" />
+      <Tabs.Screen name="routines" />
       <Tabs.Screen name="train" />
       <Tabs.Screen name="progress" />
     </Tabs>

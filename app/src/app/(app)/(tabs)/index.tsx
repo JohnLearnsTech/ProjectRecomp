@@ -4,7 +4,7 @@ import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Bar } from '../../../components/Bar';
 import { ConsistencyCard, Nudge } from '../../../components/Consistency';
-import { Habits } from '../../../components/Habits';
+import { RoutinesGlance } from '../../../components/RoutinesGlance';
 import { LiftPlan } from '../../../components/LiftPlan';
 import { Ring } from '../../../components/Ring';
 import { ScreenHeader } from '../../../components/ScreenHeader';
@@ -37,6 +37,12 @@ export default function Today() {
     if (pause) pauseTimer(pause);
     if (start || pause) router.setParams({ start: undefined, pause: undefined });
   }, [start, pause]);
+  // Habits live on Routines now: links from widgets and notifications that open one go there.
+  useEffect(() => {
+    if (!habit && !stop) return;
+    router.setParams({ habit: undefined, stop: undefined });
+    router.navigate({ pathname: '/routines', params: habit ? { habit } : { stop: stop! } });
+  }, [habit, stop]);
   const [log, setLog] = useState<db.DayLog | null>(null);
   const [quote, setQuote] = useState(currentQuote());
 
@@ -153,7 +159,7 @@ export default function Today() {
         <WeekBudget />
         <WeekCard />
         <HabitResize />
-        <Habits openId={habit} stopId={stop} onOpened={() => router.setParams({ habit: undefined, stop: undefined })} />
+        <RoutinesGlance />
         <ConsistencyCard />
 
         <Text style={[s.label, { marginTop: 8 }]}>
